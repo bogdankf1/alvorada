@@ -95,7 +95,10 @@ function considerWar(ctx: Ctx, state: GameState, pid: PlayerId): AiDecision | nu
   if (state.turn < 30) return null;
   const myPower = militaryPower(ctx, state, pid);
   const myCapital = playerCities(state, pid)[0];
-  if (!myCapital || myPower < 30) return null;
+  if (!myCapital || myPower < 25) return null;
+  // land hunger makes empires bolder
+  const cramped = knownGoodSpots(ctx, state, pid).length === 0 && state.turn > 50;
+  const ratioNeeded = cramped ? 1.3 : 1.45;
 
   for (const rival of state.players) {
     if (!rival.alive || rival.id === pid || atWar(state, pid, rival.id)) continue;
@@ -108,10 +111,10 @@ function considerWar(ctx: Ctx, state: GameState, pid: PlayerId): AiDecision | nu
     const nearest = Math.min(
       ...theirCities.map((c) => hexDistance({ q: c.q, r: c.r }, { q: myCapital.q, r: myCapital.r })),
     );
-    if (myPower >= theirPower * 1.5 && nearest <= 14) {
+    if (myPower >= theirPower * ratioNeeded && nearest <= 18) {
       return {
         action: { type: 'DECLARE_WAR', player: pid, target: rival.id },
-        reason: `war on ${rival.name}: power ${myPower} vs ~${theirPower}, marches ${nearest} tiles`,
+        reason: `war on ${rival.name}: power ${myPower} vs ~${theirPower}, marches ${nearest} tiles${cramped ? ', no land left' : ''}`,
       };
     }
   }
@@ -191,10 +194,12 @@ function decideWorker(ctx: Ctx, state: GameState, unit: Unit): AiDecision | null
 function decideScout(ctx: Ctx, state: GameState, unit: Unit): AiDecision | null {
   const pid = unit.owner;
   const vis = state.visibility[pid];
-  // nearest explored tile adjacent to the unknown
-  let best: { a: Axial; dist: number; idx: number } | null = null;
+  // explored land tiles that touch the unknown, nearest first
+  const frontier: { a: Axial; dist: number; idx: number }[] = [];
   for (let idx = 0; idx < state.tiles.length; idx++) {
     if (vis[idx] === VIS_UNSEEN) continue;
+    if (ctx.rules.terrains[state.tiles[idx].terrain].water) continue;
+    if (ctx.rules.elevations[state.tiles[idx].elevation].impassable) continue;
     const a = axialOfIndex(idx, state.mapW);
     const touchesUnknown = neighbors(a).some((nb) => {
       const j = tileIndex(nb, state.mapW, state.mapH);
@@ -203,12 +208,15 @@ function decideScout(ctx: Ctx, state: GameState, unit: Unit): AiDecision | null 
     if (!touchesUnknown) continue;
     const dist = hexDistance(a, { q: unit.q, r: unit.r });
     if (dist === 0) continue;
-    if (!best || dist < best.dist || (dist === best.dist && idx < best.idx)) {
-      best = { a, dist, idx };
-    }
+    frontier.push({ a, dist, idx });
   }
-  if (!best) return null;
-  return moveAlong(ctx, state, unit, best.a, `scouting the frontier at distance ${best.dist}`);
+  frontier.sort((x, y) => x.dist - y.dist || x.idx - y.idx);
+  // the nearest few may be walled off by sea or peaks — take the first reachable
+  for (const c of frontier.slice(0, 12)) {
+    const d = moveAlong(ctx, state, unit, c.a, `scouting the frontier at distance ${c.dist}`);
+    if (d) return d;
+  }
+  return null;
 }
 
 function decideMilitary(ctx: Ctx, state: GameState, unit: Unit): AiDecision | null {

@@ -181,6 +181,21 @@ export function pickProduction(
     if (mil) return { item: mil, reason: `army lags rivals (${myPower} vs ~${rivalPower})` };
   }
 
+  // 5b. wars we are in, or wars we intend: build the host
+  const atWarNow = state.players.some((p) => p.alive && atWar(state, pid, p.id));
+  if (atWarNow && myPower < rivalPower * 2) {
+    const mil = bestMilitary(ctx, state, city);
+    if (mil) return { item: mil, reason: 'the war must be fed' };
+  }
+  if (!atWarNow && spots.length === 0 && state.turn > 40 && rivalPower > 0 && myPower < rivalPower * 1.7) {
+    const mil = bestMilitary(ctx, state, city);
+    if (mil)
+      return {
+        item: mil,
+        reason: `no land left to settle — preparing for conquest (${myPower}/${Math.ceil(rivalPower * 1.7)})`,
+      };
+  }
+
   // 6. civic buildings in priority order
   for (const b of BUILDING_PRIORITY) {
     const item: ProductionItem = { kind: 'building', id: b };
