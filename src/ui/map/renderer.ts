@@ -310,6 +310,39 @@ export class MapRenderer {
       const p = hexToPixel(a, HEX);
       paintTile(g, this.rules, s.tiles[i], p.x, p.y, a.q, a.r, s.config.seed);
     }
+    // surf: foam along every water edge that touches land
+    g.lineCap = 'round';
+    for (let i = 0; i < s.tiles.length; i++) {
+      const t = s.tiles[i];
+      if (!this.rules.terrains[t.terrain].water) continue;
+      const a = axialOfIndex(i, s.mapW);
+      const p = hexToPixel(a, HEX);
+      const corners = cornersOf(p.x, p.y);
+      for (let d = 0; d < 6; d++) {
+        const j = tileIndex(neighborAxial(a, d), s.mapW, s.mapH);
+        if (j < 0 || this.rules.terrains[s.tiles[j].terrain].water) continue;
+        const [c1, c2] = edgeCorners(corners, d);
+        g.beginPath();
+        g.moveTo(c1[0], c1[1]);
+        g.lineTo(c2[0], c2[1]);
+        g.strokeStyle = 'rgba(156,196,212,0.55)';
+        g.lineWidth = 2.8;
+        g.stroke();
+        // a second, fainter swash a touch into the water
+        const mx = (c1[0] + c2[0]) / 2 - p.x;
+        const my = (c1[1] + c2[1]) / 2 - p.y;
+        const len = Math.sqrt(mx * mx + my * my) || 1;
+        const ox = (-mx / len) * 4.5;
+        const oy = (-my / len) * 4.5;
+        g.beginPath();
+        g.moveTo(c1[0] * 0.85 + p.x * 0.15 + ox, c1[1] * 0.85 + p.y * 0.15 + oy);
+        g.lineTo(c2[0] * 0.85 + p.x * 0.15 + ox, c2[1] * 0.85 + p.y * 0.15 + oy);
+        g.strokeStyle = 'rgba(156,196,212,0.22)';
+        g.lineWidth = 1.6;
+        g.stroke();
+      }
+    }
+
     for (let i = 0; i < s.tiles.length; i++) {
       const t = s.tiles[i];
       const a = axialOfIndex(i, s.mapW);
@@ -392,10 +425,34 @@ export class MapRenderer {
     }
     g.restore();
 
-    // 4. the remembered world: hard-edged parchment wash over explored-dim tiles
+    // 4. the cartographer's ink: a bled sepia line where knowledge ends
+    g.save();
+    g.globalCompositeOperation = 'source-atop';
+    g.scale(SCALE, SCALE);
+    g.strokeStyle = css(rgb(PALETTE.sepia), 0.5);
+    g.lineWidth = 3.4;
+    g.lineCap = 'round';
+    for (let i = 0; i < s.tiles.length; i++) {
+      if (vis[i] !== VIS_UNSEEN) continue;
+      const a = axialOfIndex(i, s.mapW);
+      const p = hexToPixel(a, HEX);
+      const corners = cornersOf(p.x, p.y);
+      for (let d = 0; d < 6; d++) {
+        const j = tileIndex(neighborAxial(a, d), s.mapW, s.mapH);
+        if (j < 0 || vis[j] === VIS_UNSEEN) continue;
+        const [c1, c2] = edgeCorners(corners, d);
+        g.beginPath();
+        g.moveTo(c1[0], c1[1]);
+        g.lineTo(c2[0], c2[1]);
+        g.stroke();
+      }
+    }
+    g.restore();
+
+    // 5. the remembered world: hard-edged parchment wash over explored-dim tiles
     g.save();
     g.scale(SCALE, SCALE);
-    g.fillStyle = css(rgb(PALETTE.parchment), 0.42);
+    g.fillStyle = css(rgb(PALETTE.parchment), 0.38);
     for (let i = 0; i < s.tiles.length; i++) {
       if (vis[i] !== 1) continue;
       const p = hexToPixel(axialOfIndex(i, s.mapW), HEX);
