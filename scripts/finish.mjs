@@ -1,4 +1,4 @@
-// Duel-map probe: advance turns until a war exists, photograph the front.
+// Run a duel to its verdict; photograph the victory screen.
 import puppeteer from 'puppeteer-core';
 import { createServer } from 'vite';
 import { mkdirSync } from 'fs';
@@ -25,45 +25,23 @@ await page.evaluate((s) => {
   Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set.call(input, s);
   input.dispatchEvent(new Event('input', { bubbles: true }));
 }, seed);
-// duel map
 await page.evaluate(() => [...document.querySelectorAll('.choice')].find((e) => e.textContent.includes('Duel')).click());
 await page.evaluate(() => [...document.querySelectorAll('.btn--primary')].find((e) => e.textContent.includes('Begin')).click());
 await new Promise((r) => setTimeout(r, 1200));
 
-let shot = 0;
-for (let batch = 0; batch < 30; batch++) {
-  await page.evaluate(() => window.__alvorada().debugAutoplay(4));
-  await new Promise((r) => setTimeout(r, 2500));
-  const front = await page.evaluate(() => {
-    const api = window.__alvorada();
-    const g = api.game;
-    if (!g) return null;
-    const wars = g.relations.some((row, a) => row.some((rel, b) => rel === 'war' && a !== b));
-    if (!wars) return { wars: false, turn: g.turn, ended: g.phase === 'ended' };
-    // frontline: enemy unit visible to viewer, else enemy city known
-    const vis = g.visibility[api.viewingPlayer];
-    const W = g.mapW;
-    const idxOf = (q, r) => r * W + q + ((r - (r & 1)) >> 1);
-    const enemies = Object.values(g.units).filter(
-      (u) => u.owner !== api.viewingPlayer && vis[idxOf(u.q, u.r)] === 2,
-    );
-    const target = enemies[0] ?? Object.values(g.cities).find((c) => c.owner !== api.viewingPlayer && vis[idxOf(c.q, c.r)] > 0);
-    return { wars: true, turn: g.turn, ended: g.phase === 'ended', at: target ? { q: target.q, r: target.r } : null };
+let info = null;
+for (let batch = 0; batch < 60; batch++) {
+  await page.evaluate(() => window.__alvorada().debugAutoplay(5));
+  await new Promise((r) => setTimeout(r, 2800));
+  info = await page.evaluate(() => {
+    const g = window.__alvorada().game;
+    return { turn: g.turn, phase: g.phase, winner: g.winner };
   });
-  if (!front) break;
-  if (front.wars && front.at) {
-    await page.evaluate(({ at }) => window.__alvorada().view(at.q, at.r, 1.35), { at: front.at });
-    await new Promise((r) => setTimeout(r, 400));
-    await page.screenshot({ path: `shots/2${shot}-war-t${front.turn}.png` });
-    shot++;
-    if (shot >= 3) break;
-  }
-  if (front.ended) {
-    await page.screenshot({ path: `shots/29-ended-t${front.turn}.png` });
-    break;
-  }
+  if (info.phase === 'ended') break;
 }
-console.log('shots taken:', shot);
+console.log('result:', JSON.stringify(info));
+await new Promise((r) => setTimeout(r, 600));
+await page.screenshot({ path: 'shots/30-verdict.png' });
 await browser.close();
 await server.close();
 if (errors.length) {
