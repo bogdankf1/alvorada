@@ -1,0 +1,158 @@
+/**
+ * Core game-state types. The whole state is plain serializable JSON:
+ * no class instances, no Maps/Sets, no functions, no Dates.
+ * GameState + the action log fully determine a game (see PLAN.md §3.3).
+ */
+import type { Ruleset } from '../data/types';
+
+export type PlayerId = number;
+export type UnitId = number;
+export type CityId = number;
+
+export interface Axial {
+  q: number;
+  r: number;
+}
+
+export interface Tile {
+  terrain: string;
+  elevation: string; // 'flat' | 'hill' | 'mountain' (data ids)
+  feature: string | null;
+  resource: string | null;
+  improvement: string | null;
+  ownerCity: CityId | null; // territory: derived from exactly one place
+}
+
+export type UnitOrder =
+  | { kind: 'goto'; path: Axial[] } // remaining steps, executed across turns
+  | { kind: 'build'; improvement: string; turnsLeft: number };
+
+export type Stance = 'none' | 'fortified' | 'skipped';
+
+export interface Unit {
+  id: UnitId;
+  owner: PlayerId;
+  def: string;
+  q: number;
+  r: number;
+  hp: number; // 0-100
+  moves: number; // move points remaining this turn
+  stance: Stance;
+  acted: boolean; // moved/attacked since last turn-start (gates healing)
+  order: UnitOrder | null;
+}
+
+export interface ProductionItem {
+  kind: 'unit' | 'building';
+  id: string;
+}
+
+export interface City {
+  id: CityId;
+  owner: PlayerId;
+  name: string;
+  q: number;
+  r: number;
+  pop: number;
+  food: number; // stored toward growth
+  production: { item: ProductionItem | null; progress: number };
+  buildings: string[];
+  culture: number; // stored toward next border expansion
+  tilesClaimed: number; // border expansions completed (sets the next threshold)
+  hp: number;
+}
+
+export type Relation = 'peace' | 'war';
+
+export interface Player {
+  id: PlayerId;
+  name: string; // leader name
+  civ: string;
+  color: string;
+  controller: 'human' | 'ai'; // setup data for the driver; the engine never branches on it
+  alive: boolean;
+  techs: string[];
+  researching: string | null;
+  science: number; // stored toward current research
+  gold: number;
+  nextCityName: number;
+}
+
+export interface GameEvent {
+  seq: number;
+  turn: number;
+  player: PlayerId | null; // audience; null = everyone
+  type: string;
+  msg: string;
+  q?: number;
+  r?: number; // optional map focus for the notification
+}
+
+export interface PlayerSpec {
+  civ: string;
+  controller: 'human' | 'ai';
+  name?: string;
+}
+
+export interface GameConfig {
+  seed: number;
+  mapW: number;
+  mapH: number;
+  players: PlayerSpec[];
+}
+
+export const VIS_UNSEEN = 0;
+export const VIS_EXPLORED = 1;
+export const VIS_VISIBLE = 2;
+
+export interface GameState {
+  schema: number;
+  rulesetId: string;
+  config: GameConfig;
+  rngState: number;
+  turn: number;
+  currentPlayer: PlayerId;
+  phase: 'playing' | 'ended';
+  mapW: number;
+  mapH: number;
+  tiles: Tile[];
+  players: Player[];
+  relations: Relation[][];
+  units: Record<UnitId, Unit>;
+  cities: Record<CityId, City>;
+  visibility: number[][]; // [player][tileIndex] -> VIS_*
+  nextUnitId: number;
+  nextCityId: number;
+  eventSeq: number;
+  events: GameEvent[]; // bounded ring, audience-tagged
+  winner: { player: PlayerId; victory: 'conquest' | 'score' } | null;
+}
+
+/** Engine context: rules travel beside state so content is never imported by logic. */
+export interface Ctx {
+  rules: Ruleset;
+}
+
+export type Action =
+  | { type: 'FOUND_CITY'; player: PlayerId; unit: UnitId }
+  | { type: 'MOVE_UNIT'; player: PlayerId; unit: UnitId; path: Axial[] }
+  | { type: 'ATTACK'; player: PlayerId; unit: UnitId; target: Axial }
+  | { type: 'RANGED_ATTACK'; player: PlayerId; unit: UnitId; target: Axial }
+  | { type: 'BUILD_IMPROVEMENT'; player: PlayerId; unit: UnitId; improvement: string }
+  | { type: 'FORTIFY'; player: PlayerId; unit: UnitId }
+  | { type: 'SKIP_UNIT'; player: PlayerId; unit: UnitId }
+  | { type: 'DISBAND'; player: PlayerId; unit: UnitId }
+  | { type: 'SET_PRODUCTION'; player: PlayerId; city: CityId; item: ProductionItem }
+  | { type: 'BUY_ITEM'; player: PlayerId; city: CityId; item: ProductionItem }
+  | { type: 'SET_RESEARCH'; player: PlayerId; tech: string }
+  | { type: 'DECLARE_WAR'; player: PlayerId; target: PlayerId }
+  | { type: 'END_TURN'; player: PlayerId };
+
+export type ActionType = Action['type'];
+
+/** Sorted numeric keys of a Record — the only sanctioned way to iterate units/cities. */
+export function sortedIds(rec: Record<number, unknown>): number[] {
+  return Object.keys(rec)
+    .map(Number)
+    .sort((a, b) => a - b);
+}
