@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "sim": "vitest run tests/sim.balance.test.ts --reporter=basic"
+    "sim": "vitest run tests/selfplay.test.ts --reporter=basic"
   },
   "dependencies": {
     "@fontsource/alegreya-sans": "^5.2.0",
