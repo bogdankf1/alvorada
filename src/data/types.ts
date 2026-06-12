@@ -54,8 +54,8 @@ export interface ResourceDef {
   kind: 'bonus' | 'strategic';
   yields: PartialYields; // delta, applies once the owner has revealedBy
   revealedBy?: string; // tech id; undefined = visible from the start
-  improvedBy: string; // improvement id that activates it
-  bonusImproved: PartialYields; // extra delta once the matching improvement exists
+  improvedBy?: string; // improvement id that activates it (undefined = unimprovable)
+  bonusImproved?: PartialYields; // extra delta once the matching improvement exists
   spawn: { terrains: string[]; elevations?: string[]; weight: number };
 }
 
