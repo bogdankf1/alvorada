@@ -295,6 +295,13 @@ function decideMilitary(ctx: Ctx, state: GameState, unit: Unit): AiDecision | nu
     return moveAlong(ctx, state, unit, { q: c.q, r: c.r }, `marching to garrison ${c.name}`);
   }
 
+  // 4e. peacetime, every city guarded: spare soldiers chart the world
+  const anyWar = state.players.some((p) => p.alive && atWar(state, pid, p.id));
+  if (!anyWar && state.turn < 70) {
+    const explore = decideScout(ctx, state, unit);
+    if (explore) return explore;
+  }
+
   return null;
 }
 

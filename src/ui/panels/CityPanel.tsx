@@ -1,0 +1,169 @@
+import { gameCtx } from '../../app/driver';
+import { appStore, useApp } from '../../app/store';
+import { humanDispatch, isMyTurn } from '../actions';
+import {
+  cityYields,
+  growthThreshold,
+  itemCost,
+  productionOptions,
+  purchaseCost,
+} from '../../engine/selectors';
+import type { ProductionItem } from '../../engine/types';
+import { YIELD_COLORS, YIELD_ICONS, IconCog, IconPeople } from '../icons';
+import { YIELD_KEYS } from '../../data/types';
+
+export function CityPanel() {
+  const game = useApp((s) => s.game);
+  const viewer = useApp((s) => s.viewingPlayer);
+  const selectedCity = useApp((s) => s.selectedCity);
+  useApp((s) => s.aiThinking);
+  if (!game || selectedCity === null) return null;
+  const city = game.cities[selectedCity];
+  if (!city) return null;
+  const mine = city.owner === viewer;
+  const { total } = cityYields(gameCtx, game, city);
+  const need = growthThreshold(city.pop);
+  const net = total.food - city.pop * gameCtx.rules.settings.foodConsumptionPerPop;
+  const growTurns = net > 0 ? Math.ceil((need - city.food) / net) : null;
+  const player = game.players[viewer];
+
+  const current = city.production.item;
+  const currentCost = current ? itemCost(gameCtx, current) : 0;
+  const prodTurns =
+    current && total.production > 0
+      ? Math.ceil((currentCost - city.production.progress) / total.production)
+      : null;
+
+  const options = mine && isMyTurn() ? productionOptions(gameCtx, game, city) : [];
+
+  const itemName = (item: ProductionItem) =>
+    item.kind === 'unit' ? gameCtx.rules.units[item.id].name : gameCtx.rules.buildings[item.id].name;
+
+  return (
+    <div className="city-panel plate">
+      <header>
+        <h2>{city.name}</h2>
+        <span className="pop">
+          <IconPeople size={13} /> {city.pop}
+        </span>
+        <button className="btn btn--ghost city-close" onClick={() => appStore.set({ selectedCity: null })}>
+          ✕
+        </button>
+      </header>
+
+      <div className="yields-row">
+        {YIELD_KEYS.map((k) => {
+          const Icon = YIELD_ICONS[k];
+          return (
+            <span key={k} className="yield-chip" style={{ color: YIELD_COLORS[k] }} title={k}>
+              <Icon />
+              <span className="num">{total[k]}</span>
+            </span>
+          );
+        })}
+      </div>
+
+      <div className="city-scroll scroll-quiet">
+        <div className="city-section-title">Growth</div>
+        <div className="bar">
+          <i style={{ width: `${Math.min(100, (city.food / need) * 100)}%`, background: YIELD_COLORS.food }} />
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--ivory-dim)', marginTop: 4 }}>
+          {city.food}/{need} food · {net >= 0 ? `+${net}` : net}/turn
+          {growTurns !== null && ` · grows in ${growTurns}t`}
+          {net < 0 && ' · starving!'}
+        </div>
+
+        <div className="city-section-title">Production</div>
+        <div className="prod-current">
+          <IconCog size={16} style={{ color: YIELD_COLORS.production }} />
+          <div className="grow">
+            <div style={{ fontWeight: 700 }}>{current ? itemName(current) : 'Nothing queued'}</div>
+            {current && (
+              <>
+                <div className="bar" style={{ marginTop: 4 }}>
+                  <i
+                    style={{
+                      width: `${Math.min(100, (city.production.progress / currentCost) * 100)}%`,
+                      background: YIELD_COLORS.production,
+                    }}
+                  />
+                </div>
+                <div style={{ fontSize: 11.5, color: 'var(--ivory-dim)', marginTop: 3 }}>
+                  {city.production.progress}/{currentCost}
+                  {prodTurns !== null && ` · ${prodTurns}t`}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {options.length > 0 && (
+          <>
+            <div className="city-section-title">Order Production</div>
+            <div className="prod-list">
+              {options.map((item) => {
+                const cost = itemCost(gameCtx, item);
+                const turns = total.production > 0 ? Math.ceil(cost / total.production) : null;
+                const price = purchaseCost(gameCtx, item);
+                return (
+                  <div
+                    key={`${item.kind}:${item.id}`}
+                    className="prod-item"
+                    onClick={() =>
+                      humanDispatch({ type: 'SET_PRODUCTION', player: viewer, city: city.id, item })
+                    }
+                  >
+                    <span className="nm">{itemName(item)}</span>
+                    <span className="turns">{turns !== null ? `${turns}t` : '—'}</span>
+                    {player.gold >= price && (
+                      <button
+                        className="btn buy"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          humanDispatch({ type: 'BUY_ITEM', player: viewer, city: city.id, item });
+                        }}
+                        title="Purchase outright with gold"
+                      >
+                        {price}g
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        <div className="city-section-title">Buildings</div>
+        <div className="bld-list">
+          {city.buildings.length === 0 && (
+            <span style={{ color: 'var(--ivory-dim)', fontSize: 12.5 }}>None yet</span>
+          )}
+          {city.buildings.map((b) => (
+            <span key={b} className="bld-chip">
+              {gameCtx.rules.buildings[b].name}
+            </span>
+          ))}
+        </div>
+
+        {city.hp < gameCtx.rules.settings.cityMaxHp && (
+          <>
+            <div className="city-section-title">City Defense</div>
+            <div className="bar">
+              <i
+                style={{
+                  width: `${(city.hp / gameCtx.rules.settings.cityMaxHp) * 100}%`,
+                  background: city.hp > 100 ? 'var(--ok)' : 'var(--danger)',
+                }}
+              />
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--ivory-dim)', marginTop: 4 }}>
+              {city.hp}/{gameCtx.rules.settings.cityMaxHp} walls
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}

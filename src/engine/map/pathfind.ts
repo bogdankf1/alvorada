@@ -88,8 +88,19 @@ export function moveRulesFor(ctx: Ctx, state: GameState, unit: Unit): MoveRules 
     } else if (!uCivilian) {
       militaryBlocked.add(idx); // visible enemy military: never walkable
       civilianBlocked.add(idx);
+    } else {
+      civilianBlocked.add(idx); // enemy civilians: military capture, civilians can't
     }
-    // visible enemy *civilians* are walkable (capture on entry)
+  }
+  // foreign city tiles fall to ATTACK, never to walking in
+  for (const id of sortedIds(state.cities)) {
+    const c = state.cities[id];
+    if (c.owner === pid) continue;
+    const idx = tileIndex({ q: c.q, r: c.r }, state.mapW, state.mapH);
+    if (vis[idx] >= VIS_EXPLORED) {
+      militaryBlocked.add(idx);
+      civilianBlocked.add(idx);
+    }
   }
 
   return {

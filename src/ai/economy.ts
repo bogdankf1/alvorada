@@ -140,6 +140,16 @@ export function pickProduction(
     if (mil) return { item: mil, reason: `enemies near ${city.name} (threat ${threat})` };
   }
 
+  // 2b. eyes on the world: one early scout per empire
+  if (
+    state.turn <= 40 &&
+    ctx.rules.units.scout &&
+    !myUnits.some((u) => u.def === 'scout') &&
+    canProduce(ctx, state, city, { kind: 'unit', id: 'scout' }).ok
+  ) {
+    return { item: { kind: 'unit', id: 'scout' }, reason: 'the world is unmapped' };
+  }
+
   // 3. expansion while the land is open
   const settlersAlive = myUnits.filter((u) => ctx.rules.units[u.def].abilities?.includes('foundCity')).length;
   const spots = knownGoodSpots(ctx, state, pid);

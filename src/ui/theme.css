@@ -1,0 +1,251 @@
+/* ALVORADA — design tokens & house styles (see DESIGN.md)
+   Palette "Cartographer's Dawn"; chamfered brass plates; Cinzel + Alegreya Sans. */
+
+:root {
+  --lacquer: #1b2330;
+  --lacquer-hi: #232c3a;
+  --lacquer-lo: #141b25;
+  --brass: #c8a55b;
+  --brass-dim: #8a744a;
+  --brass-bright: #e3c47d;
+  --ivory: #f0e7d2;
+  --ivory-dim: #b9b09a;
+  --parchment: #d9c49a;
+  --sepia: #6a5436;
+  --atlantic: #1e4e73;
+  --danger: #c25b4a;
+  --ok: #7da34c;
+
+  --font-display: 'Cinzel', 'Times New Roman', serif;
+  --font-body: 'Alegreya Sans', 'Gill Sans', system-ui, sans-serif;
+
+  --chamfer: 8px;
+  --chamfer-sm: 5px;
+  --shadow-plate: 0 4px 18px rgba(6, 10, 16, 0.55), 0 1px 4px rgba(6, 10, 16, 0.5);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ivory);
+  background: var(--lacquer-lo);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --- the house shape: chamfered plates --- */
+.plate {
+  position: relative;
+  background: linear-gradient(180deg, var(--lacquer-hi) 0%, var(--lacquer) 55%, var(--lacquer-lo) 100%);
+  clip-path: polygon(
+    var(--chamfer) 0,
+    calc(100% - var(--chamfer)) 0,
+    100% var(--chamfer),
+    100% calc(100% - var(--chamfer)),
+    calc(100% - var(--chamfer)) 100%,
+    var(--chamfer) 100%,
+    0 calc(100% - var(--chamfer)),
+    0 var(--chamfer)
+  );
+  filter: drop-shadow(0 3px 10px rgba(5, 8, 13, 0.6));
+}
+/* brass fitting drawn as an inset border via pseudo-element */
+.plate::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, var(--brass) 0%, var(--brass-dim) 100%);
+  clip-path: polygon(
+    var(--chamfer) 0, calc(100% - var(--chamfer)) 0, 100% var(--chamfer),
+    100% calc(100% - var(--chamfer)), calc(100% - var(--chamfer)) 100%, var(--chamfer) 100%,
+    0 calc(100% - var(--chamfer)), 0 var(--chamfer),
+    var(--chamfer) 1px,
+    1.5px calc(var(--chamfer) + 0.5px),
+    1.5px calc(100% - var(--chamfer) - 0.5px),
+    calc(var(--chamfer) + 0.5px) calc(100% - 1.5px),
+    calc(100% - var(--chamfer) - 0.5px) calc(100% - 1.5px),
+    calc(100% - 1.5px) calc(100% - var(--chamfer) - 0.5px),
+    calc(100% - 1.5px) calc(var(--chamfer) + 0.5px),
+    calc(100% - var(--chamfer) - 0.5px) 1.5px,
+    var(--chamfer) 1px
+  );
+  opacity: 0.85;
+}
+.plate--sm {
+  --chamfer: var(--chamfer-sm);
+}
+
+.plate-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 12.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+
+/* --- buttons --- */
+.btn {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: var(--ivory);
+  background: linear-gradient(180deg, #2b3547, #1d2532);
+  border: 1px solid var(--brass-dim);
+  clip-path: polygon(
+    var(--chamfer-sm) 0, calc(100% - var(--chamfer-sm)) 0, 100% var(--chamfer-sm),
+    100% calc(100% - var(--chamfer-sm)), calc(100% - var(--chamfer-sm)) 100%,
+    var(--chamfer-sm) 100%, 0 calc(100% - var(--chamfer-sm)), 0 var(--chamfer-sm)
+  );
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: filter 120ms ease, transform 120ms ease;
+  user-select: none;
+}
+.btn:hover {
+  filter: brightness(1.18);
+}
+.btn:active {
+  transform: translateY(1px);
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+  filter: none;
+}
+.btn--primary {
+  font-family: var(--font-display);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #1c1606;
+  background: linear-gradient(180deg, var(--brass-bright), var(--brass) 60%, #a8854a);
+  border-color: #6d5832;
+}
+.btn--danger {
+  border-color: #8a4a3e;
+  color: #eebbae;
+}
+.btn--ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--ivory-dim);
+}
+.btn--ghost:hover {
+  color: var(--ivory);
+}
+
+/* --- shared bits --- */
+.bar {
+  position: relative;
+  height: 6px;
+  background: #10151d;
+  border: 1px solid #0a0e14;
+  overflow: hidden;
+}
+.bar > i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  display: block;
+  transition: width 220ms ease;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.num {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--brass-dim) 30%, var(--brass-dim) 70%, transparent);
+  opacity: 0.5;
+  margin: 8px 0;
+}
+
+.scroll-quiet {
+  scrollbar-width: thin;
+  scrollbar-color: var(--brass-dim) transparent;
+}
+.scroll-quiet::-webkit-scrollbar {
+  width: 8px;
+}
+.scroll-quiet::-webkit-scrollbar-thumb {
+  background: var(--brass-dim);
+  border-radius: 4px;
+}
+
+@keyframes toast-in {
+  from {
+    transform: translateX(16px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes panel-in {
+  from {
+    transform: translateX(-14px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes panel-in-right {
+  from {
+    transform: translateX(14px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes rise-fade {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-22px);
+    opacity: 0;
+  }
+}
+@keyframes sheen {
+  0% {
+    background-position: -120% 0;
+  }
+  100% {
+    background-position: 220% 0;
+  }
+}
+@keyframes scrim-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
