@@ -44,6 +44,7 @@ export class LocalGame {
   state: GameState;
   readonly log: Action[] = [];
   private lastEventSeq: number;
+  private lastProposalSeen = 0;
   private aiRunning = false;
   /** Called after every applied action — the renderer hooks animations here. */
   onAction: ((action: Action, prev: GameState, next: GameState) => void) | null = null;
@@ -79,6 +80,19 @@ export class LocalGame {
   private publish(): void {
     appStore.set({ game: this.state });
     this.drainEvents();
+    this.surfaceProposals();
+  }
+
+  private surfaceProposals(): void {
+    const viewer = this.viewingPlayer;
+    let newest = 0;
+    for (const p of this.state.proposals) {
+      if (p.to === viewer && p.id > this.lastProposalSeen && p.id > newest) newest = p.id;
+    }
+    if (newest > 0) {
+      this.lastProposalSeen = newest;
+      appStore.set({ proposalModal: newest });
+    }
   }
 
   private drainEvents(): void {

@@ -5,6 +5,7 @@
  */
 import { useSyncExternalStore } from 'react';
 import type { Action, GameState, PlayerId } from '../engine/types';
+import type { DraftDeal } from '../ui/diplomacy';
 
 export interface Toast {
   id: number;
@@ -27,13 +28,16 @@ export interface AppState {
   selectedUnit: number | null;
   selectedCity: number | null;
   hoveredTile: number | null;
-  overlay: 'tech' | 'menu' | null;
+  overlay: 'tech' | 'menu' | 'diplomacy' | null;
   aiThinking: boolean;
   toasts: Toast[];
   aiLog: AiLogEntry[];
   aiLogOpen: boolean;
   cameraFocus: { q: number; r: number; seq: number } | null; // one-shot pan request
   warConfirm: { target: PlayerId; followUp: Action } | null;
+  diploTarget: PlayerId | null;
+  draftDeal: DraftDeal | null;
+  proposalModal: number | null; // proposal id to show in the incoming-offer modal
   winnerSeen: boolean;
 }
 
@@ -51,6 +55,9 @@ const initial: AppState = {
   aiLogOpen: false,
   cameraFocus: null,
   warConfirm: null,
+  diploTarget: null,
+  draftDeal: null,
+  proposalModal: null,
   winnerSeen: false,
 };
 
