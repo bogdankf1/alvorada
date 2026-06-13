@@ -9,7 +9,7 @@ import type { Action, GameConfig, GameState } from '../src/engine/types';
 import { initialState } from '../src/engine/state';
 import { applyAction } from '../src/engine/reducer';
 import { gameHash } from '../src/engine/serialize';
-import { computeScore, playerCities } from '../src/engine/selectors';
+import { computeScore, empireHappiness, playerCities } from '../src/engine/selectors';
 import { decide } from '../src/ai/decide';
 import { ctx } from './helpers';
 
@@ -98,6 +98,8 @@ describe('balance telemetry', () => {
       techs: p.techs.length,
       gold: p.gold,
       score: computeScore(ctx, state, p.id),
+      happiness: empireHappiness(ctx, state, p.id).net,
+      routes: Object.values(state.tradeRoutes).filter((r) => r.owner === p.id).length,
     }));
     console.table(rows);
     expect(rows.length).toBe(4);
@@ -135,4 +137,19 @@ describe('breadth in self-play', () => {
     for (const a of log) replay = applyAction(ctx, replay, a);
     expect(gameHash(replay)).toBe(gameHash(state));
   }, 180_000);
+});
+
+describe('city & economy depth in self-play', () => {
+  it('trade routes are established and happiness buildings get built over a long game (and it replays)', () => {
+    const { state, log } = runGame(7777, 200);
+    const established = log.filter((a) => a.type === 'ESTABLISH_TRADE_ROUTE').length;
+    expect(established, 'caravans should open routes').toBeGreaterThan(0);
+    const happinessBuildings = Object.values(state.cities).filter((c) =>
+      c.buildings.some((b) => b === 'colosseum' || b === 'courthouse'),
+    ).length;
+    expect(happinessBuildings, 'AIs should build happiness buildings').toBeGreaterThan(0);
+    let replay = initialState(config(7777), ctx);
+    for (const a of log) replay = applyAction(ctx, replay, a);
+    expect(gameHash(replay)).toBe(gameHash(state));
+  }, 200_000);
 });
