@@ -20,6 +20,25 @@ export interface Attitude {
   factors: AttitudeFactor[];
 }
 
+// Deal-token valuation constants. Not in ruleset settings for v1 (the spec didn't
+// enumerate them); kept here, named, so they read clearly and are trivial to promote
+// to data later. The attitude weights/bands/margins ARE data — see DiplomacySettings.
+const OPEN_BORDERS_COST: Record<AttitudeBand, number> = {
+  hostile: 400, // effectively a refusal: you don't let enemies march through
+  wary: 120,
+  neutral: 40,
+  cordial: 15,
+  friendly: 15,
+};
+const OPEN_BORDERS_RECEIVED = 20; // gaining passage into their land: minor convenience
+const PEACE_BASE_VALUE = 20; // baseline worth of ending a war, before how-the-war-goes
+const FRIENDSHIP_VALUE = 30; // worth of a friendship the player is willing to enter
+const FRIENDSHIP_GATE_PENALTY = -1000; // below the trust bar: won't befriend at any price
+
+const BAND_ORDER: AttitudeBand[] = ['hostile', 'wary', 'neutral', 'cordial', 'friendly'];
+
+// Whether any two owned territories are adjacent. Scans tiles (~hundreds–1300 at game
+// scale) — microseconds, and this is the engine layer (no render loop).
 function territoriesTouch(state: GameState, a: PlayerId, b: PlayerId): boolean {
   for (let i = 0; i < state.tiles.length; i++) {
     if (tileOwner(state, i) !== a) continue;
@@ -31,11 +50,12 @@ function territoriesTouch(state: GameState, a: PlayerId, b: PlayerId): boolean {
   return false;
 }
 
-function cityWithin(state: GameState, owner: PlayerId, near: PlayerId, range: number): boolean {
-  const mine = playerCities(state, near);
-  for (const c of playerCities(state, owner)) {
-    for (const m of mine) {
-      if (hexDistance({ q: c.q, r: c.r }, { q: m.q, r: m.r }) <= range) return true;
+/** True when any city of `a` sits within `range` of any city of `b`. */
+function cityWithin(state: GameState, a: PlayerId, b: PlayerId, range: number): boolean {
+  const bCities = playerCities(state, b);
+  for (const ca of playerCities(state, a)) {
+    for (const cb of bCities) {
+      if (hexDistance({ q: ca.q, r: ca.r }, { q: cb.q, r: cb.r }) <= range) return true;
     }
   }
   return false;
@@ -65,7 +85,8 @@ export function attitude(ctx: Ctx, state: GameState, subject: PlayerId, toward: 
   if (rel.denounced || back.denounced) add('Denouncement', d.denounced);
   if (rel.friends) add('Declared friendship', d.friendship);
   if (territoriesTouch(state, subject, toward)) add('Bordering territory', d.borderFriction);
-  if (back.goldPerTurn > 0 || back.openBordersUntil >= state.turn) add('Favorable dealings', d.favorableDeal);
+  if (back.goldPerTurn > 0 || (back.openBordersUntil > 0 && back.openBordersUntil >= state.turn))
+    add('Favorable dealings', d.favorableDeal);
   if (cityWithin(state, toward, subject, d.competitionRange)) add('Crowding our lands', d.landCompetition);
 
   const myPower = militaryPower(ctx, state, subject);
@@ -90,23 +111,18 @@ function sideValue(
   v += items.gold; // face value
   if (items.goldPerTurn) v += items.goldPerTurn.amount * Math.min(items.goldPerTurn.turns, d.goldPerTurnHorizon);
   if (items.openBorders) {
-    if (asReceiver) v += 20; // gaining passage into their land: minor convenience
-    else {
-      // granting passage costs more the less you trust them
-      const band = attitude(ctx, state, owner, counterparty).band;
-      v += band === 'hostile' ? 400 : band === 'wary' ? 120 : band === 'neutral' ? 40 : 15;
-    }
+    // gaining passage is a minor convenience; granting it costs more the less you trust them
+    v += asReceiver ? OPEN_BORDERS_RECEIVED : OPEN_BORDERS_COST[attitude(ctx, state, owner, counterparty).band];
   }
   if (items.peace) {
     // only meaningful at war; worth more to whoever is faring worse
     const mine = militaryPower(ctx, state, owner);
     const theirs = militaryPower(ctx, state, counterparty);
-    v += Math.max(0, Math.floor((theirs - mine) / 2) + 20);
+    v += Math.max(0, Math.floor((theirs - mine) / 2) + PEACE_BASE_VALUE);
   }
   if (items.friendship) {
     const band = attitude(ctx, state, owner, counterparty).band;
-    const order: AttitudeBand[] = ['hostile', 'wary', 'neutral', 'cordial', 'friendly'];
-    v += order.indexOf(band) >= order.indexOf(d.minFriendBand) ? 30 : -1000; // gate: won't befriend below the bar
+    v += BAND_ORDER.indexOf(band) >= BAND_ORDER.indexOf(d.minFriendBand) ? FRIENDSHIP_VALUE : FRIENDSHIP_GATE_PENALTY;
   }
   return v;
 }
