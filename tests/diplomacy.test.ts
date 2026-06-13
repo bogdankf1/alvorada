@@ -105,6 +105,39 @@ describe('resolveProposal', () => {
   });
 });
 
+import type { GameState } from '../src/engine/types';
+const endTurn2 = (s: GameState) => applyAction(ctx, s, { type: 'END_TURN', player: s.currentPlayer });
+const fullRound2 = (s: GameState) => {
+  const n = s.players.filter((p) => p.alive).length;
+  for (let i = 0; i < n; i++) s = endTurn2(s);
+  return s;
+};
+
+describe('obligations tick', () => {
+  it('pays gold-per-turn each round and expires at term end', () => {
+    let s = flatWorld(16, 10, 2);
+    meet(s, 0, 1);
+    s.players[0].gold = 100;
+    s.relations[0][1].goldPerTurn = 10;
+    s.relations[0][1].goldUntil = s.turn + 1; // pays this turn and next, then expires
+    const before1 = s.players[1].gold;
+    s = fullRound2(s); // player 0's turn-start pays
+    expect(s.players[1].gold).toBe(before1 + 10);
+    s = fullRound2(s);
+    s = fullRound2(s);
+    // after goldUntil passes, the flow is cleared
+    expect(s.relations[0][1].goldPerTurn).toBe(0);
+  });
+
+  it('open borders expire after their term', () => {
+    let s = flatWorld(16, 10, 2);
+    meet(s, 0, 1);
+    s.relations[0][1].openBordersUntil = s.turn; // expires next time player 0 processes
+    s = fullRound2(s);
+    expect(s.relations[0][1].openBordersUntil).toBe(0);
+  });
+});
+
 describe('diplomacy actions', () => {
   it('gifting gold to an AI is accepted and transfers gold', () => {
     const s0 = flatWorld(16, 10, 2);

@@ -13,6 +13,7 @@ import { findPath } from '../map/pathfind';
 import { executeMovePath } from './movement';
 import { processCity } from './cities';
 import { checkScoreVictory } from './victory';
+import { processObligations } from './diplomacy';
 
 export function handleEndTurn(ctx: Ctx, state: GameState): void {
   const current = state.currentPlayer;
@@ -130,6 +131,9 @@ export function beginTurn(ctx: Ctx, state: GameState, pid: PlayerId): void {
       }
     }
   }
+
+  // 3b. diplomacy obligations: pay tribute, expire pacts & stale proposals, decay grudges
+  processObligations(ctx, state, pid);
 
   // 4. fresh eyes
   recomputeVisibility(ctx, state, pid);
