@@ -56,3 +56,39 @@ describe('establish trade route', () => {
     expect(validateAction(ctx, s, { type: 'ESTABLISH_TRADE_ROUTE', player: 0, unit: car.id, targetCity: c1 }).ok).toBe(false);
   });
 });
+
+describe('trade route yields', () => {
+  it('an international route earns the owner gold and the destination its cut', () => {
+    let s = metPeaceCities();
+    const myCity = Object.values(s.cities).find((c) => c.owner === 0)!;
+    const theirCity = Object.values(s.cities).find((c) => c.owner === 1)!;
+    const car = spawn(s, 0, 'caravan', theirCity.q - 1, theirCity.r);
+    refreshVis(s);
+    const ownerGoldBefore = cityYields(ctx, s, myCity).total.gold;
+    const destGoldBefore = cityYields(ctx, s, theirCity).total.gold;
+    s = applyAction(ctx, s, { type: 'ESTABLISH_TRADE_ROUTE', player: 0, unit: car.id, targetCity: theirCity.id });
+    s = thaw(s);
+    expect(Object.values(s.tradeRoutes)[0].kind).toBe('international');
+    const my = Object.values(s.cities).find((c) => c.owner === 0)!;
+    const their = Object.values(s.cities).find((c) => c.owner === 1)!;
+    expect(cityYields(ctx, s, my).total.gold).toBe(ownerGoldBefore + 4); // international gold
+    expect(cityYields(ctx, s, their).total.gold).toBe(destGoldBefore + 2); // destinationGold
+  });
+
+  it('friendship multiplies the international yield', () => {
+    let s = metPeaceCities();
+    const theirCity = Object.values(s.cities).find((c) => c.owner === 1)!;
+    const car = spawn(s, 0, 'caravan', theirCity.q - 1, theirCity.r);
+    refreshVis(s);
+    s.relations[0][1].friends = true; s.relations[1][0].friends = true;
+    s = applyAction(ctx, s, { type: 'ESTABLISH_TRADE_ROUTE', player: 0, unit: car.id, targetCity: theirCity.id });
+    s = thaw(s);
+    const my = Object.values(s.cities).find((c) => c.owner === 0)!;
+    const baseGold = Object.values(s.cities).find((c) => c.owner === 0)!; // reference only
+    // 4 gold * (100+50)/100 = 6
+    const withRoute = cityYields(ctx, s, my).total.gold;
+    s.tradeRoutes = {}; // strip the route to read the baseline
+    expect(withRoute - cityYields(ctx, s, my).total.gold).toBe(6);
+    void baseGold;
+  });
+});
