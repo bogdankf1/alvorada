@@ -111,3 +111,20 @@ describe('AI diplomacy in self-play', () => {
     expect(diploActions).toBeGreaterThan(0);
   }, 120_000);
 });
+
+describe('breadth in self-play', () => {
+  it('over a long game, wonders get built and rivals reach the new eras (and it replays)', () => {
+    const { state, log } = runGame(20260613, 200);
+    const wondersBuilt = Object.keys(state.wondersBuilt).length;
+    const reachedNewEra = state.players.some((p) =>
+      p.techs.some((t) => ['feudalism', 'machinery', 'education', 'gunpowder'].includes(t)),
+    );
+    expect(wondersBuilt).toBeGreaterThan(0);
+    expect(reachedNewEra).toBe(true);
+
+    // the wonder/era-laden log replays bit-identically
+    let replay = initialState(config(20260613), ctx);
+    for (const a of log) replay = applyAction(ctx, replay, a);
+    expect(gameHash(replay)).toBe(gameHash(state));
+  }, 180_000);
+});
