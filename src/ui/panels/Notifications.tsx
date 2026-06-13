@@ -3,10 +3,17 @@ import { IconLaurel, IconScroll, IconSwords, IconWheat } from '../icons';
 
 function iconFor(type: string) {
   if (type === 'techDone' || type === 'resourceRevealed') return <IconScroll />;
-  if (type === 'war' || type === 'unitKilled' || type === 'cityCaptured' || type === 'cityBombarded')
+  if (
+    type === 'war' ||
+    type === 'unitKilled' ||
+    type === 'cityCaptured' ||
+    type === 'cityBombarded' ||
+    type === 'denounce' ||
+    type === 'dealBroken'
+  )
     return <IconSwords />;
   if (type === 'cityGrew' || type === 'cityFounded' || type === 'cityStarved') return <IconWheat />;
-  return <IconLaurel />;
+  return <IconLaurel />; // includes diplomacy outcomes: dealOffer/dealAccepted/dealRejected/dealCounter
 }
 
 export function Notifications() {

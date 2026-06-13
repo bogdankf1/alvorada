@@ -38,6 +38,7 @@ export function ForeignAffairs() {
               const att = attitude(gameCtx, game, id, viewer);
               const war = atWar(game, viewer, id);
               const friends = game.relations[viewer][id].friends;
+              const denounced = game.relations[viewer][id].denounced;
               return (
                 <div
                   key={id}
@@ -51,6 +52,7 @@ export function ForeignAffairs() {
                       {ATTITUDE_LABEL[att.band]}
                       {war && <span className="badge war"> ⚔ War</span>}
                       {friends && <span className="badge friend"> ♥ Friends</span>}
+                      {denounced && <span className="badge war"> ⚑ Denounced</span>}
                     </div>
                   </div>
                 </div>
@@ -166,6 +168,16 @@ function DealTable(props: {
       <div className="deal-actions">
         <button className="btn btn--primary" disabled={!myTurn} onClick={propose}>Propose</button>
         <button className="btn" onClick={() => setDraft(emptyDraft())}>Clear</button>
+        {!war && !game.relations[viewer][rival].denounced && (
+          <button
+            className="btn btn--danger"
+            disabled={!myTurn}
+            title="A public rebuke — sours their attitude and ends any friendship"
+            onClick={() => humanDispatch({ type: 'DENOUNCE', player: viewer, target: rival })}
+          >
+            Denounce
+          </button>
+        )}
       </div>
     </div>
   );

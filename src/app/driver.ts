@@ -33,6 +33,12 @@ const TOAST_TYPES = new Set([
   'resourceRevealed',
   'cityBombarded',
   'victory',
+  'dealOffer',
+  'dealAccepted',
+  'dealRejected',
+  'dealCounter',
+  'dealBroken',
+  'denounce',
 ]);
 
 export interface DispatchResult {

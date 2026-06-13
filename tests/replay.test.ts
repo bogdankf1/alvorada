@@ -108,32 +108,52 @@ describe('replay determinism', () => {
 });
 
 describe('diplomacy replay determinism', () => {
-  it('a scripted diplomacy game replays bit-identically', () => {
-    const config = {
-      seed: 909,
-      mapW: 30,
-      mapH: 20,
-      players: [
-        { civ: 'rome', controller: 'human' as const },
-        { civ: 'egypt', controller: 'ai' as const },
-      ],
-    };
-    // force "met" by running enough turns is heavy; instead exercise actions that don't need met
-    // by building a script that first meets via DECLARE_WAR is invalid (needs met). So mark met
-    // through a known-safe sequence: run a few end-turns (units explore), then deal.
-    const build = (): { final: ReturnType<typeof initialState>; log: Action[] } => {
-      let s = initialState(config, ctx);
+  const config = {
+    seed: 909,
+    mapW: 30,
+    mapH: 20,
+    players: [
+      { civ: 'rome', controller: 'human' as const },
+      { civ: 'egypt', controller: 'ai' as const },
+    ],
+  };
+  // Deterministic starting state shared by build and replay: force first contact and
+  // give the human a treasury so deals are affordable. Both paths derive it identically.
+  const makeStart = () => {
+    const s = initialState(config, ctx);
+    s.relations[0][1].met = true;
+    s.relations[1][0].met = true;
+    s.players[0].gold = 300;
+    return s;
+  };
+
+  it('a scripted diplomacy game (deals, denounce, obligations) replays bit-identically', () => {
+    const term = ctx.rules.settings.diplomacy.termLength;
+    const build = () => {
+      let s = makeStart();
       const log: Action[] = [];
       const act = (a: Action) => {
         s = applyAction(ctx, s, a);
         log.push(a);
       };
+      // human (player 0) gifts gold (AI accepts), buys open borders, then denounces
+      act({ type: 'PROPOSE_DEAL', player: 0, to: 1, give: { gold: 100 }, take: { gold: 0 } });
+      act({ type: 'PROPOSE_DEAL', player: 0, to: 1, give: { gold: 50 }, take: { gold: 0, openBorders: true } });
+      act({ type: 'PROPOSE_DEAL', player: 0, to: 1, give: { gold: 0, goldPerTurn: { amount: 5, turns: term } }, take: { gold: 0 } });
+      act({ type: 'DENOUNCE', player: 0, target: 1 });
+      // run several rounds so obligations tick (gold-per-turn) and grudge decays
       for (let i = 0; i < 12; i++) act({ type: 'END_TURN', player: s.currentPlayer });
       return { final: s, log };
     };
     const a = build();
-    let replay = initialState(config, ctx);
+    // the script exercised the machinery, not just turns (assert on stable facts)
+    expect(a.log.filter((x) => x.type === 'PROPOSE_DEAL').length).toBe(3);
+    expect(a.final.relations[0][1].denounced).toBe(true); // denounce sticks
+    expect(a.final.relations[1][0].openBordersUntil).toBeGreaterThan(a.final.turn); // pact still active
+
+    let replay = makeStart();
     for (const action of a.log) replay = applyAction(ctx, replay, action);
     expect(gameHash(replay)).toBe(gameHash(a.final));
+    expect(replay).toEqual(a.final);
   });
 });
