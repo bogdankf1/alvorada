@@ -22,6 +22,7 @@ import { recomputeVisibility } from '../map/visibility';
 import { pushEvent } from '../events';
 import { captureCivilian } from './movement';
 import { checkScienceVictory } from './victory';
+import { pruneRoutesForCity } from './trade';
 
 export function nextCityName(ctx: Ctx, state: GameState, pid: PlayerId): string {
   const player = state.players[pid];
@@ -293,6 +294,7 @@ export function captureCity(ctx: Ctx, state: GameState, city: City, byPlayer: Pl
   city.hp = s.cityCaptureHp;
   city.owner = byPlayer;
   city.occupied = true;
+  pruneRoutesForCity(state, city.id);
 
   // palace relocates to the old owner's oldest remaining city
   const remaining = sortedIds(state.cities)

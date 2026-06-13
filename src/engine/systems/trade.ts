@@ -59,3 +59,24 @@ export function processTradeRoutes(ctx: Ctx, state: GameState, pid: PlayerId): v
     }
   }
 }
+
+export function pruneRoutesForCity(state: GameState, cityId: number): void {
+  for (const id of sortedIds(state.tradeRoutes)) {
+    const r = state.tradeRoutes[id];
+    if (r.fromCity === cityId || r.toCity === cityId) delete state.tradeRoutes[id];
+  }
+}
+
+export function cancelInternationalRoutesBetween(state: GameState, a: PlayerId, b: PlayerId): void {
+  for (const id of sortedIds(state.tradeRoutes)) {
+    const r = state.tradeRoutes[id];
+    if (r.kind !== 'international') continue;
+    const oa = state.cities[r.fromCity]?.owner;
+    const ob = state.cities[r.toCity]?.owner;
+    if ((oa === a && ob === b) || (oa === b && ob === a)) {
+      const dst = state.cities[r.toCity];
+      pushEvent(state, { player: r.owner, type: 'tradeBroken', msg: 'War severed a trade route', q: dst?.q, r: dst?.r });
+      delete state.tradeRoutes[id];
+    }
+  }
+}

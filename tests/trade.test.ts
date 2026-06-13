@@ -4,6 +4,7 @@ import { applyAction } from '../src/engine/reducer';
 import { validateAction } from '../src/engine/validate';
 import { cityYields } from '../src/engine/selectors';
 import { processTradeRoutes } from '../src/engine/systems/trade';
+import { captureCity } from '../src/engine/systems/cities';
 import { axialOfIndex } from '../src/engine/hex';
 
 export function twoCities(): ReturnType<typeof flatWorld> {
@@ -124,5 +125,31 @@ describe('trade route lifecycle', () => {
     processTradeRoutes(ctx, s, 0);
     expect(Object.keys(s.tradeRoutes).length).toBe(0);
     expect(s.players[1].gold).toBe(goldBefore + ctx.rules.settings.tradeRoute.pillageBounty);
+  });
+});
+
+describe('trade route severance', () => {
+  it('declaring war cancels international routes between the belligerents', () => {
+    let s = metPeaceCities();
+    const theirCity = Object.values(s.cities).find((c) => c.owner === 1)!;
+    const car = spawn(s, 0, 'caravan', theirCity.q - 1, theirCity.r);
+    refreshVis(s);
+    s = applyAction(ctx, s, { type: 'ESTABLISH_TRADE_ROUTE', player: 0, unit: car.id, targetCity: theirCity.id });
+    s = thaw(s);
+    expect(Object.keys(s.tradeRoutes).length).toBe(1);
+    s = applyAction(ctx, s, { type: 'DECLARE_WAR', player: 0, target: 1 });
+    expect(Object.keys(s.tradeRoutes).length).toBe(0);
+  });
+
+  it('capturing a city prunes routes touching it', () => {
+    let s = twoCities();
+    const [, c1] = Object.keys(s.cities).map(Number);
+    const car = spawn(s, 0, 'caravan', 11, 5);
+    refreshVis(s);
+    s = applyAction(ctx, s, { type: 'ESTABLISH_TRADE_ROUTE', player: 0, unit: car.id, targetCity: c1 });
+    s = thaw(s);
+    expect(Object.keys(s.tradeRoutes).length).toBe(1);
+    captureCity(ctx, s, s.cities[c1], 1);
+    expect(Object.keys(s.tradeRoutes).length).toBe(0);
   });
 });

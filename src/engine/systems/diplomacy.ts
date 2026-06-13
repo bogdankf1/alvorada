@@ -5,6 +5,7 @@
  */
 import type { Ctx, GameState, PlayerId, DealItems, Proposal } from '../types';
 import { pushEvent } from '../events';
+import { cancelInternationalRoutesBetween } from './trade';
 
 export function cancelPacts(state: GameState, a: PlayerId, b: PlayerId): void {
   for (const [x, y] of [[a, b], [b, a]] as const) {
@@ -23,6 +24,7 @@ export function enterWar(ctx: Ctx, state: GameState, a: PlayerId, b: PlayerId): 
     r.friends = false;
   }
   cancelPacts(state, a, b);
+  cancelInternationalRoutesBetween(state, a, b);
   state.relations[b][a].grudge += ctx.rules.settings.diplomacy.grudgeOnWar;
   state.proposals = state.proposals.filter(
     (p) => !((p.from === a && p.to === b) || (p.from === b && p.to === a)),
