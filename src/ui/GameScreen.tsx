@@ -4,6 +4,7 @@ import { TopBar } from './panels/TopBar';
 import { UnitPanel } from './panels/UnitPanel';
 import { CityPanel } from './panels/CityPanel';
 import { TechTree } from './panels/TechTree';
+import { ForeignAffairs } from './panels/ForeignAffairs';
 import { Notifications } from './panels/Notifications';
 import { HudRight } from './panels/HudRight';
 import { TileInfo } from './panels/TileInfo';
@@ -33,6 +34,9 @@ export function GameScreen() {
           break;
         case 'KeyT':
           appStore.set({ overlay: ov === 'tech' ? null : 'tech' });
+          break;
+        case 'KeyG':
+          appStore.set({ overlay: ov === 'diplomacy' ? null : 'diplomacy' });
           break;
         case 'KeyN':
           selectNextIdleUnit();
@@ -67,6 +71,7 @@ export function GameScreen() {
       <HudRight />
       <AiLog />
       {overlay === 'tech' && <TechTree />}
+      {overlay === 'diplomacy' && <ForeignAffairs />}
       <GameMenu />
       <WarConfirm />
       <VictoryOverlay />

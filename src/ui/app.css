@@ -734,3 +734,35 @@
   text-transform: uppercase;
   color: var(--brass-bright);
 }
+
+/* foreign affairs council */
+.diplo { position: absolute; inset: 0; display: flex; flex-direction: column; }
+.diplo-body { flex: 1; overflow: auto; padding: 8px 26px 26px; display: grid; grid-template-columns: 320px 1fr; gap: 22px; }
+.powers { display: flex; flex-direction: column; gap: 6px; }
+.power { display: flex; gap: 10px; align-items: center; padding: 10px 12px; cursor: pointer;
+  background: rgba(10,14,20,0.4); border: 1px solid rgba(200,165,91,0.25);
+  clip-path: polygon(6px 0,calc(100% - 6px) 0,100% 6px,100% calc(100% - 6px),calc(100% - 6px) 100%,6px 100%,0 calc(100% - 6px),0 6px); }
+.power:hover { border-color: var(--brass); }
+.power.is-active { border-color: var(--brass-bright); background: linear-gradient(90deg, rgba(200,165,91,0.18), rgba(200,165,91,0.05)); }
+.power .nm { font-weight: 700; }
+.power .att { font-size: 12px; margin-top: 1px; }
+.power .badge { font-size: 11px; }
+.power .badge.war { color: var(--danger); }
+.power .badge.friend { color: #7FB6D9; }
+.muted { color: var(--ivory-dim); font-size: 13px; }
+.deal { max-width: 560px; }
+.deal-why { cursor: pointer; color: var(--ivory-dim); font-size: 13px; margin-bottom: 8px; }
+.why-list { list-style: none; margin: 0 0 12px; padding: 8px 12px; background: rgba(10,14,20,0.4);
+  border: 1px solid rgba(200,165,91,0.2); font-size: 12.5px; }
+.why-list li { display: flex; justify-content: space-between; padding: 2px 0; }
+.why-list .pos { color: #9CC069; } .why-list .neg { color: #C25B4A; }
+.deal-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.deal-col { background: rgba(10,14,20,0.35); border: 1px solid rgba(200,165,91,0.2); padding: 10px 12px; }
+.deal-col-h { font-family: var(--font-display); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--brass); margin-bottom: 8px; }
+.num-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 5px 0; font-size: 13px; }
+.num-row input { width: 84px; background: rgba(10,14,20,0.5); border: 1px solid rgba(200,165,91,0.3); color: var(--ivory); padding: 4px 6px; font-family: var(--font-body); }
+.chk, .deal-row { display: flex; align-items: center; gap: 8px; font-size: 13px; margin: 8px 0 0; }
+.deal-row { margin: 12px 0; }
+.verdict { margin: 14px 0; font-weight: 700; }
+.verdict.accept { color: #9CC069; } .verdict.counter { color: #D08B4C; } .verdict.reject { color: #C25B4A; }
+.deal-actions { display: flex; gap: 10px; }
