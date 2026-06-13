@@ -133,8 +133,10 @@ function handle(ctx: Ctx, state: GameState, action: Action): void {
     }
 
     case 'DECLARE_WAR': {
-      state.relations[action.player][action.target] = 'war';
-      state.relations[action.target][action.player] = 'war';
+      state.relations[action.player][action.target].status = 'war';
+      state.relations[action.target][action.player].status = 'war';
+      state.relations[action.player][action.target].since = state.turn;
+      state.relations[action.target][action.player].since = state.turn;
       pushEvent(state, {
         player: null,
         type: 'war',

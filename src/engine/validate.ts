@@ -206,6 +206,11 @@ export function validateAction(ctx: Ctx, state: GameState, action: Action): Vali
       if (atWar(state, action.player, action.target)) return fail('already at war');
       return ok;
     }
+
+    case 'PROPOSE_DEAL':
+    case 'RESPOND_DEAL':
+    case 'DENOUNCE':
+      return fail('diplomacy not yet implemented');
   }
 }
 

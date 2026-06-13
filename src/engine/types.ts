@@ -62,7 +62,48 @@ export interface City {
   hp: number;
 }
 
-export type Relation = 'peace' | 'war';
+export interface RelationState {
+  status: 'peace' | 'war'; // symmetric
+  since: number; // turn status last changed (symmetric)
+  met: boolean; // a and b have encountered each other (symmetric); sticky once true
+  friends: boolean; // mutual declared friendship (symmetric)
+  denounced: boolean; // a has denounced b (directional)
+  openBordersUntil: number; // a grants b transit until this turn (0 = none; directional)
+  goldPerTurn: number; // a pays b each turn (directional)
+  goldUntil: number; // gold-per-turn runs until this turn (0 = none)
+  grudge: number; // a's grudge toward b; decays each turn (directional)
+}
+
+export function blankRelation(): RelationState {
+  return {
+    status: 'peace',
+    since: 1,
+    met: false,
+    friends: false,
+    denounced: false,
+    openBordersUntil: 0,
+    goldPerTurn: 0,
+    goldUntil: 0,
+    grudge: 0,
+  };
+}
+
+export interface DealItems {
+  gold: number; // lump sum this side provides (0 = none)
+  goldPerTurn?: { amount: number; turns: number };
+  openBorders?: boolean; // this side grants the other transit
+  peace?: boolean; // mutual (both sides set to end a war)
+  friendship?: boolean; // mutual (both sides set)
+}
+
+export interface Proposal {
+  id: number;
+  from: PlayerId;
+  to: PlayerId;
+  give: DealItems; // what `from` provides
+  take: DealItems; // what `from` asks of `to`
+  expiresTurn: number;
+}
 
 export interface Player {
   id: PlayerId;
@@ -117,7 +158,9 @@ export interface GameState {
   mapH: number;
   tiles: Tile[];
   players: Player[];
-  relations: Relation[][];
+  relations: RelationState[][];
+  proposals: Proposal[];
+  nextProposalId: number;
   units: Record<UnitId, Unit>;
   cities: Record<CityId, City>;
   visibility: number[][]; // [player][tileIndex] -> VIS_*
@@ -146,6 +189,9 @@ export type Action =
   | { type: 'BUY_ITEM'; player: PlayerId; city: CityId; item: ProductionItem }
   | { type: 'SET_RESEARCH'; player: PlayerId; tech: string }
   | { type: 'DECLARE_WAR'; player: PlayerId; target: PlayerId }
+  | { type: 'PROPOSE_DEAL'; player: PlayerId; to: PlayerId; give: DealItems; take: DealItems }
+  | { type: 'RESPOND_DEAL'; player: PlayerId; proposal: number; accept: boolean }
+  | { type: 'DENOUNCE'; player: PlayerId; target: PlayerId }
   | { type: 'END_TURN'; player: PlayerId };
 
 export type ActionType = Action['type'];

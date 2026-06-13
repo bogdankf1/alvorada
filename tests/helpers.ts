@@ -3,6 +3,7 @@
  * Build the scene fully, then act — applyAction freezes its output (Immer).
  */
 import type { Ctx, GameState, Unit } from '../src/engine/types';
+import { blankRelation } from '../src/engine/types';
 import type { Ruleset } from '../src/data/types';
 import { STANDARD_RULESET } from '../src/data/standard';
 import { recomputeVisibility } from '../src/engine/map/visibility';
@@ -65,7 +66,9 @@ export function flatWorld(w = 12, h = 10, playerCount = 2): GameState {
     mapH: h,
     tiles,
     players,
-    relations: players.map(() => players.map(() => 'peace' as const)),
+    relations: players.map(() => players.map(() => blankRelation())),
+    proposals: [],
+    nextProposalId: 1,
     units: {},
     cities: {},
     visibility: players.map(() => new Array<number>(w * h).fill(0)),
@@ -116,6 +119,8 @@ export function thaw(state: GameState): GameState {
 }
 
 export function declareWarBetween(state: GameState, a: number, b: number): void {
-  state.relations[a][b] = 'war';
-  state.relations[b][a] = 'war';
+  state.relations[a][b].status = 'war';
+  state.relations[b][a].status = 'war';
+  state.relations[a][b].since = state.turn;
+  state.relations[b][a].since = state.turn;
 }

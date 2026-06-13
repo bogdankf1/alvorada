@@ -62,7 +62,7 @@ export function playerCities(state: GameState, pid: PlayerId): City[] {
 }
 
 export function atWar(state: GameState, a: PlayerId, b: PlayerId): boolean {
-  return a !== b && state.relations[a][b] === 'war';
+  return a !== b && state.relations[a][b].status === 'war';
 }
 
 export function tileOwner(state: GameState, idx: number): PlayerId | null {

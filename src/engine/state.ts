@@ -2,7 +2,8 @@
  * initialState(config, rules): a complete, ready-to-play game.
  * A game is fully determined by (config, action log) — see PLAN.md §3.3.
  */
-import type { Ctx, GameConfig, GameState, Player, Relation, Unit } from './types';
+import type { Ctx, GameConfig, GameState, Player, RelationState, Unit } from './types';
+import { blankRelation } from './types';
 import { tileIndex } from './hex';
 import { generateMap } from './map/generate';
 import { recomputeVisibility } from './map/visibility';
@@ -31,7 +32,7 @@ export function initialState(config: GameConfig, ctx: Ctx): GameState {
     };
   });
 
-  const relations: Relation[][] = players.map(() => players.map(() => 'peace' as Relation));
+  const relations: RelationState[][] = players.map(() => players.map(() => blankRelation()));
 
   const state: GameState = {
     schema: SCHEMA_VERSION,
@@ -46,6 +47,8 @@ export function initialState(config: GameConfig, ctx: Ctx): GameState {
     tiles,
     players,
     relations,
+    proposals: [],
+    nextProposalId: 1,
     units: {},
     cities: {},
     visibility: players.map(() => new Array<number>(tiles.length).fill(0)),
