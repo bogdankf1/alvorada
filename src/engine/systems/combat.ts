@@ -6,7 +6,7 @@
  */
 import type { City, Ctx, GameState, Unit } from '../types';
 import { tileIndex } from '../hex';
-import { cityAt, civilianAt, defenseBonusAt, militaryAt } from '../selectors';
+import { cityAt, civilianAt, defenseBonusAt, militaryAt, wonderOwnerEffects } from '../selectors';
 import { recomputeVisibility } from '../map/visibility';
 import { pushEvent } from '../events';
 import { captureCity } from './cities';
@@ -57,6 +57,7 @@ export function cityStrength(ctx: Ctx, state: GameState, city: City): number {
   let str = s.cityBaseStrength + s.cityStrengthPerPop * city.pop;
   for (const b of city.buildings) str += ctx.rules.buildings[b].defense?.strength ?? 0;
   if (militaryAt(ctx, state, { q: city.q, r: city.r })) str += s.garrisonBonus;
+  str += wonderOwnerEffects(ctx, state, city.owner).cityDefense;
   return str;
 }
 

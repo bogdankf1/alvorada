@@ -3,7 +3,8 @@ import { STANDARD_RULESET } from '../src/data/standard';
 import { ctx, flatWorld, spawn, refreshVis, thaw } from './helpers';
 import { applyAction } from '../src/engine/reducer';
 import { validateAction } from '../src/engine/validate';
-import { canProduce } from '../src/engine/selectors';
+import { canProduce, cityYields } from '../src/engine/selectors';
+import { cityStrength } from '../src/engine/systems/combat';
 
 describe('era content', () => {
   // (ruleset cross-reference validity is covered by tests/ruleset.test.ts)
@@ -66,5 +67,39 @@ describe('wonders: gating', () => {
     s.players[0].gold = 100000;
     const v = validateAction(ctx, s, { type: 'BUY_ITEM', player: 0, city: 1, item: { kind: 'building', id: 'great_library' } });
     expect(v.ok).toBe(false);
+  });
+});
+
+describe('wonders: ongoing effects', () => {
+  it('empireYields add to every city the owner holds', () => {
+    let s = flatWorld(16, 12, 2);
+    const a = spawn(s, 0, 'settler', 4, 5);
+    const b = spawn(s, 0, 'settler', 9, 5);
+    spawn(s, 1, 'warrior', 1, 10);
+    refreshVis(s);
+    s = applyAction(ctx, s, { type: 'FOUND_CITY', player: 0, unit: a.id });
+    s = applyAction(ctx, s, { type: 'FOUND_CITY', player: 0, unit: b.id });
+    s = thaw(s);
+    const cityIds = Object.keys(s.cities).map(Number);
+    const before = cityYields(ctx, s, s.cities[cityIds[1]]).total.food;
+    // hanging_gardens built by the first city → +1 food empire-wide
+    s.cities[cityIds[0]].buildings.push('hanging_gardens');
+    s.wondersBuilt['hanging_gardens'] = cityIds[0];
+    const after = cityYields(ctx, s, s.cities[cityIds[1]]).total.food; // the OTHER city benefits
+    expect(after).toBe(before + 1);
+  });
+
+  it('cityDefense aura raises every owner city\'s strength', () => {
+    let s = flatWorld(16, 12, 2);
+    const a = spawn(s, 0, 'settler', 4, 5);
+    spawn(s, 1, 'warrior', 1, 10);
+    refreshVis(s);
+    s = applyAction(ctx, s, { type: 'FOUND_CITY', player: 0, unit: a.id });
+    s = thaw(s);
+    const id = Object.keys(s.cities).map(Number)[0];
+    const before = cityStrength(ctx, s, s.cities[id]);
+    s.cities[id].buildings.push('great_wall');
+    s.wondersBuilt['great_wall'] = id;
+    expect(cityStrength(ctx, s, s.cities[id])).toBe(before + 6);
   });
 });

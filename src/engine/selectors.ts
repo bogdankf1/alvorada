@@ -186,7 +186,27 @@ export function cityYields(ctx: Ctx, state: GameState, city: City): CityYieldBre
     if (def.perPop) total[def.perPop.yield] += Math.floor(city.pop / def.perPop.per);
   }
   if (s.sciencePerPopHalf) total.science += Math.floor(city.pop / 2);
+  addYields(total, wonderOwnerEffects(ctx, state, city.owner).empire);
   return { total, worked };
+}
+
+/** Aggregate the ongoing wonder effects owned by `owner`: empire-wide yields + city-defense aura. */
+export function wonderOwnerEffects(
+  ctx: Ctx,
+  state: GameState,
+  owner: PlayerId,
+): { empire: Yields; cityDefense: number } {
+  const empire = emptyYields();
+  let cityDefense = 0;
+  for (const wid of Object.keys(state.wondersBuilt).sort()) {
+    const city = state.cities[state.wondersBuilt[wid]];
+    if (!city || city.owner !== owner) continue;
+    const eff = ctx.rules.buildings[wid]?.effect;
+    if (!eff) continue;
+    if (eff.kind === 'empireYields') addYields(empire, eff.yields);
+    else if (eff.kind === 'cityDefense') cityDefense += eff.strength;
+  }
+  return { empire, cityDefense };
 }
 
 export function growthThreshold(pop: number): number {
