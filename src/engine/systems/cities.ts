@@ -122,8 +122,13 @@ export function completeWonder(ctx: Ctx, state: GameState, city: City, wonderId:
       for (let i = 0; i < eff.count; i++) placeProducedUnit(ctx, state, city, eff.unit);
     } else if (eff.kind === 'cultureBurst') {
       city.culture += eff.amount;
+    } else {
+      // empireYields / cityDefense are ongoing (read by selectors) — nothing to fire here.
+      // This assignment is a compile-time exhaustiveness guard: if a new ONE-TIME effect
+      // kind is added, TypeScript will error here until it's handled above.
+      const _ongoing: { kind: 'empireYields' } | { kind: 'cityDefense' } = eff;
+      void _ongoing;
     }
-    // empireYields / cityDefense are ongoing (read by selectors) — nothing to fire here
   }
   // refund any other city racing the same wonder
   for (const id of sortedIds(state.cities)) {

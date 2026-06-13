@@ -173,4 +173,30 @@ describe('wonders: completion', () => {
     expect(s.cities[c1].production.item).toBeNull();
     expect(s.players[0].gold).toBeGreaterThan(goldBefore);
   });
+
+  it('refunds a RIVAL city racing the same wonder, to that rival', () => {
+    let s = flatWorld(20, 12, 2);
+    const mine = spawn(s, 0, 'settler', 4, 5);
+    const theirs = spawn(s, 1, 'settler', 15, 6);
+    refreshVis(s);
+    s = applyAction(ctx, s, { type: 'FOUND_CITY', player: 0, unit: mine.id });
+    s = thaw(s);
+    s.currentPlayer = 1;
+    s = applyAction(ctx, s, { type: 'FOUND_CITY', player: 1, unit: theirs.id });
+    s = thaw(s);
+    s.currentPlayer = 0;
+    s.players[0].techs.push('mathematics');
+    s.players[1].techs.push('mathematics');
+    const myCity = Object.values(s.cities).find((c) => c.owner === 0)!;
+    const rivalCity = Object.values(s.cities).find((c) => c.owner === 1)!;
+    myCity.production = { item: { kind: 'building', id: 'hanging_gardens' }, progress: ctx.rules.buildings.hanging_gardens.cost };
+    rivalCity.production = { item: { kind: 'building', id: 'hanging_gardens' }, progress: 55 };
+    const rivalGoldBefore = s.players[1].gold;
+    let guard = 0;
+    while (s.wondersBuilt['hanging_gardens'] === undefined && guard < 6) { s = fullRound(s); guard++; }
+    expect(s.wondersBuilt['hanging_gardens']).toBe(myCity.id);
+    const rivalCityAfter = Object.values(s.cities).find((c) => c.owner === 1)!;
+    expect(rivalCityAfter.production.item).toBeNull();
+    expect(s.players[1].gold).toBeGreaterThan(rivalGoldBefore); // rival refunded, to the rival
+  });
 });
