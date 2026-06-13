@@ -222,6 +222,18 @@ describe('science victory', () => {
   });
 });
 
+describe('luxury resources', () => {
+  it('defines five luxuries, each improvable and tagged luxury', () => {
+    const r = STANDARD_RULESET.resources;
+    for (const id of ['wine', 'silk', 'spices', 'incense', 'gems']) {
+      expect(r[id], id).toBeDefined();
+      expect(r[id].kind, id).toBe('luxury');
+      expect(r[id].improvedBy, id).toBeDefined();
+    }
+    expect(STANDARD_RULESET.improvements.plantation).toBeDefined();
+  });
+});
+
 import { pickProduction, pickResearch } from '../src/ai/economy';
 
 describe('AI breadth', () => {

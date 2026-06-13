@@ -64,6 +64,31 @@ export const RESOURCES: Record<string, ResourceDef> = {
     bonusImproved: { production: 1 },
     spawn: { terrains: ['grassland', 'plains', 'desert', 'tundra'], weight: 6 },
   },
+  wine: {
+    id: 'wine', name: 'Wine', kind: 'luxury', yields: { gold: 1 },
+    improvedBy: 'plantation', bonusImproved: { gold: 1 },
+    spawn: { terrains: ['grassland', 'plains'], elevations: ['flat'], weight: 5 },
+  },
+  silk: {
+    id: 'silk', name: 'Silk', kind: 'luxury', yields: { gold: 1 },
+    improvedBy: 'plantation', bonusImproved: { gold: 1 },
+    spawn: { terrains: ['grassland', 'plains'], weight: 4 },
+  },
+  spices: {
+    id: 'spices', name: 'Spices', kind: 'luxury', yields: { gold: 1 },
+    improvedBy: 'plantation', bonusImproved: { gold: 1 },
+    spawn: { terrains: ['plains', 'grassland'], weight: 4 },
+  },
+  incense: {
+    id: 'incense', name: 'Incense', kind: 'luxury', yields: { gold: 1 },
+    improvedBy: 'plantation', bonusImproved: { gold: 1 },
+    spawn: { terrains: ['desert', 'plains'], weight: 4 },
+  },
+  gems: {
+    id: 'gems', name: 'Gems', kind: 'luxury', yields: { gold: 2 },
+    improvedBy: 'mine', bonusImproved: { gold: 1 },
+    spawn: { terrains: ['grassland', 'plains', 'desert'], elevations: ['hill'], weight: 4 },
+  },
 };
 
 export const IMPROVEMENTS: Record<string, ImprovementDef> = {
@@ -99,6 +124,10 @@ export const IMPROVEMENTS: Record<string, ImprovementDef> = {
     yields: { production: 1 },
     requiresResource: true,
     requiresTech: 'masonry',
+  },
+  plantation: {
+    id: 'plantation', name: 'Plantation', turns: 5, yields: { gold: 1 },
+    requiresResource: true, requiresTech: 'pottery',
   },
   clear: {
     id: 'clear',
