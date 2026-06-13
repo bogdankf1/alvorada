@@ -17,6 +17,7 @@ interface DebugApi {
   clickHex(q: number, r: number): void;
   selectCity(id: number): void;
   view(q: number, r: number, zoom?: number): void;
+  animProbe(id: number): { x: number; y: number; anims: number } | null;
   debugAutoplay(turns: number): Promise<void>;
 }
 
@@ -49,6 +50,10 @@ export function installDebugBridge(): void {
       if (!renderer) return;
       renderer.camera.zoom = zoom;
       renderer.centerOn({ q, r });
+    },
+
+    animProbe(id: number) {
+      return activeRenderer.current?.debugUnitScreen(id) ?? null;
     },
 
     /** Plays the viewer's turns with the AI brain — fills the world for visual checks. */

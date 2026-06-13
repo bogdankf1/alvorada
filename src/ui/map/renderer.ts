@@ -221,7 +221,7 @@ export class MapRenderer {
         unitId: u.id,
         steps,
         start: performance.now(),
-        durPerStep: 140,
+        durPerStep: 180,
       });
     } else if (action.type === 'ATTACK' || action.type === 'RANGED_ATTACK') {
       const attacker = prev.units[action.unit];
@@ -587,6 +587,15 @@ export class MapRenderer {
       g.lineWidth = 1.4;
       g.stroke();
     }
+  }
+
+  /** Test probe: a unit's current on-screen position and live animation count. */
+  debugUnitScreen(id: number): { x: number; y: number; anims: number } | null {
+    if (!this.state) return null;
+    const u = this.state.units[id];
+    if (!u) return null;
+    const pos = this.unitRenderPos(this.state, u, this.animatedPos(u));
+    return { x: pos.x, y: pos.y, anims: this.moveAnims.size + this.lungeAnims.size };
   }
 
   private animatedPos(u: Unit): { x: number; y: number } | null {

@@ -104,7 +104,7 @@ name in Cinzel, pop badge, production progress as a 2px brass underline.
 
 | Event | Motion | Spec |
 |---|---|---|
-| Unit move | glide tile-to-tile | 140ms/tile, ease-out quad |
+| Unit move | glide tile-to-tile | 180ms/tile, ease-out quad |
 | Combat | attacker lunge 30% toward target + back; floating damage numeral | 220ms; numeral rises 24px / 600ms fade |
 | Fog reveal | parchment cross-fade | 250ms |
 | Panel open | slide + fade 12px | 180ms cubic-bezier(.2,.7,.3,1) |
@@ -113,7 +113,7 @@ name in Cinzel, pop badge, production progress as a 2px brass underline.
 | End turn ready | single brass sheen sweep | 800ms, once per state change |
 
 Nothing loops idly except the selection ring; nothing bounces; nothing moves that didn't
-change. AI moves inside your vision animate at the same 140ms so the world feels
+change. AI moves inside your vision animate at the same 180ms so the world feels
 inhabited; outside vision they resolve instantly.
 
 ## 6. Layout

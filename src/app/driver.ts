@@ -133,7 +133,7 @@ export class LocalGame {
         }
         this.publish();
         if (visible && (action.type === 'MOVE_UNIT' || action.type === 'ATTACK' || action.type === 'RANGED_ATTACK')) {
-          await sleep(190);
+          await sleep(220); // let the glide/lunge finish before the rival's next move
         } else if (++batched % 25 === 0) {
           await sleep(0); // yield to the UI thread on long invisible stretches
         }
