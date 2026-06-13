@@ -19,7 +19,7 @@ export function TopBar() {
     gold += y.gold;
   }
 
-  const pending = game.proposals.filter((p) => p.to === viewer).length;
+  const pending = game.proposals.filter((p) => p.to === viewer && game.turn <= p.expiresTurn).length;
   const tech = player.researching ? gameCtx.rules.techs[player.researching] : null;
   const progress = tech ? Math.min(1, player.science / tech.cost) : 0;
   const turnsLeft = tech && science > 0 ? Math.ceil((tech.cost - player.science) / science) : null;

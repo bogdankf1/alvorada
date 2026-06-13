@@ -85,13 +85,18 @@ export class LocalGame {
 
   private surfaceProposals(): void {
     const viewer = this.viewingPlayer;
-    let newest = 0;
+    // Surface the OLDEST unseen offer to the viewer (answer them in arrival order).
+    // The AI proposes at most one per turn, so a batch is rare; if it happens, the
+    // remaining ones surface on subsequent publishes.
+    let oldest = 0;
     for (const p of this.state.proposals) {
-      if (p.to === viewer && p.id > this.lastProposalSeen && p.id > newest) newest = p.id;
+      if (p.to === viewer && p.id > this.lastProposalSeen && (oldest === 0 || p.id < oldest)) {
+        oldest = p.id;
+      }
     }
-    if (newest > 0) {
-      this.lastProposalSeen = newest;
-      appStore.set({ proposalModal: newest });
+    if (oldest > 0) {
+      this.lastProposalSeen = oldest;
+      appStore.set({ proposalModal: oldest });
     }
   }
 
@@ -187,6 +192,9 @@ export function startGame(game: LocalGame): void {
     selectedUnit: null,
     selectedCity: null,
     overlay: null,
+    diploTarget: null,
+    draftDeal: null,
+    proposalModal: null,
     toasts: [],
     aiLog: [],
     winnerSeen: false,

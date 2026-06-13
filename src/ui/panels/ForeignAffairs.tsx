@@ -114,8 +114,8 @@ function DealTable(props: {
       {showWhy && (
         <ul className="why-list">
           {att.factors.length === 0 && <li className="muted">No strong feelings either way.</li>}
-          {att.factors.map((f, i) => (
-            <li key={i}>
+          {att.factors.map((f) => (
+            <li key={f.label}>
               <span>{f.label}</span>
               <span className={f.delta >= 0 ? 'pos' : 'neg'}>{f.delta >= 0 ? `+${f.delta}` : f.delta}</span>
             </li>
