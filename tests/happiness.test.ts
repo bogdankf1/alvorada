@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { ctx, flatWorld, spawn, refreshVis, thaw, customCtx } from './helpers';
 import { applyAction } from '../src/engine/reducer';
-import { empireHappiness, connectedLuxuries, cityYields } from '../src/engine/selectors';
+import { empireHappiness, connectedLuxuries, cityYields, canProduce } from '../src/engine/selectors';
 import { processCity } from '../src/engine/systems/cities';
 
 /** Found one city for player 0 and return the thawed state + city id. */
@@ -90,5 +90,13 @@ describe('happiness brake', () => {
     const vu = customCtx((r) => { r.settings.happiness.perCity = 1000; });
     const s3 = thaw(s); processCity(vu, s3, s3.cities[id]);
     expect(s3.cities[id].food).toBeLessThan(contentFood);
+  });
+
+  it('settlers cannot be produced while the empire is unhappy', () => {
+    const { s, id } = oneCity();
+    s.cities[id].pop = 3;
+    expect(canProduce(ctx, s, s.cities[id], { kind: 'unit', id: 'settler' }).ok).toBe(true);
+    const unhappy = customCtx((r) => { r.settings.happiness.perCity = 1000; });
+    expect(canProduce(unhappy, s, s.cities[id], { kind: 'unit', id: 'settler' }).ok).toBe(false);
   });
 });

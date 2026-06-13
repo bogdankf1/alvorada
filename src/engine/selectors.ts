@@ -304,8 +304,11 @@ export function canProduce(
       return { ok: false, reason: `requires ${ctx.rules.techs[def.requiresTech].name}` };
     if (def.requiresResource && strategicAvailability(ctx, state, city.owner, def.requiresResource) <= 0)
       return { ok: false, reason: `requires ${ctx.rules.resources[def.requiresResource].name}` };
-    if (def.abilities?.includes('foundCity') && city.pop < 2)
-      return { ok: false, reason: 'city too small (needs population 2)' };
+    if (def.abilities?.includes('foundCity')) {
+      if (empireHappiness(ctx, state, city.owner).net < 0)
+        return { ok: false, reason: 'the empire is too unhappy to support settlers' };
+      if (city.pop < 2) return { ok: false, reason: 'city too small (needs population 2)' };
+    }
     return { ok: true };
   }
   const def = ctx.rules.buildings[item.id];
