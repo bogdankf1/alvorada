@@ -3,8 +3,8 @@
  * facts — validation, the reducer, the AI, and the UI all ask these same
  * questions, which is what keeps their answers consistent.
  */
-import type { Yields } from '../data/types';
-import { addYields, emptyYields } from '../data/types';
+import type { PartialYields, SpecialistType, Yields } from '../data/types';
+import { addYields, emptyYields, YIELD_KEYS } from '../data/types';
 import type { Axial, City, Ctx, GameState, PlayerId, ProductionItem, Unit } from './types';
 import { sortedIds } from './types';
 import { hexDistance, hexesWithin, tileIndex } from './hex';
@@ -142,43 +142,93 @@ export function resourceRevealed(
   return !res.revealedBy || state.players[player].techs.includes(res.revealedBy);
 }
 
-/** Deterministic auto-assignment: the city's pop works its best owned tiles. */
-export function assignWorkedTiles(ctx: Ctx, state: GameState, city: City): number[] {
+export function allocateCitizens(
+  ctx: Ctx, state: GameState, city: City,
+): { worked: number[]; specialists: Partial<Record<SpecialistType, number>> } {
+  const weight = (y: PartialYields) =>
+    (y.food ?? 0) * 4 + (y.production ?? 0) * 3 + (y.gold ?? 0) * 2 + (y.science ?? 0) * 2 + (y.culture ?? 0);
   const centerIdx = tileIndex({ q: city.q, r: city.r }, state.mapW, state.mapH);
-  const candidates: { idx: number; value: number }[] = [];
+
+  const tileCands: { kind: 'tile'; idx: number; value: number }[] = [];
   for (const h of hexesWithin({ q: city.q, r: city.r }, ctx.rules.settings.workRadius)) {
     const idx = tileIndex(h, state.mapW, state.mapH);
     if (idx < 0 || idx === centerIdx) continue;
     if (state.tiles[idx].ownerCity !== city.id) continue;
     if (ctx.rules.elevations[state.tiles[idx].elevation].impassable) continue;
-    const y = tileYields(ctx, state, idx, city.owner);
-    candidates.push({
-      idx,
-      value: y.food * 4 + y.production * 3 + y.gold * 2 + y.science * 2 + y.culture,
-    });
+    tileCands.push({ kind: 'tile', idx, value: weight(tileYields(ctx, state, idx, city.owner)) });
   }
-  candidates.sort((a, b) => b.value - a.value || a.idx - b.idx);
-  return candidates.slice(0, city.pop).map((c) => c.idx);
+
+  const TYPE_ORDER: SpecialistType[] = ['scientist', 'merchant', 'artist', 'engineer'];
+  const slotCounts: Partial<Record<SpecialistType, number>> = {};
+  for (const b of city.buildings) {
+    const def = ctx.rules.buildings[b];
+    if (def.specialistSlots)
+      slotCounts[def.specialistSlots.type] = (slotCounts[def.specialistSlots.type] ?? 0) + def.specialistSlots.count;
+  }
+
+  const specialists: Partial<Record<SpecialistType, number>> = {};
+  let remaining = city.pop;
+
+  // forced specialists first (clamped to available slots and pop)
+  if (city.forcedSpecialists) {
+    for (const t of TYPE_ORDER) {
+      const want = Math.min(city.forcedSpecialists[t] ?? 0, slotCounts[t] ?? 0, remaining);
+      if (want > 0) { specialists[t] = want; slotCounts[t] = (slotCounts[t] ?? 0) - want; remaining -= want; }
+    }
+  }
+
+  // fill the rest greedily across remaining tiles + open slots
+  const slotCands: { kind: 'slot'; type: SpecialistType; value: number }[] = [];
+  for (const t of TYPE_ORDER) {
+    const val = weight(ctx.rules.specialists[t].yields);
+    for (let i = 0; i < (slotCounts[t] ?? 0); i++) slotCands.push({ kind: 'slot', type: t, value: val });
+  }
+  const rank = (c: { kind: string }) => (c.kind === 'tile' ? 0 : 1);
+  const pool = [...tileCands, ...slotCands].sort((a, b) =>
+    b.value - a.value ||
+    rank(a) - rank(b) ||
+    (a.kind === 'tile' && b.kind === 'tile' ? a.idx - b.idx : 0) ||
+    (a.kind === 'slot' && b.kind === 'slot' ? TYPE_ORDER.indexOf(a.type) - TYPE_ORDER.indexOf(b.type) : 0),
+  );
+
+  const worked: number[] = [];
+  for (const cand of pool) {
+    if (remaining <= 0) break;
+    if (cand.kind === 'tile') worked.push(cand.idx);
+    else specialists[cand.type] = (specialists[cand.type] ?? 0) + 1;
+    remaining -= 1;
+  }
+  return { worked, specialists };
+}
+
+/** Deterministic auto-assignment: the city's pop works its best owned tiles. */
+export function assignWorkedTiles(ctx: Ctx, state: GameState, city: City): number[] {
+  return allocateCitizens(ctx, state, city).worked;
 }
 
 export interface CityYieldBreakdown {
   total: Yields;
   worked: number[];
+  specialists: Partial<Record<SpecialistType, number>>;
 }
 
 export function cityYields(ctx: Ctx, state: GameState, city: City): CityYieldBreakdown {
   const s = ctx.rules.settings;
   const total = emptyYields();
 
-  // center tile (never below the settlement minimum)
   const centerIdx = tileIndex({ q: city.q, r: city.r }, state.mapW, state.mapH);
   const center = tileYields(ctx, state, centerIdx, city.owner);
   center.food = Math.max(center.food, 2);
   center.production = Math.max(center.production, 1);
   addYields(total, center);
 
-  const worked = assignWorkedTiles(ctx, state, city);
-  for (const idx of worked) addYields(total, tileYields(ctx, state, idx, city.owner));
+  const alloc = allocateCitizens(ctx, state, city);
+  for (const idx of alloc.worked) addYields(total, tileYields(ctx, state, idx, city.owner));
+  for (const t of Object.keys(alloc.specialists).sort() as SpecialistType[]) {
+    const n = alloc.specialists[t] ?? 0;
+    const y = ctx.rules.specialists[t].yields;
+    for (const k of YIELD_KEYS) total[k] += (y[k] ?? 0) * n;
+  }
 
   for (const b of city.buildings) {
     const def = ctx.rules.buildings[b];
@@ -187,10 +237,11 @@ export function cityYields(ctx: Ctx, state: GameState, city: City): CityYieldBre
   }
   if (s.sciencePerPopHalf) total.science += Math.floor(city.pop / 2);
   addYields(total, wonderOwnerEffects(ctx, state, city.owner).empire);
+
   if (empireHappiness(ctx, state, city.owner).tier === 'veryUnhappy') {
     total.production = Math.floor((total.production * (100 - s.happiness.veryUnhappyProdPenaltyPct)) / 100);
   }
-  return { total, worked };
+  return { total, worked: alloc.worked, specialists: alloc.specialists };
 }
 
 /** Aggregate the ongoing wonder effects owned by `owner`: empire-wide yields + city-defense aura. */
