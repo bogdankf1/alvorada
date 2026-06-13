@@ -3,6 +3,8 @@ import type { TechDef, EraDef } from '../types';
 export const ERAS: EraDef[] = [
   { id: 'ancient', name: 'Ancient Era' },
   { id: 'classical', name: 'Classical Era' },
+  { id: 'medieval', name: 'Medieval Era' },
+  { id: 'renaissance', name: 'Renaissance Era' },
 ];
 
 /**
@@ -123,4 +125,21 @@ export const TECHS: Record<string, TechDef> = {
     prereqs: ['masonry'],
     pos: { col: 4, row: 3 },
   },
+  // --- Medieval ---
+  feudalism: { id: 'feudalism', name: 'Feudalism', era: 'medieval', cost: 160, prereqs: ['currency'], pos: { col: 5, row: 0 } },
+  engineering: { id: 'engineering', name: 'Engineering', era: 'medieval', cost: 175, prereqs: ['construction', 'mathematics'], pos: { col: 5, row: 3 } },
+  machinery: { id: 'machinery', name: 'Machinery', era: 'medieval', cost: 160, prereqs: ['iron_working', 'mathematics'], pos: { col: 5, row: 4 } },
+  education: { id: 'education', name: 'Education', era: 'medieval', cost: 200, prereqs: ['philosophy', 'mathematics'], pos: { col: 6, row: 0 } },
+  guilds: { id: 'guilds', name: 'Guilds', era: 'medieval', cost: 210, prereqs: ['currency', 'feudalism'], pos: { col: 6, row: 1 } },
+  chivalry: { id: 'chivalry', name: 'Chivalry', era: 'medieval', cost: 185, prereqs: ['horseback_riding', 'feudalism'], pos: { col: 6, row: 2 } },
+  theology: { id: 'theology', name: 'Theology', era: 'medieval', cost: 200, prereqs: ['philosophy'], pos: { col: 6, row: 4 } },
+  // --- Renaissance ---
+  astronomy: { id: 'astronomy', name: 'Astronomy', era: 'renaissance', cost: 260, prereqs: ['education'], pos: { col: 7, row: 0 } },
+  printing_press: { id: 'printing_press', name: 'Printing Press', era: 'renaissance', cost: 280, prereqs: ['education', 'machinery'], pos: { col: 7, row: 1 } },
+  banking: { id: 'banking', name: 'Banking', era: 'renaissance', cost: 270, prereqs: ['guilds', 'currency'], pos: { col: 7, row: 2 } },
+  gunpowder: { id: 'gunpowder', name: 'Gunpowder', era: 'renaissance', cost: 260, prereqs: ['machinery', 'chivalry'], pos: { col: 7, row: 4 } },
+  architecture: { id: 'architecture', name: 'Architecture', era: 'renaissance', cost: 300, prereqs: ['engineering', 'astronomy'], pos: { col: 8, row: 0 } },
+  metallurgy: { id: 'metallurgy', name: 'Metallurgy', era: 'renaissance', cost: 300, prereqs: ['gunpowder'], pos: { col: 8, row: 4 } },
+  chemistry: { id: 'chemistry', name: 'Chemistry', era: 'renaissance', cost: 340, prereqs: ['metallurgy', 'astronomy'], pos: { col: 9, row: 4 } },
+  scientific_method: { id: 'scientific_method', name: 'Scientific Method', era: 'renaissance', cost: 400, prereqs: ['printing_press', 'chemistry'], pos: { col: 9, row: 1 } },
 };
