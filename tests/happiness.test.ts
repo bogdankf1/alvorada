@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { ctx, flatWorld, spawn, refreshVis, thaw } from './helpers';
+import { ctx, flatWorld, spawn, refreshVis, thaw, customCtx } from './helpers';
 import { applyAction } from '../src/engine/reducer';
-import { empireHappiness, connectedLuxuries } from '../src/engine/selectors';
+import { empireHappiness, connectedLuxuries, cityYields } from '../src/engine/selectors';
+import { processCity } from '../src/engine/systems/cities';
 
 /** Found one city for player 0 and return the thawed state + city id. */
 function oneCity(): { s: ReturnType<typeof flatWorld>; id: number } {
@@ -66,5 +67,28 @@ describe('empireHappiness', () => {
     expect(empireHappiness(ctx, s, 0).tier).toBe('unhappy');
     s.cities[id].pop = 17; // 9 - 2 - 17 = -10 → veryUnhappy
     expect(empireHappiness(ctx, s, 0).tier).toBe('veryUnhappy');
+  });
+});
+
+describe('happiness brake', () => {
+  it('very unhappy applies a production penalty to city yields', () => {
+    const { s, id } = oneCity();
+    s.cities[id].buildings.push('workshop');
+    const contentProd = cityYields(ctx, s, s.cities[id]).total.production;
+    const vu = customCtx((r) => { r.settings.happiness.perCity = 1000; }); // force net < veryUnhappyAt
+    const penalized = cityYields(vu, s, s.cities[id]).total.production;
+    expect(penalized).toBe(Math.floor((contentProd * (100 - 33)) / 100));
+    expect(penalized).toBeLessThan(contentProd);
+  });
+
+  it('an unhappy empire throttles food growth', () => {
+    const { s, id } = oneCity();
+    s.cities[id].pop = 2;
+    const s2 = thaw(s); processCity(ctx, s2, s2.cities[id]);
+    const contentFood = s2.cities[id].food;
+    expect(contentFood).toBeGreaterThan(0);
+    const vu = customCtx((r) => { r.settings.happiness.perCity = 1000; });
+    const s3 = thaw(s); processCity(vu, s3, s3.cities[id]);
+    expect(s3.cities[id].food).toBeLessThan(contentFood);
   });
 });

@@ -10,6 +10,7 @@ import {
   borderThreshold,
   cityYields,
   civilianAt,
+  empireHappiness,
   growthThreshold,
   isCivilian,
   isImpassable,
@@ -219,8 +220,13 @@ export function processCity(ctx: Ctx, state: GameState, city: City): CityTurnOut
     }
   }
 
-  // growth
-  const net = total.food - city.pop * s.foodConsumptionPerPop;
+  // growth — empire unhappiness throttles (or stops) it
+  let net = total.food - city.pop * s.foodConsumptionPerPop;
+  if (net > 0) {
+    const tier = empireHappiness(ctx, state, city.owner).tier;
+    if (tier === 'veryUnhappy') net = 0;
+    else if (tier === 'unhappy') net = Math.floor(net / s.happiness.unhappyGrowthDivisor);
+  }
   city.food += net;
   const threshold = growthThreshold(city.pop);
   if (city.food >= threshold) {

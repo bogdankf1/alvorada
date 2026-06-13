@@ -187,6 +187,9 @@ export function cityYields(ctx: Ctx, state: GameState, city: City): CityYieldBre
   }
   if (s.sciencePerPopHalf) total.science += Math.floor(city.pop / 2);
   addYields(total, wonderOwnerEffects(ctx, state, city.owner).empire);
+  if (empireHappiness(ctx, state, city.owner).tier === 'veryUnhappy') {
+    total.production = Math.floor((total.production * (100 - s.happiness.veryUnhappyProdPenaltyPct)) / 100);
+  }
   return { total, worked };
 }
 
