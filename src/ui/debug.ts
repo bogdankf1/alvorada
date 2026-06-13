@@ -6,7 +6,7 @@
 import { appStore } from '../app/store';
 import { gameCtx } from '../app/driver';
 import { tileIndex } from '../engine/hex';
-import { productionOptions } from '../engine/selectors';
+import { empireHappiness, productionOptions } from '../engine/selectors';
 import type { GameState } from '../engine/types';
 import { decide } from '../ai/decide';
 import { humanDispatch } from './actions';
@@ -20,6 +20,7 @@ interface DebugApi {
   view(q: number, r: number, zoom?: number): void;
   animProbe(id: number): { x: number; y: number; anims: number } | null;
   prodOptions(cityId: number): { kind: string; id: string; wonder: boolean }[];
+  happiness(): { happy: number; unhappy: number; net: number; tier: string; connectedLuxuries: string[] } | null;
   debugAutoplay(turns: number): Promise<void>;
 }
 
@@ -67,6 +68,11 @@ export function installDebugBridge(): void {
         id: it.id,
         wonder: it.kind === 'building' && !!gameCtx.rules.buildings[it.id].wonder,
       }));
+    },
+
+    happiness() {
+      const g = appStore.get().game;
+      return g ? empireHappiness(gameCtx, g, appStore.get().viewingPlayer) : null;
     },
 
     /** Plays the viewer's turns with the AI brain — fills the world for visual checks. */

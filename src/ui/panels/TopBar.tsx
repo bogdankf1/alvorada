@@ -1,6 +1,6 @@
 import { gameCtx } from '../../app/driver';
 import { appStore, useApp } from '../../app/store';
-import { cityYields, computeScore, currentEra, playerCities } from '../../engine/selectors';
+import { cityYields, computeScore, currentEra, empireHappiness, playerCities } from '../../engine/selectors';
 import { IconAmphora, IconCoin, IconLaurel, IconScroll, YIELD_COLORS } from '../icons';
 
 export function TopBar() {
@@ -18,6 +18,9 @@ export function TopBar() {
     culture += y.culture;
     gold += y.gold;
   }
+
+  const hap = empireHappiness(gameCtx, game, viewer);
+  const hapColor = hap.tier === 'content' ? '#7DBE7D' : hap.tier === 'unhappy' ? '#D9A441' : '#C75450';
 
   const pending = game.proposals.filter((p) => p.to === viewer && game.turn <= p.expiresTurn).length;
   const tech = player.researching ? gameCtx.rules.techs[player.researching] : null;
@@ -56,6 +59,14 @@ export function TopBar() {
         <IconCoin />
         <span className="num">{player.gold}</span>
         <span className="per-turn">+{gold}</span>
+      </span>
+      <span
+        className="yield-chip"
+        style={{ color: hapColor }}
+        title={`Happiness ${hap.net} (+${hap.happy} / −${hap.unhappy})\nLuxuries connected: ${hap.connectedLuxuries.length}`}
+      >
+        <span style={{ fontWeight: 700 }}>☺</span>
+        <span className="per-turn">{hap.net}</span>
       </span>
 
       <div className="spacer" />
