@@ -132,11 +132,11 @@ export const TECHS: Record<string, TechDef> = {
   education: { id: 'education', name: 'Education', era: 'medieval', cost: 200, prereqs: ['philosophy', 'mathematics'], pos: { col: 6, row: 0 } },
   guilds: { id: 'guilds', name: 'Guilds', era: 'medieval', cost: 210, prereqs: ['currency', 'feudalism'], pos: { col: 6, row: 1 } },
   chivalry: { id: 'chivalry', name: 'Chivalry', era: 'medieval', cost: 185, prereqs: ['horseback_riding', 'feudalism'], pos: { col: 6, row: 2 } },
-  theology: { id: 'theology', name: 'Theology', era: 'medieval', cost: 200, prereqs: ['philosophy'], pos: { col: 6, row: 4 } },
+  theology: { id: 'theology', name: 'Theology', era: 'medieval', cost: 200, prereqs: ['philosophy'], pos: { col: 5, row: 1 } },
   // --- Renaissance ---
   astronomy: { id: 'astronomy', name: 'Astronomy', era: 'renaissance', cost: 260, prereqs: ['education'], pos: { col: 7, row: 0 } },
   printing_press: { id: 'printing_press', name: 'Printing Press', era: 'renaissance', cost: 280, prereqs: ['education', 'machinery'], pos: { col: 7, row: 1 } },
-  banking: { id: 'banking', name: 'Banking', era: 'renaissance', cost: 270, prereqs: ['guilds', 'currency'], pos: { col: 7, row: 2 } },
+  banking: { id: 'banking', name: 'Banking', era: 'renaissance', cost: 270, prereqs: ['guilds'], pos: { col: 7, row: 2 } },
   gunpowder: { id: 'gunpowder', name: 'Gunpowder', era: 'renaissance', cost: 260, prereqs: ['machinery', 'chivalry'], pos: { col: 7, row: 4 } },
   architecture: { id: 'architecture', name: 'Architecture', era: 'renaissance', cost: 300, prereqs: ['engineering', 'astronomy'], pos: { col: 8, row: 0 } },
   metallurgy: { id: 'metallurgy', name: 'Metallurgy', era: 'renaissance', cost: 300, prereqs: ['gunpowder'], pos: { col: 8, row: 4 } },

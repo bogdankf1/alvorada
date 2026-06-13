@@ -114,7 +114,7 @@ export const UNITS: Record<string, UnitDef> = {
     art: { glyph: 'catapult' },
   },
   pikeman: {
-    id: 'pikeman', name: 'Pikeman', cost: 72, moves: 2, sight: 2, strength: 18,
+    id: 'pikeman', name: 'Pikeman', cost: 90, moves: 2, sight: 2, strength: 18,
     class: 'melee', domain: 'land', bonuses: [{ vsClass: 'mounted', pct: 50 }],
     requiresTech: 'feudalism', art: { glyph: 'spear' },
   },
