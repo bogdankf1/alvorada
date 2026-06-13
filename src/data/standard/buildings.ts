@@ -75,4 +75,24 @@ export const BUILDINGS: Record<string, BuildingDef> = {
     requiresTech: 'construction',
     art: { glyph: 'arch' },
   },
+  university: {
+    id: 'university', name: 'University', cost: 130, yields: { science: 2 },
+    perPop: { yield: 'science', per: 2 }, requiresTech: 'education', art: { glyph: 'scroll' },
+  },
+  observatory: {
+    id: 'observatory', name: 'Observatory', cost: 140, yields: { science: 3 },
+    requiresTech: 'astronomy', art: { glyph: 'scroll' },
+  },
+  castle: {
+    id: 'castle', name: 'Castle', cost: 110, yields: {}, defense: { strength: 8 },
+    requiresTech: 'engineering', art: { glyph: 'wall' },
+  },
+  bank: {
+    id: 'bank', name: 'Bank', cost: 130, yields: { gold: 4 }, requiresTech: 'banking',
+    art: { glyph: 'coin' },
+  },
+  monastery: {
+    id: 'monastery', name: 'Monastery', cost: 96, yields: { culture: 2, science: 1 },
+    requiresTech: 'theology', art: { glyph: 'temple' },
+  },
 };
