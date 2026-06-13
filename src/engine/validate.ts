@@ -185,6 +185,8 @@ export function validateAction(ctx: Ctx, state: GameState, action: Action): Vali
       if (!city || city.owner !== action.player) return fail('not your city');
       const can = canProduce(ctx, state, city, action.item);
       if (!can.ok) return can;
+      if (action.item.kind === 'building' && ctx.rules.buildings[action.item.id]?.wonder)
+        return fail('wonders cannot be purchased');
       const price = purchaseCost(ctx, action.item);
       if (state.players[action.player].gold < price)
         return fail(`not enough gold (${price} needed)`);

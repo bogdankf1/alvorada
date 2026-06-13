@@ -99,4 +99,38 @@ export const BUILDINGS: Record<string, BuildingDef> = {
     id: 'cathedral', name: 'Cathedral', cost: 150, yields: { culture: 4 },
     requiresTech: 'architecture', art: { glyph: 'temple' },
   },
+  pyramids: {
+    id: 'pyramids', name: 'The Pyramids', cost: 180, yields: { production: 1 },
+    wonder: true, effect: { kind: 'freeUnit', unit: 'worker', count: 2 },
+    requiresTech: 'masonry', art: { glyph: 'palace' },
+  },
+  great_library: {
+    id: 'great_library', name: 'The Great Library', cost: 200, yields: { science: 3 },
+    wonder: true, effect: { kind: 'freeTech' }, requiresTech: 'writing', art: { glyph: 'scroll' },
+  },
+  hanging_gardens: {
+    id: 'hanging_gardens', name: 'The Hanging Gardens', cost: 220, yields: { food: 2 },
+    wonder: true, effect: { kind: 'empireYields', yields: { food: 1 } },
+    requiresTech: 'mathematics', art: { glyph: 'amphora' },
+  },
+  great_wall: {
+    id: 'great_wall', name: 'The Great Wall', cost: 300, yields: {},
+    wonder: true, effect: { kind: 'cityDefense', strength: 6 },
+    requiresTech: 'engineering', art: { glyph: 'wall' },
+  },
+  notre_dame: {
+    id: 'notre_dame', name: 'Notre-Dame', cost: 320, yields: { culture: 3 },
+    wonder: true, effect: { kind: 'cultureBurst', amount: 60 },
+    requiresTech: 'theology', art: { glyph: 'temple' },
+  },
+  leonardos_workshop: {
+    id: 'leonardos_workshop', name: "Leonardo's Workshop", cost: 420, yields: { production: 2 },
+    wonder: true, effect: { kind: 'empireYields', yields: { production: 1, science: 1 } },
+    requiresTech: 'printing_press', art: { glyph: 'hammer' },
+  },
+  sistine_chapel: {
+    id: 'sistine_chapel', name: 'The Sistine Chapel', cost: 420, yields: { culture: 3 },
+    wonder: true, effect: { kind: 'empireYields', yields: { culture: 1 } },
+    requiresTech: 'architecture', art: { glyph: 'temple' },
+  },
 };

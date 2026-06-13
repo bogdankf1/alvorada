@@ -247,6 +247,8 @@ export function canProduce(
   if (city.buildings.includes(item.id)) return { ok: false, reason: 'already built' };
   if (def.requiresTech && !player.techs.includes(def.requiresTech))
     return { ok: false, reason: `requires ${ctx.rules.techs[def.requiresTech].name}` };
+  if (def.wonder && state.wondersBuilt[item.id] !== undefined)
+    return { ok: false, reason: 'wonder already built elsewhere' };
   return { ok: true };
 }
 
