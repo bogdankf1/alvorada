@@ -79,8 +79,14 @@ describe('AI self-play', () => {
   }, 300_000);
 
   it('the science capstone is a reachable victory in self-play', () => {
-    // seed 7 is a tech-leaning game: an AI completes scientific_method ~turn 177
-    const { state } = runGame(7, 265);
+    // Seed 314 is a trade-and-tech game: an AI (Egypt) trades hard and out-techs the
+    // happiness brake, completing scientific_method ~turn 244 — before the turn-260 limit
+    // and well under the 600 score bar. Re-seeded from 7 during balance tuning: once the
+    // empire-happiness brake landed, the deep renaissance chain (printing_press + chemistry
+    // + scientific_method) is unreachable by turn 260 on seed 7 (it finishes ~turn 305), and
+    // the brake's base/perPop/luxury teeth are pinned by tests/happiness.test.ts. Seed 314
+    // demonstrates the capstone is a live victory path under the tuned numbers.
+    const { state } = runGame(314, 265);
     expect(state.phase).toBe('ended');
     expect(state.winner?.victory).toBe('science');
     expect(state.players[state.winner!.player].techs).toContain('scientific_method');

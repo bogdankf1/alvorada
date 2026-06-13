@@ -35,22 +35,32 @@ const SETTINGS: RulesetSettings = {
   // leader actually reach the science capstone (~turn 200-250) before the score/timeout
   // ending preempts it — so science is a reachable race, not a dead victory path.
   victory: { scoreThreshold: 600, turnLimit: 260, scienceCapstone: 'scientific_method' },
+  // Tuned via self-play telemetry. The brake still bites hard (empires routinely go
+  // Unhappy/Very-Unhappy and build colosseums/courthouses) — but unhappyGrowthDivisor 3
+  // (was 4) lets an Unhappy empire still grow its science core instead of stalling out,
+  // so a trade-and-tech civ can reach the science capstone. Divisor 2 was too loose (it
+  // bred sprawling empires permanently mired in Very-Unhappy); 3 keeps mid-game empires
+  // at a healthy 4-6 cities. The base/perCity/perPop/luxury/veryUnhappyAt teeth are fixed.
   happiness: {
     baseEmpire: 9,
     perCity: 2,
     perPop: 1,
     occupiedExtra: 3,
     luxuryHappiness: 4,
-    unhappyGrowthDivisor: 4,
+    unhappyGrowthDivisor: 3,
     veryUnhappyAt: -10,
     veryUnhappyProdPenaltyPct: 33,
   },
+  // internationalScience 6 (was 2) is the key science enabler: trade science flows through
+  // cityYields and bypasses the happiness growth/production brake, so a civ that trades hard
+  // can out-tech the throttle and complete the renaissance chain. duration 40 + caravan cost
+  // 40 keep routes plentiful and steady (fewer rebuilds) so the trade-science path is real.
   tradeRoute: {
     caravanRange: 12,
-    duration: 30,
+    duration: 40,
     domestic: { food: 1, production: 1 },
     international: { gold: 4 },
-    internationalScience: 2,
+    internationalScience: 6,
     internationalScienceTech: 'guilds',
     destinationGold: 2,
     friendshipBonusPct: 50,
