@@ -5,7 +5,7 @@
  */
 import type { PartialYields, SpecialistType, Yields } from '../data/types';
 import { addYields, emptyYields, YIELD_KEYS } from '../data/types';
-import type { Axial, City, Ctx, GameState, PlayerId, ProductionItem, Unit } from './types';
+import type { Axial, City, Ctx, GameState, PlayerId, ProductionItem, TradeRoute, Unit } from './types';
 import { sortedIds } from './types';
 import { hexDistance, hexesWithin, tileIndex } from './hex';
 
@@ -238,6 +238,12 @@ export function cityYields(ctx: Ctx, state: GameState, city: City): CityYieldBre
   if (s.sciencePerPopHalf) total.science += Math.floor(city.pop / 2);
   addYields(total, wonderOwnerEffects(ctx, state, city.owner).empire);
 
+  for (const rid of sortedIds(state.tradeRoutes)) {
+    const route = state.tradeRoutes[rid];
+    if (route.fromCity === city.id) addYields(total, routeOriginYield(ctx, state, route));
+    if (route.toCity === city.id && route.kind === 'international') total.gold += s.tradeRoute.destinationGold;
+  }
+
   if (empireHappiness(ctx, state, city.owner).tier === 'veryUnhappy') {
     total.production = Math.floor((total.production * (100 - s.happiness.veryUnhappyProdPenaltyPct)) / 100);
   }
@@ -445,4 +451,35 @@ export function currentEra(ctx: Ctx, state: GameState, pid: PlayerId): string {
     if (i > best) best = i;
   }
   return eras[best].id;
+}
+
+export function tradeOrigin(ctx: Ctx, state: GameState, pid: PlayerId, target: City): City | null {
+  const range = ctx.rules.settings.tradeRoute.caravanRange;
+  let best: City | null = null;
+  let bestDist = Infinity;
+  for (const c of playerCities(state, pid)) {
+    if (c.id === target.id) continue;
+    const d = hexDistance({ q: c.q, r: c.r }, { q: target.q, r: target.r });
+    if (d > range) continue;
+    if (d < bestDist || (d === bestDist && (best === null || c.id < best.id))) { best = c; bestDist = d; }
+  }
+  return best;
+}
+
+function routeOriginYield(ctx: Ctx, state: GameState, route: TradeRoute): PartialYields {
+  const tr = ctx.rules.settings.tradeRoute;
+  if (route.kind === 'domestic') return tr.domestic;
+  const out: Yields = { ...emptyYields(), ...tr.international };
+  if (state.players[route.owner].techs.includes(tr.internationalScienceTech)) out.science += tr.internationalScience;
+  const dst = state.cities[route.toCity];
+  if (dst) {
+    const o = route.owner, d = dst.owner;
+    const friends = state.relations[o][d].friends;
+    const open = state.relations[o][d].openBordersUntil >= state.turn || state.relations[d][o].openBordersUntil >= state.turn;
+    if (friends || open) {
+      out.gold = Math.floor((out.gold * (100 + tr.friendshipBonusPct)) / 100);
+      out.science = Math.floor((out.science * (100 + tr.friendshipBonusPct)) / 100);
+    }
+  }
+  return out;
 }

@@ -14,6 +14,7 @@ import { handleEndTurn } from './systems/turn';
 import { checkElimination } from './systems/victory';
 import { recomputeVisibility } from './map/visibility';
 import { applyDeal, applyDenounce, enterWar, pushProposal } from './systems/diplomacy';
+import { establishTradeRoute } from './systems/trade';
 import { resolveProposal } from './diplomacy-eval';
 
 export class ActionError extends Error {
@@ -134,6 +135,11 @@ function handle(ctx: Ctx, state: GameState, action: Action): void {
           r: city.r,
         });
       }
+      break;
+    }
+
+    case 'ESTABLISH_TRADE_ROUTE': {
+      establishTradeRoute(ctx, state, state.units[action.unit], state.cities[action.targetCity]);
       break;
     }
 

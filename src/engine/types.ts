@@ -203,6 +203,7 @@ export type Action =
   | { type: 'SET_PRODUCTION'; player: PlayerId; city: CityId; item: ProductionItem }
   | { type: 'SET_SPECIALISTS'; player: PlayerId; city: CityId; specialist: SpecialistType; count: number }
   | { type: 'BUY_ITEM'; player: PlayerId; city: CityId; item: ProductionItem }
+  | { type: 'ESTABLISH_TRADE_ROUTE'; player: PlayerId; unit: UnitId; targetCity: CityId }
   | { type: 'SET_RESEARCH'; player: PlayerId; tech: string }
   | { type: 'DECLARE_WAR'; player: PlayerId; target: PlayerId }
   | { type: 'PROPOSE_DEAL'; player: PlayerId; to: PlayerId; give: DealItems; take: DealItems }

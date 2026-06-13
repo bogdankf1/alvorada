@@ -17,6 +17,7 @@ import {
   militaryAt,
   purchaseCost,
   tileOwner,
+  tradeOrigin,
 } from './selectors';
 import { moveRulesFor } from './map/pathfind';
 
@@ -204,6 +205,29 @@ export function validateAction(ctx: Ctx, state: GameState, action: Action): Vali
       const price = purchaseCost(ctx, action.item);
       if (state.players[action.player].gold < price)
         return fail(`not enough gold (${price} needed)`);
+      return ok;
+    }
+
+    case 'ESTABLISH_TRADE_ROUTE': {
+      const v = ownUnit(state, action.player, action.unit);
+      if (!v.unit) return v.error!;
+      const unit = v.unit;
+      if (!ctx.rules.units[unit.def].abilities?.includes('trade')) return fail('this unit cannot trade');
+      if (unit.moves <= 0) return fail('no movement left');
+      const target = state.cities[action.targetCity];
+      if (!target) return fail('no such city');
+      if (hexDistance({ q: unit.q, r: unit.r }, { q: target.q, r: target.r }) > 1)
+        return fail('the caravan must reach the destination city');
+      const origin = tradeOrigin(ctx, state, action.player, target);
+      if (!origin) return fail('no home city within trade range');
+      if (target.owner !== action.player) {
+        if (!hasMet(state, action.player, target.owner)) return fail('you have not met this power');
+        if (atWar(state, action.player, target.owner)) return fail('cannot trade during war');
+      }
+      const dup = Object.values(state.tradeRoutes).some(
+        (r) => r.owner === action.player && r.fromCity === origin.id && r.toCity === target.id,
+      );
+      if (dup) return fail('a route already runs there');
       return ok;
     }
 
