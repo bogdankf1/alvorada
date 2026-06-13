@@ -73,6 +73,10 @@ export function validateRuleset(rules: Ruleset): string[] {
   if (!(rules.settings.victory.scienceCapstone in rules.techs))
     errors.push(`settings: unknown science capstone tech ${rules.settings.victory.scienceCapstone}`);
 
+  for (const b of Object.values(rules.buildings))
+    if (b.effect?.kind === 'freeUnit' && !(b.effect.unit in rules.units))
+      errors.push(`building ${b.id}: unknown freeUnit ${b.effect.unit}`);
+
   return errors;
 }
 

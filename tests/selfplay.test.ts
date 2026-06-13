@@ -73,9 +73,17 @@ describe('AI self-play', () => {
   }, 120_000);
 
   it('a full game reaches a verdict by the turn limit', () => {
-    const { state } = runGame(60221, 205);
+    const { state } = runGame(60221, 265); // turnLimit is 260; run just past it
     expect(state.phase).toBe('ended');
     expect(state.winner).not.toBeNull();
+  }, 300_000);
+
+  it('the science capstone is a reachable victory in self-play', () => {
+    // seed 7 is a tech-leaning game: an AI completes scientific_method ~turn 177
+    const { state } = runGame(7, 265);
+    expect(state.phase).toBe('ended');
+    expect(state.winner?.victory).toBe('science');
+    expect(state.players[state.winner!.player].techs).toContain('scientific_method');
   }, 300_000);
 });
 

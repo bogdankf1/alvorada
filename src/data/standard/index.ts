@@ -31,7 +31,10 @@ const SETTINGS: RulesetSettings = {
   borderGrowth: { base: 10, linear: 8, quad: 2 },
   borderMaxRadius: 3,
   score: { city: 8, pop: 3, tech: 5, strengthPer: 20 },
-  victory: { scoreThreshold: 350, turnLimit: 200, scienceCapstone: 'scientific_method' },
+  // turnLimit 260 + scoreThreshold 600: the longer arc + higher score bar let a tech
+  // leader actually reach the science capstone (~turn 200-250) before the score/timeout
+  // ending preempts it — so science is a reachable race, not a dead victory path.
+  victory: { scoreThreshold: 600, turnLimit: 260, scienceCapstone: 'scientific_method' },
   startingUnits: ['settler', 'warrior'],
   diplomacy: {
     termLength: 30,

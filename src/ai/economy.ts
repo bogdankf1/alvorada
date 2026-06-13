@@ -116,7 +116,7 @@ function bestMilitary(ctx: Ctx, state: GameState, city: City): ProductionItem | 
   return null;
 }
 
-const BUILDING_PRIORITY = ['monument', 'granary', 'library', 'walls', 'market', 'workshop', 'aqueduct', 'temple'];
+const BUILDING_PRIORITY = ['monument', 'granary', 'library', 'walls', 'market', 'workshop', 'aqueduct', 'temple', 'university', 'observatory', 'bank', 'castle', 'monastery', 'cathedral'];
 
 export function pickProduction(
   ctx: Ctx,
