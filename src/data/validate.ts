@@ -70,6 +70,9 @@ export function validateRuleset(rules: Ruleset): string[] {
   for (const su of rules.settings.startingUnits)
     if (!has(rules.units, su)) errors.push(`settings: unknown starting unit ${su}`);
 
+  if (!(rules.settings.victory.scienceCapstone in rules.techs))
+    errors.push(`settings: unknown science capstone tech ${rules.settings.victory.scienceCapstone}`);
+
   return errors;
 }
 

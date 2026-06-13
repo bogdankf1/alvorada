@@ -31,7 +31,7 @@ const SETTINGS: RulesetSettings = {
   borderGrowth: { base: 10, linear: 8, quad: 2 },
   borderMaxRadius: 3,
   score: { city: 8, pop: 3, tech: 5, strengthPer: 20 },
-  victory: { scoreThreshold: 350, turnLimit: 200 },
+  victory: { scoreThreshold: 350, turnLimit: 200, scienceCapstone: 'scientific_method' },
   startingUnits: ['settler', 'warrior'],
   diplomacy: {
     termLength: 30,

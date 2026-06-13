@@ -156,7 +156,7 @@ export interface RulesetSettings {
   borderGrowth: { base: number; linear: number; quad: number }; // base + linear*n + quad*n^2
   borderMaxRadius: number;
   score: { city: number; pop: number; tech: number; strengthPer: number };
-  victory: { scoreThreshold: number; turnLimit: number };
+  victory: { scoreThreshold: number; turnLimit: number; scienceCapstone: string };
   startingUnits: string[];
   diplomacy: DiplomacySettings;
 }
