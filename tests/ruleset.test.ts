@@ -41,4 +41,16 @@ describe('standard ruleset', () => {
     const colors = Object.values(STANDARD_RULESET.civs).map((c) => c.color);
     expect(new Set(colors).size).toBe(colors.length);
   });
+
+  it('rejects a building slot of an unknown specialist type', () => {
+    const r = structuredClone(STANDARD_RULESET);
+    // @ts-expect-error intentionally invalid for the test
+    r.buildings.library.specialistSlots = { type: 'wizard', count: 1 };
+    expect(validateRuleset(r)).toContain('building library: unknown specialist type wizard');
+  });
+  it('rejects an unknown trade-science tech', () => {
+    const r = structuredClone(STANDARD_RULESET);
+    r.settings.tradeRoute.internationalScienceTech = 'nonesuch';
+    expect(validateRuleset(r)).toContain('settings: unknown trade-science tech nonesuch');
+  });
 });

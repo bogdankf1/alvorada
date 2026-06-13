@@ -43,6 +43,10 @@ export function validateRuleset(rules: Ruleset): string[] {
   for (const b of Object.values(rules.buildings))
     if (!has(rules.techs, b.requiresTech)) errors.push(`building ${b.id}: unknown tech ${b.requiresTech}`);
 
+  for (const b of Object.values(rules.buildings))
+    if (b.specialistSlots && !(b.specialistSlots.type in rules.specialists))
+      errors.push(`building ${b.id}: unknown specialist type ${b.specialistSlots.type}`);
+
   const eraIds = new Set(rules.eras.map((e) => e.id));
   for (const t of Object.values(rules.techs)) {
     if (!eraIds.has(t.era)) errors.push(`tech ${t.id}: unknown era ${t.era}`);
@@ -72,6 +76,9 @@ export function validateRuleset(rules: Ruleset): string[] {
 
   if (!(rules.settings.victory.scienceCapstone in rules.techs))
     errors.push(`settings: unknown science capstone tech ${rules.settings.victory.scienceCapstone}`);
+
+  if (!(rules.settings.tradeRoute.internationalScienceTech in rules.techs))
+    errors.push(`settings: unknown trade-science tech ${rules.settings.tradeRoute.internationalScienceTech}`);
 
   for (const b of Object.values(rules.buildings))
     if (b.effect?.kind === 'freeUnit' && !(b.effect.unit in rules.units))
