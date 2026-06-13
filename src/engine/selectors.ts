@@ -209,6 +209,50 @@ export function wonderOwnerEffects(
   return { empire, cityDefense };
 }
 
+export function connectedLuxuries(ctx: Ctx, state: GameState, pid: PlayerId): string[] {
+  const set = new Set<string>();
+  for (let i = 0; i < state.tiles.length; i++) {
+    const t = state.tiles[i];
+    if (!t.resource) continue;
+    const res = ctx.rules.resources[t.resource];
+    if (res.kind !== 'luxury') continue;
+    if (tileOwner(state, i) !== pid) continue;
+    if (res.improvedBy && t.improvement === res.improvedBy) set.add(res.id);
+  }
+  return [...set].sort();
+}
+
+export interface HappinessReport {
+  happy: number;
+  unhappy: number;
+  net: number;
+  tier: 'content' | 'unhappy' | 'veryUnhappy';
+  connectedLuxuries: string[];
+}
+
+export function empireHappiness(ctx: Ctx, state: GameState, pid: PlayerId): HappinessReport {
+  const h = ctx.rules.settings.happiness;
+  const cities = playerCities(state, pid);
+  let happy = h.baseEmpire;
+  let unhappy = cities.length * h.perCity;
+  for (const c of cities) {
+    unhappy += c.pop * h.perPop;
+    if (c.occupied && !c.buildings.some((b) => ctx.rules.buildings[b].pacifies)) unhappy += h.occupiedExtra;
+    for (const b of c.buildings) happy += ctx.rules.buildings[b].happiness ?? 0;
+  }
+  const lux = connectedLuxuries(ctx, state, pid);
+  for (const id of lux) happy += ctx.rules.resources[id].happiness ?? h.luxuryHappiness;
+  for (const wid of Object.keys(state.wondersBuilt).sort()) {
+    const city = state.cities[state.wondersBuilt[wid]];
+    if (!city || city.owner !== pid) continue;
+    const eff = ctx.rules.buildings[wid]?.effect;
+    if (eff?.kind === 'happiness') happy += eff.amount;
+  }
+  const net = happy - unhappy;
+  const tier = net >= 0 ? 'content' : net <= h.veryUnhappyAt ? 'veryUnhappy' : 'unhappy';
+  return { happy, unhappy, net, tier, connectedLuxuries: lux };
+}
+
 export function growthThreshold(pop: number): number {
   const p = pop - 1;
   return 15 + 8 * p + Math.floor(p * Math.sqrt(p));
