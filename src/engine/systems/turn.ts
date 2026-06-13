@@ -12,7 +12,7 @@ import { pushEvent } from '../events';
 import { findPath } from '../map/pathfind';
 import { executeMovePath } from './movement';
 import { processCity } from './cities';
-import { checkScoreVictory } from './victory';
+import { checkScoreVictory, checkScienceVictory } from './victory';
 import { processObligations } from './diplomacy';
 
 export function handleEndTurn(ctx: Ctx, state: GameState): void {
@@ -120,6 +120,7 @@ export function beginTurn(ctx: Ctx, state: GameState, pid: PlayerId): void {
         type: 'techDone',
         msg: `${tech.name} discovered!`,
       });
+      checkScienceVictory(ctx, state, pid);
       for (const res of Object.values(ctx.rules.resources)) {
         if (res.revealedBy === tech.id) {
           pushEvent(state, {

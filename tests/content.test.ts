@@ -200,3 +200,24 @@ describe('wonders: completion', () => {
     expect(s.players[1].gold).toBeGreaterThan(rivalGoldBefore); // rival refunded, to the rival
   });
 });
+
+describe('science victory', () => {
+  it('researching the capstone wins a science victory', () => {
+    let s = flatWorld(14, 12, 2);
+    const settler = spawn(s, 0, 'settler', 5, 5);
+    spawn(s, 1, 'warrior', 1, 10);
+    refreshVis(s);
+    s = applyAction(ctx, s, { type: 'FOUND_CITY', player: 0, unit: settler.id });
+    s = thaw(s);
+    // give player 0 the capstone's prereqs and a full beaker bank on it
+    s.players[0].techs.push('printing_press', 'chemistry');
+    s.players[0].researching = 'scientific_method';
+    s.players[0].science = ctx.rules.techs.scientific_method.cost;
+    s = endTurn(s); // player 0 ends; beginTurn(1) runs... need player 0's beginTurn
+    // advance until player 0's turn-start processes the research
+    let guard = 0;
+    while (s.phase === 'playing' && guard < 4) { s = endTurn(s); guard++; }
+    expect(s.phase).toBe('ended');
+    expect(s.winner).toEqual({ player: 0, victory: 'science' });
+  });
+});

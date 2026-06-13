@@ -3,7 +3,7 @@
  * adding a new one (domination, culture, ...) means adding a function here
  * plus a settings entry, nothing else.
  */
-import type { Ctx, GameState } from '../types';
+import type { Ctx, GameState, PlayerId } from '../types';
 import { sortedIds } from '../types';
 import { computeScore, playerCities, playerUnits } from '../selectors';
 import { recomputeVisibility } from '../map/visibility';
@@ -49,6 +49,19 @@ export function checkScoreVictory(ctx: Ctx, state: GameState): void {
   if (top && (top.score >= v.scoreThreshold || state.turn > v.turnLimit)) {
     declareWinner(state, top.id, 'score');
   }
+}
+
+/** Win immediately upon researching the science capstone tech. */
+export function checkScienceVictory(ctx: Ctx, state: GameState, pid: PlayerId): void {
+  if (state.phase !== 'playing') return;
+  if (!state.players[pid].techs.includes(ctx.rules.settings.victory.scienceCapstone)) return;
+  state.winner = { player: pid, victory: 'science' };
+  state.phase = 'ended';
+  pushEvent(state, {
+    player: null,
+    type: 'victory',
+    msg: `${state.players[pid].name} ushers in a new age of reason!`,
+  });
 }
 
 function declareWinner(state: GameState, player: number, victory: 'conquest' | 'score'): void {
