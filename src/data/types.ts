@@ -149,6 +149,7 @@ export interface RulesetSettings {
   score: { city: number; pop: number; tech: number; strengthPer: number };
   victory: { scoreThreshold: number; turnLimit: number };
   startingUnits: string[];
+  diplomacy: DiplomacySettings;
 }
 
 export interface Ruleset {
@@ -164,6 +165,33 @@ export interface Ruleset {
   civs: Record<string, CivDef>;
   eras: EraDef[];
   settings: RulesetSettings;
+}
+
+export type AttitudeBand = 'hostile' | 'wary' | 'neutral' | 'cordial' | 'friendly';
+
+export interface DiplomacySettings {
+  termLength: number; // turns an open-borders / gold-per-turn deal lasts
+  goldPerTurnHorizon: number; // turns of gold-per-turn the AI values up front
+  proposalTtl: number; // turns a pending proposal stays open
+  grudgeOnWar: number; // grudge stamped on the victim when war is declared
+  grudgeOnCapture: number; // extra grudge when a city is captured
+  grudgeDecay: number; // grudge lost per turn
+  attitude: {
+    atWar: number;
+    grudgePerPoint: number;
+    denounced: number;
+    friendship: number;
+    borderFriction: number;
+    favorableDeal: number;
+    landCompetition: number;
+    strongerRival: number;
+    weakerRival: number;
+    competitionRange: number; // tiles
+  };
+  bands: { friendly: number; cordial: number; neutral: number; wary: number }; // score >= → band; below wary = hostile
+  acceptMargin: Record<AttitudeBand, number>; // AI accepts if netValueToRecipient >= margin[band]
+  counterWindow: number; // AI counters when net is within [margin - counterWindow, margin)
+  minFriendBand: AttitudeBand; // band at/above which the AI agrees to friendship
 }
 
 export const ZERO_YIELDS: Yields = { food: 0, production: 0, gold: 0, science: 0, culture: 0 };

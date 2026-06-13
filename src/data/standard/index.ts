@@ -33,6 +33,30 @@ const SETTINGS: RulesetSettings = {
   score: { city: 8, pop: 3, tech: 5, strengthPer: 20 },
   victory: { scoreThreshold: 350, turnLimit: 200 },
   startingUnits: ['settler', 'warrior'],
+  diplomacy: {
+    termLength: 30,
+    goldPerTurnHorizon: 20,
+    proposalTtl: 1,
+    grudgeOnWar: 30,
+    grudgeOnCapture: 20,
+    grudgeDecay: 2,
+    attitude: {
+      atWar: -60,
+      grudgePerPoint: -1,
+      denounced: -25,
+      friendship: 40,
+      borderFriction: -15,
+      favorableDeal: 15,
+      landCompetition: -10,
+      strongerRival: -10,
+      weakerRival: 5,
+      competitionRange: 4,
+    },
+    bands: { friendly: 40, cordial: 15, neutral: -15, wary: -40 },
+    acceptMargin: { hostile: 40, wary: 20, neutral: 8, cordial: 0, friendly: -10 },
+    counterWindow: 30,
+    minFriendBand: 'cordial',
+  },
 };
 
 export const STANDARD_RULESET: Ruleset = {
