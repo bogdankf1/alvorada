@@ -6,6 +6,7 @@
 import { appStore } from '../app/store';
 import { gameCtx } from '../app/driver';
 import { tileIndex } from '../engine/hex';
+import { productionOptions } from '../engine/selectors';
 import type { GameState } from '../engine/types';
 import { decide } from '../ai/decide';
 import { humanDispatch } from './actions';
@@ -18,6 +19,7 @@ interface DebugApi {
   selectCity(id: number): void;
   view(q: number, r: number, zoom?: number): void;
   animProbe(id: number): { x: number; y: number; anims: number } | null;
+  prodOptions(cityId: number): { kind: string; id: string; wonder: boolean }[];
   debugAutoplay(turns: number): Promise<void>;
 }
 
@@ -54,6 +56,17 @@ export function installDebugBridge(): void {
 
     animProbe(id: number) {
       return activeRenderer.current?.debugUnitScreen(id) ?? null;
+    },
+
+    prodOptions(cityId: number) {
+      const g = appStore.get().game;
+      const c = g?.cities[cityId];
+      if (!g || !c) return [];
+      return productionOptions(gameCtx, g, c).map((it) => ({
+        kind: it.kind,
+        id: it.id,
+        wonder: it.kind === 'building' && !!gameCtx.rules.buildings[it.id].wonder,
+      }));
     },
 
     /** Plays the viewer's turns with the AI brain — fills the world for visual checks. */
