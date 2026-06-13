@@ -125,3 +125,19 @@ describe('happiness events', () => {
     expect(s.events.some((e) => e.type === 'unhappy' || e.type === 'veryUnhappy')).toBe(true);
   });
 });
+
+import { pickProduction } from '../src/ai/economy';
+
+describe('AI happiness response', () => {
+  it('an unhappy city builds a happiness building before other works', () => {
+    const { s, id } = oneCity();
+    const c = s.cities[id];
+    c.pop = 4;
+    s.players[0].techs.push('construction'); // colosseum available
+    spawn(s, 0, 'warrior', 5, 5); // garrison so it's not "undefended"
+    refreshVis(s);
+    const unhappy = customCtx((r) => { r.settings.happiness.perCity = 1000; });
+    const pick = pickProduction(unhappy, s, c);
+    expect(pick?.item).toEqual({ kind: 'building', id: 'colosseum' });
+  });
+});

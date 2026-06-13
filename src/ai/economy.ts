@@ -11,6 +11,7 @@ import {
   availableTechs,
   canProduce,
   cityDistanceOk,
+  empireHappiness,
   isCivilian,
   isImpassable,
   isWater,
@@ -116,7 +117,7 @@ function bestMilitary(ctx: Ctx, state: GameState, city: City): ProductionItem | 
   return null;
 }
 
-const BUILDING_PRIORITY = ['monument', 'granary', 'library', 'walls', 'market', 'workshop', 'aqueduct', 'temple', 'university', 'observatory', 'bank', 'castle', 'monastery', 'cathedral'];
+const BUILDING_PRIORITY = ['monument', 'granary', 'library', 'walls', 'market', 'workshop', 'aqueduct', 'temple', 'colosseum', 'courthouse', 'university', 'observatory', 'bank', 'castle', 'monastery', 'cathedral'];
 
 export function pickProduction(
   ctx: Ctx,
@@ -140,7 +141,15 @@ export function pickProduction(
     if (mil) return { item: mil, reason: `enemies near ${city.name} (threat ${threat})` };
   }
 
-  // 2b. eyes on the world: one early scout per empire
+  // 2b. an unhappy empire quells unrest before anything optional
+  if (empireHappiness(ctx, state, pid).net < 0) {
+    if (city.occupied && canProduce(ctx, state, city, { kind: 'building', id: 'courthouse' }).ok)
+      return { item: { kind: 'building', id: 'courthouse' }, reason: `${city.name} seethes under occupation` };
+    if (canProduce(ctx, state, city, { kind: 'building', id: 'colosseum' }).ok)
+      return { item: { kind: 'building', id: 'colosseum' }, reason: 'the people demand bread and circuses' };
+  }
+
+  // 2c. eyes on the world: one early scout per empire
   if (
     state.turn <= 40 &&
     ctx.rules.units.scout &&
@@ -263,7 +272,10 @@ export function bestWorkerJob(
         if (!v.ok) continue;
         const def = ctx.rules.improvements[imp];
         let value = (def.yields.food ?? 0) * 3 + (def.yields.production ?? 0) * 2 + (def.yields.gold ?? 0);
-        if (tile.resource && ctx.rules.resources[tile.resource].improvedBy === imp) value += 6;
+        if (tile.resource && ctx.rules.resources[tile.resource].improvedBy === imp) {
+          value += 6;
+          if (ctx.rules.resources[tile.resource].kind === 'luxury') value += 8; // connecting a luxury relieves unhappiness
+        }
         if (def.clearsFeature) value = 1; // chop only when nothing else remains
         const dist = hexDistance({ q: worker.q, r: worker.r }, h);
         if (
