@@ -103,6 +103,9 @@ export function TechTree() {
                 }}
               >
                 <h4>{t.name}</h4>
+                {t.id === gameCtx.rules.settings.victory.scienceCapstone && (
+                  <div className="capstone-chip">★ Science Victory</div>
+                )}
                 <div className="cost">
                   <IconScroll size={11} /> {t.cost}
                   {state === 'is-current' && ` · ${Math.round(progress * 100)}%`}

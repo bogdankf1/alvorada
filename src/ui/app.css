@@ -620,6 +620,18 @@
   text-transform: uppercase;
 }
 
+.tech-node .capstone-chip {
+  margin-top: 3px;
+  font-family: var(--font-display);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #1c1606;
+  background: linear-gradient(180deg, var(--brass-bright), var(--brass));
+  padding: 1px 5px;
+  display: inline-block;
+}
+
 /* modals */
 .modal-center {
   position: absolute;
