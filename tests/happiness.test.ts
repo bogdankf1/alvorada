@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ctx, flatWorld, spawn, refreshVis, thaw, customCtx } from './helpers';
 import { applyAction } from '../src/engine/reducer';
 import { empireHappiness, connectedLuxuries, cityYields, canProduce } from '../src/engine/selectors';
-import { processCity } from '../src/engine/systems/cities';
+import { processCity, captureCity } from '../src/engine/systems/cities';
 
 /** Found one city for player 0 and return the thawed state + city id. */
 function oneCity(): { s: ReturnType<typeof flatWorld>; id: number } {
@@ -98,5 +98,17 @@ describe('happiness brake', () => {
     expect(canProduce(ctx, s, s.cities[id], { kind: 'unit', id: 'settler' }).ok).toBe(true);
     const unhappy = customCtx((r) => { r.settings.happiness.perCity = 1000; });
     expect(canProduce(unhappy, s, s.cities[id], { kind: 'unit', id: 'settler' }).ok).toBe(false);
+  });
+});
+
+describe('occupied cities', () => {
+  it('captureCity marks the city occupied and unrest clears with a courthouse', () => {
+    const { s, id } = oneCity(); // owned by player 0
+    captureCity(ctx, s, s.cities[id], 1);
+    expect(s.cities[id].owner).toBe(1);
+    expect(s.cities[id].occupied).toBe(true);
+    const before = empireHappiness(ctx, s, 1).unhappy;
+    s.cities[id].buildings.push('courthouse');
+    expect(before - empireHappiness(ctx, s, 1).unhappy).toBe(3); // occupiedExtra cleared
   });
 });

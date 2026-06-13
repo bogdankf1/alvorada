@@ -292,6 +292,7 @@ export function captureCity(ctx: Ctx, state: GameState, city: City, byPlayer: Pl
   city.production = { item: null, progress: 0 };
   city.hp = s.cityCaptureHp;
   city.owner = byPlayer;
+  city.occupied = true;
 
   // palace relocates to the old owner's oldest remaining city
   const remaining = sortedIds(state.cities)
