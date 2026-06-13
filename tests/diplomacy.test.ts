@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ctx, flatWorld, spawn, refreshVis, declareWarBetween } from './helpers';
 import { hasMet } from '../src/engine/selectors';
 import { findPath } from '../src/engine/map/pathfind';
+import { captureCity } from '../src/engine/systems/cities';
 import { applyAction } from '../src/engine/reducer';
 import { validateAction } from '../src/engine/validate';
 import { attitude, valueDeal, resolveProposal } from '../src/engine/diplomacy-eval';
@@ -235,5 +236,18 @@ describe('diplomacy actions', () => {
   it('rejects negotiating with an unmet power', () => {
     const s = flatWorld(16, 10, 2);
     expect(validateAction(ctx, s, { type: 'PROPOSE_DEAL', player: 0, to: 1, give: { gold: 0 }, take: { gold: 0 } }).ok).toBe(false);
+  });
+});
+
+describe('capture grudge', () => {
+  it('the former owner resents the conqueror', () => {
+    const s = flatWorld(16, 10, 2);
+    // give player 1 a city, then capture it as player 0
+    const settler = spawn(s, 1, 'settler', 8, 5);
+    const s1 = applyAction(ctx, { ...s, currentPlayer: 1 }, { type: 'FOUND_CITY', player: 1, unit: settler.id });
+    const draft = structuredClone(s1) as any;
+    const city = Object.values(draft.cities)[0] as any;
+    captureCity(ctx, draft, city, 0);
+    expect(draft.relations[1][0].grudge).toBeGreaterThanOrEqual(ctx.rules.settings.diplomacy.grudgeOnCapture);
   });
 });

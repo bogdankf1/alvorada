@@ -233,6 +233,7 @@ export function processCity(ctx: Ctx, state: GameState, city: City): CityTurnOut
 export function captureCity(ctx: Ctx, state: GameState, city: City, byPlayer: PlayerId): void {
   const s = ctx.rules.settings;
   const oldOwner = city.owner;
+  state.relations[oldOwner][byPlayer].grudge += ctx.rules.settings.diplomacy.grudgeOnCapture;
 
   if (s.capturePopLossQuarter) city.pop = Math.max(1, city.pop - Math.floor(city.pop / 4));
   city.buildings = city.buildings.filter((b) => {
