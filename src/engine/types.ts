@@ -3,7 +3,7 @@
  * no class instances, no Maps/Sets, no functions, no Dates.
  * GameState + the action log fully determine a game (see PLAN.md §3.3).
  */
-import type { Ruleset } from '../data/types';
+import type { Ruleset, SpecialistType } from '../data/types';
 
 export type PlayerId = number;
 export type UnitId = number;
@@ -60,6 +60,18 @@ export interface City {
   culture: number; // stored toward next border expansion
   tilesClaimed: number; // border expansions completed (sets the next threshold)
   hp: number;
+  occupied?: boolean; // captured; adds unrest until a pacifying building is built
+  forcedSpecialists?: Partial<Record<SpecialistType, number>>; // manual pinned minimums
+}
+
+export interface TradeRoute {
+  id: number;
+  owner: PlayerId;
+  fromCity: CityId;
+  toCity: CityId;
+  kind: 'domestic' | 'international';
+  expires: number; // absolute turn the route ends
+  path: number[]; // tile indices, origin→destination (pillage + rendering)
 }
 
 export interface RelationState {
@@ -167,6 +179,8 @@ export interface GameState {
   nextUnitId: number;
   nextCityId: number;
   wondersBuilt: Record<string, CityId>; // wonderId -> the city that built it (global uniqueness)
+  tradeRoutes: Record<number, TradeRoute>;
+  nextTradeRouteId: number;
   eventSeq: number;
   events: GameEvent[]; // bounded ring, audience-tagged
   winner: { player: PlayerId; victory: 'conquest' | 'score' | 'science' } | null;

@@ -55,6 +55,8 @@ export function initialState(config: GameConfig, ctx: Ctx): GameState {
     nextUnitId: 1,
     nextCityId: 1,
     wondersBuilt: {},
+    tradeRoutes: {},
+    nextTradeRouteId: 1,
     eventSeq: 0,
     events: [],
     winner: null,

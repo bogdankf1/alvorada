@@ -75,6 +75,8 @@ export function flatWorld(w = 12, h = 10, playerCount = 2): GameState {
     nextUnitId: 1,
     nextCityId: 1,
     wondersBuilt: {},
+    tradeRoutes: {},
+    nextTradeRouteId: 1,
     eventSeq: 0,
     events: [],
     winner: null,
