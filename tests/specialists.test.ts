@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ctx, flatWorld, spawn, refreshVis, thaw } from './helpers';
 import { applyAction } from '../src/engine/reducer';
 import { allocateCitizens, cityYields } from '../src/engine/selectors';
+import { validateAction } from '../src/engine/validate';
 
 function oneCity() {
   let s = flatWorld(16, 12, 2);
@@ -44,5 +45,17 @@ describe('allocateCitizens', () => {
     c.pop = 1;
     const alloc = allocateCitizens(ctx, s, c);
     expect((alloc.specialists.scientist ?? 0) + alloc.worked.length).toBe(1);
+  });
+});
+
+describe('SET_SPECIALISTS', () => {
+  it('pins, rejects over-cap, and clears at zero', () => {
+    const { s, id } = oneCity();
+    s.cities[id].buildings.push('library'); // 1 scientist slot
+    let s2 = applyAction(ctx, s, { type: 'SET_SPECIALISTS', player: 0, city: id, specialist: 'scientist', count: 1 });
+    expect(s2.cities[id].forcedSpecialists?.scientist).toBe(1);
+    expect(validateAction(ctx, s2, { type: 'SET_SPECIALISTS', player: 0, city: id, specialist: 'scientist', count: 2 }).ok).toBe(false);
+    s2 = applyAction(ctx, s2, { type: 'SET_SPECIALISTS', player: 0, city: id, specialist: 'scientist', count: 0 });
+    expect(s2.cities[id].forcedSpecialists?.scientist).toBeUndefined();
   });
 });

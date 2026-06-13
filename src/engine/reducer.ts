@@ -95,6 +95,14 @@ function handle(ctx: Ctx, state: GameState, action: Action): void {
       break;
     }
 
+    case 'SET_SPECIALISTS': {
+      const city = state.cities[action.city];
+      if (!city.forcedSpecialists) city.forcedSpecialists = {};
+      if (action.count <= 0) delete city.forcedSpecialists[action.specialist];
+      else city.forcedSpecialists[action.specialist] = action.count;
+      break;
+    }
+
     case 'BUY_ITEM': {
       const city = state.cities[action.city];
       const player = state.players[action.player];

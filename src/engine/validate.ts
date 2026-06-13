@@ -180,6 +180,20 @@ export function validateAction(ctx: Ctx, state: GameState, action: Action): Vali
       return canProduce(ctx, state, city, action.item);
     }
 
+    case 'SET_SPECIALISTS': {
+      const city = state.cities[action.city];
+      if (!city || city.owner !== action.player) return fail('not your city');
+      if (!ctx.rules.specialists[action.specialist]) return fail('unknown specialist');
+      if (!Number.isInteger(action.count) || action.count < 0) return fail('invalid count');
+      let slots = 0;
+      for (const b of city.buildings) {
+        const d = ctx.rules.buildings[b];
+        if (d.specialistSlots?.type === action.specialist) slots += d.specialistSlots.count;
+      }
+      if (action.count > slots) return fail('not enough specialist slots');
+      return ok;
+    }
+
     case 'BUY_ITEM': {
       const city = state.cities[action.city];
       if (!city || city.owner !== action.player) return fail('not your city');
