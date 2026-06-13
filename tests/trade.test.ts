@@ -1,8 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { ctx, flatWorld, spawn, refreshVis, thaw } from './helpers';
+import { ctx, flatWorld, spawn, refreshVis, thaw, declareWarBetween } from './helpers';
 import { applyAction } from '../src/engine/reducer';
 import { validateAction } from '../src/engine/validate';
 import { cityYields } from '../src/engine/selectors';
+import { processTradeRoutes } from '../src/engine/systems/trade';
+import { axialOfIndex } from '../src/engine/hex';
 
 export function twoCities(): ReturnType<typeof flatWorld> {
   let s = flatWorld(24, 12, 2);
@@ -90,5 +92,37 @@ describe('trade route yields', () => {
     s.tradeRoutes = {}; // strip the route to read the baseline
     expect(withRoute - cityYields(ctx, s, my).total.gold).toBe(6);
     void baseGold;
+  });
+});
+
+describe('trade route lifecycle', () => {
+  it('a route is removed when it expires', () => {
+    let s = twoCities();
+    const [, c1] = Object.keys(s.cities).map(Number);
+    const car = spawn(s, 0, 'caravan', 11, 5);
+    refreshVis(s);
+    s = applyAction(ctx, s, { type: 'ESTABLISH_TRADE_ROUTE', player: 0, unit: car.id, targetCity: c1 });
+    s = thaw(s);
+    const rid = Object.keys(s.tradeRoutes).map(Number)[0];
+    s.tradeRoutes[rid].expires = s.turn; // due now
+    processTradeRoutes(ctx, s, 0);
+    expect(s.tradeRoutes[rid]).toBeUndefined();
+  });
+
+  it('an at-war enemy on the path plunders the route for the bounty', () => {
+    let s = twoCities();
+    const [, c1] = Object.keys(s.cities).map(Number);
+    const car = spawn(s, 0, 'caravan', 11, 5);
+    refreshVis(s);
+    s = applyAction(ctx, s, { type: 'ESTABLISH_TRADE_ROUTE', player: 0, unit: car.id, targetCity: c1 });
+    s = thaw(s);
+    declareWarBetween(s, 0, 1);
+    const route = Object.values(s.tradeRoutes)[0];
+    const mid = axialOfIndex(route.path[Math.floor(route.path.length / 2)], s.mapW);
+    spawn(s, 1, 'warrior', mid.q, mid.r);
+    const goldBefore = s.players[1].gold;
+    processTradeRoutes(ctx, s, 0);
+    expect(Object.keys(s.tradeRoutes).length).toBe(0);
+    expect(s.players[1].gold).toBe(goldBefore + ctx.rules.settings.tradeRoute.pillageBounty);
   });
 });
