@@ -234,6 +234,22 @@ describe('luxury resources', () => {
   });
 });
 
+describe('happiness & specialist buildings', () => {
+  const b = STANDARD_RULESET.buildings;
+  it('adds colosseum, courthouse, and the Circus Maximus wonder', () => {
+    expect(b.colosseum.happiness).toBe(3);
+    expect(b.courthouse.pacifies).toBe(true);
+    expect(b.circus_maximus.wonder).toBe(true);
+    expect(b.circus_maximus.effect).toEqual({ kind: 'happiness', amount: 5 });
+  });
+  it('puts specialist slots on yield buildings', () => {
+    expect(b.library.specialistSlots).toEqual({ type: 'scientist', count: 1 });
+    expect(b.market.specialistSlots).toEqual({ type: 'merchant', count: 1 });
+    expect(b.temple.specialistSlots).toEqual({ type: 'artist', count: 1 });
+    expect(b.workshop.specialistSlots).toEqual({ type: 'engineer', count: 1 });
+  });
+});
+
 import { pickProduction, pickResearch } from '../src/ai/economy';
 
 describe('AI breadth', () => {

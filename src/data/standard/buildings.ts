@@ -31,6 +31,7 @@ export const BUILDINGS: Record<string, BuildingDef> = {
     cost: 72,
     yields: { science: 2 },
     perPop: { yield: 'science', per: 2 },
+    specialistSlots: { type: 'scientist', count: 1 },
     requiresTech: 'writing',
     art: { glyph: 'scroll' },
   },
@@ -48,6 +49,7 @@ export const BUILDINGS: Record<string, BuildingDef> = {
     name: 'Market',
     cost: 96,
     yields: { gold: 3 },
+    specialistSlots: { type: 'merchant', count: 1 },
     requiresTech: 'currency',
     art: { glyph: 'coin' },
   },
@@ -56,6 +58,7 @@ export const BUILDINGS: Record<string, BuildingDef> = {
     name: 'Temple',
     cost: 88,
     yields: { culture: 3 },
+    specialistSlots: { type: 'artist', count: 1 },
     requiresTech: 'philosophy',
     art: { glyph: 'temple' },
   },
@@ -64,6 +67,7 @@ export const BUILDINGS: Record<string, BuildingDef> = {
     name: 'Workshop',
     cost: 112,
     yields: { production: 2 },
+    specialistSlots: { type: 'engineer', count: 1 },
     requiresTech: 'construction',
     art: { glyph: 'hammer' },
   },
@@ -75,12 +79,22 @@ export const BUILDINGS: Record<string, BuildingDef> = {
     requiresTech: 'construction',
     art: { glyph: 'arch' },
   },
+  colosseum: {
+    id: 'colosseum', name: 'Colosseum', cost: 100, yields: {},
+    happiness: 3, requiresTech: 'construction', art: { glyph: 'arch' },
+  },
+  courthouse: {
+    id: 'courthouse', name: 'Courthouse', cost: 100, yields: {},
+    pacifies: true, requiresTech: 'mathematics', art: { glyph: 'arch' },
+  },
   university: {
     id: 'university', name: 'University', cost: 130, yields: { science: 3 },
-    perPop: { yield: 'science', per: 2 }, requiresTech: 'education', art: { glyph: 'scroll' },
+    perPop: { yield: 'science', per: 2 }, specialistSlots: { type: 'scientist', count: 1 },
+    requiresTech: 'education', art: { glyph: 'scroll' },
   },
   observatory: {
     id: 'observatory', name: 'Observatory', cost: 140, yields: { science: 3 },
+    specialistSlots: { type: 'scientist', count: 1 },
     requiresTech: 'astronomy', art: { glyph: 'scroll' },
   },
   castle: {
@@ -88,8 +102,8 @@ export const BUILDINGS: Record<string, BuildingDef> = {
     requiresTech: 'engineering', art: { glyph: 'wall' },
   },
   bank: {
-    id: 'bank', name: 'Bank', cost: 130, yields: { gold: 4 }, requiresTech: 'banking',
-    art: { glyph: 'coin' },
+    id: 'bank', name: 'Bank', cost: 130, yields: { gold: 4 }, specialistSlots: { type: 'merchant', count: 1 },
+    requiresTech: 'banking', art: { glyph: 'coin' },
   },
   monastery: {
     id: 'monastery', name: 'Monastery', cost: 96, yields: { culture: 2, science: 1 },
@@ -132,5 +146,10 @@ export const BUILDINGS: Record<string, BuildingDef> = {
     id: 'sistine_chapel', name: 'The Sistine Chapel', cost: 420, yields: { culture: 3 },
     wonder: true, effect: { kind: 'empireYields', yields: { culture: 1 } },
     requiresTech: 'architecture', art: { glyph: 'temple' },
+  },
+  circus_maximus: {
+    id: 'circus_maximus', name: 'The Circus Maximus', cost: 250, yields: { culture: 1 },
+    wonder: true, effect: { kind: 'happiness', amount: 5 },
+    requiresTech: 'construction', art: { glyph: 'temple' },
   },
 };
