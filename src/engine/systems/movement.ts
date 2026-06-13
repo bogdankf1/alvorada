@@ -13,6 +13,7 @@ import {
   militaryAt,
   moveCostOf,
   atWar,
+  bordersOpenTo,
   tileOwner,
 } from '../selectors';
 import { recomputeVisibility } from '../map/visibility';
@@ -81,7 +82,12 @@ export function executeMovePath(ctx: Ctx, state: GameState, unit: Unit, path: Ax
       break;
     }
     const owner = tileOwner(state, idx);
-    if (owner !== null && owner !== unit.owner && !atWar(state, unit.owner, owner)) {
+    if (
+      owner !== null &&
+      owner !== unit.owner &&
+      !atWar(state, unit.owner, owner) &&
+      !bordersOpenTo(state, owner, unit.owner)
+    ) {
       blocked = true; // closed borders in peacetime
       break;
     }

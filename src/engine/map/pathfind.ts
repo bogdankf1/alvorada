@@ -12,7 +12,7 @@
 import type { Axial, Ctx, GameState, Unit } from '../types';
 import { VIS_EXPLORED, VIS_VISIBLE, sortedIds } from '../types';
 import { axialOfIndex, hexDistance, neighbors, tileIndex } from '../hex';
-import { atWar, isCivilian, isImpassable, moveCostOf, tileOwner } from '../selectors';
+import { atWar, bordersOpenTo, isCivilian, isImpassable, moveCostOf, tileOwner } from '../selectors';
 
 interface HeapNode {
   idx: number;
@@ -110,7 +110,8 @@ export function moveRulesFor(ctx: Ctx, state: GameState, unit: Unit): MoveRules 
       if (civilian ? civilianBlocked.has(idx) : militaryBlocked.has(idx)) return false;
       if (explored) {
         const owner = tileOwner(state, idx);
-        if (owner !== null && owner !== pid && !atWar(state, pid, owner)) return false;
+        if (owner !== null && owner !== pid && !atWar(state, pid, owner) && !bordersOpenTo(state, owner, pid))
+          return false;
       }
       return true;
     },

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { ctx, flatWorld, spawn, refreshVis, declareWarBetween } from './helpers';
 import { hasMet } from '../src/engine/selectors';
+import { findPath } from '../src/engine/map/pathfind';
 import { applyAction } from '../src/engine/reducer';
 import { validateAction } from '../src/engine/validate';
 import { attitude, valueDeal, resolveProposal } from '../src/engine/diplomacy-eval';
@@ -135,6 +136,30 @@ describe('obligations tick', () => {
     s.relations[0][1].openBordersUntil = s.turn; // expires next time player 0 processes
     s = fullRound2(s);
     expect(s.relations[0][1].openBordersUntil).toBe(0);
+  });
+});
+
+describe('open borders', () => {
+  it('lets a unit path into a peaceful rival\'s land only when granted', () => {
+    // Build a state where player 1 owns territory and player 0 wants to cross it.
+    // Use a wide map so coordinates are well within bounds.
+    const base = flatWorld(20, 14, 2);
+    meet(base, 0, 1);
+    // Give player 1 a settler at (10,7) and found a city so they own the surrounding ring
+    spawn(base, 1, 'settler', 10, 7);
+    const unitId = Object.keys(base.units).map(Number)[0];
+    const founded = applyAction(ctx, { ...base, currentPlayer: 1 }, { type: 'FOUND_CITY', player: 1, unit: unitId });
+    // Thaw and place player 0's warrior well to the left of player 1's city
+    const s = structuredClone(founded) as typeof founded;
+    const w = spawn(s as any, 0, 'warrior', 7, 7);
+    refreshVis(s as any);
+    // Closed borders: player 0 cannot path onto player 1's owned tile (9,7 is in city ring)
+    const blocked = findPath(ctx, s as any, (s as any).units[w.id], { q: 9, r: 7 });
+    expect(blocked).toBeNull();
+    // Grant open borders 1→0
+    (s as any).relations[1][0].openBordersUntil = (s as any).turn + 5;
+    const open = findPath(ctx, s as any, (s as any).units[w.id], { q: 9, r: 7 });
+    expect(open).not.toBeNull();
   });
 });
 

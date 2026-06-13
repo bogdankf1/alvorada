@@ -75,6 +75,10 @@ export function metPlayers(state: GameState, viewer: PlayerId): PlayerId[] {
     .map((p) => p.id);
 }
 
+export function bordersOpenTo(state: GameState, granter: PlayerId, grantee: PlayerId): boolean {
+  return state.relations[granter][grantee].openBordersUntil >= state.turn;
+}
+
 export function tileOwner(state: GameState, idx: number): PlayerId | null {
   const cityId = state.tiles[idx].ownerCity;
   return cityId === null ? null : (state.cities[cityId]?.owner ?? null);
