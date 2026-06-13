@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { ctx, flatWorld, spawn, refreshVis, declareWarBetween } from './helpers';
 import { hasMet } from '../src/engine/selectors';
+import { applyAction } from '../src/engine/reducer';
+import { validateAction } from '../src/engine/validate';
 import { attitude, valueDeal, resolveProposal } from '../src/engine/diplomacy-eval';
 import type { Proposal } from '../src/engine/types';
 
@@ -71,6 +73,11 @@ describe('valueDeal', () => {
   });
 });
 
+function meet(s: ReturnType<typeof flatWorld>, a: number, b: number) {
+  s.relations[a][b].met = true;
+  s.relations[b][a].met = true;
+}
+
 describe('resolveProposal', () => {
   it('accepts a clearly favorable deal', () => {
     const s = flatWorld(20, 12, 2);
@@ -95,5 +102,80 @@ describe('resolveProposal', () => {
     const r = resolveProposal(ctx, s, p, true);
     expect(r.kind).toBe('counter');
     if (r.kind === 'counter') expect(r.take.gold).toBeGreaterThan(0);
+  });
+});
+
+describe('diplomacy actions', () => {
+  it('gifting gold to an AI is accepted and transfers gold', () => {
+    const s0 = flatWorld(16, 10, 2);
+    s0.players[0].gold = 300;
+    meet(s0, 0, 1);
+    const s = applyAction(ctx, s0, { type: 'PROPOSE_DEAL', player: 0, to: 1, give: { gold: 100 }, take: { gold: 0 } });
+    expect(s.players[0].gold).toBe(200);
+    expect(s.players[1].gold).toBe(100);
+  });
+
+  it('a one-sided demand on a neutral AI is rejected, no transfer', () => {
+    const s0 = flatWorld(16, 10, 2);
+    s0.players[1].gold = 300;
+    meet(s0, 0, 1);
+    const s = applyAction(ctx, s0, { type: 'PROPOSE_DEAL', player: 0, to: 1, give: { gold: 0 }, take: { gold: 200 } });
+    expect(s.players[1].gold).toBe(300);
+    expect(s.events.some((e) => e.type === 'dealRejected')).toBe(true);
+  });
+
+  it('open-borders deal sets a directional term', () => {
+    const s0 = flatWorld(16, 10, 2);
+    s0.players[0].gold = 1000;
+    meet(s0, 0, 1);
+    // bribe player 1 to open its borders to player 0
+    const s = applyAction(ctx, s0, {
+      type: 'PROPOSE_DEAL', player: 0, to: 1,
+      give: { gold: 300 }, take: { gold: 0, openBorders: true },
+    });
+    expect(s.relations[1][0].openBordersUntil).toBe(s.turn + ctx.rules.settings.diplomacy.termLength);
+  });
+
+  it('making peace ends a war both ways and cancels pacts', () => {
+    const s0 = flatWorld(16, 10, 2);
+    declareWarBetween(s0, 0, 1);
+    meet(s0, 0, 1);
+    s0.relations[0][1].openBordersUntil = 99; // a leftover pact
+    s0.players[0].gold = 500;
+    // sweeten with gold so the hostile AI (margin=40) accepts; net must reach 40
+    const s = applyAction(ctx, s0, {
+      type: 'PROPOSE_DEAL', player: 0, to: 1,
+      give: { gold: 50, peace: true }, take: { gold: 0, peace: true },
+    });
+    expect(s.relations[0][1].status).toBe('peace');
+    expect(s.relations[1][0].status).toBe('peace');
+    expect(s.relations[0][1].openBordersUntil).toBe(0); // pact cancelled
+  });
+
+  it('denounce sets the flag, cancels friendship, and is rejected if repeated', () => {
+    const s0 = flatWorld(16, 10, 2);
+    meet(s0, 0, 1);
+    s0.relations[0][1].friends = true;
+    s0.relations[1][0].friends = true;
+    const s = applyAction(ctx, s0, { type: 'DENOUNCE', player: 0, target: 1 });
+    expect(s.relations[0][1].denounced).toBe(true);
+    expect(s.relations[0][1].friends).toBe(false);
+    expect(validateAction(ctx, s, { type: 'DENOUNCE', player: 0, target: 1 }).ok).toBe(false);
+  });
+
+  it('declaring war cancels gold-per-turn and stamps a grudge', () => {
+    const s0 = flatWorld(16, 10, 2);
+    meet(s0, 0, 1);
+    s0.relations[0][1].goldPerTurn = 5;
+    s0.relations[0][1].goldUntil = 99;
+    const s = applyAction(ctx, s0, { type: 'DECLARE_WAR', player: 0, target: 1 });
+    expect(s.relations[0][1].status).toBe('war');
+    expect(s.relations[0][1].goldPerTurn).toBe(0);
+    expect(s.relations[1][0].grudge).toBe(ctx.rules.settings.diplomacy.grudgeOnWar);
+  });
+
+  it('rejects negotiating with an unmet power', () => {
+    const s = flatWorld(16, 10, 2);
+    expect(validateAction(ctx, s, { type: 'PROPOSE_DEAL', player: 0, to: 1, give: { gold: 0 }, take: { gold: 0 } }).ok).toBe(false);
   });
 });

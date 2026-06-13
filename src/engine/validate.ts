@@ -2,11 +2,12 @@
  * Action validation — the gatekeeper a future server runs verbatim.
  * Pure: never mutates. Every reason is human-readable (the UI shows them).
  */
-import type { Action, Axial, Ctx, GameState, Unit } from './types';
+import type { Action, Axial, Ctx, GameState, Unit, DealItems } from './types';
 import { VIS_VISIBLE } from './types';
 import { hexDistance, tileIndex } from './hex';
 import {
   atWar,
+  hasMet,
   canProduce,
   cityAt,
   cityDistanceOk,
@@ -203,15 +204,67 @@ export function validateAction(ctx: Ctx, state: GameState, action: Action): Vali
       const target = state.players[action.target];
       if (!target || action.target === action.player) return fail('invalid target');
       if (!target.alive) return fail('that empire has fallen');
+      if (!hasMet(state, action.player, action.target)) return fail('you have not met this power');
       if (atWar(state, action.player, action.target)) return fail('already at war');
       return ok;
     }
 
-    case 'PROPOSE_DEAL':
-    case 'RESPOND_DEAL':
-    case 'DENOUNCE':
-      return fail('diplomacy not yet implemented');
+    case 'PROPOSE_DEAL': {
+      const to = state.players[action.to];
+      if (!to || action.to === action.player) return fail('invalid recipient');
+      if (!to.alive) return fail('that empire has fallen');
+      if (!hasMet(state, action.player, action.to)) return fail('you have not met this power');
+      return validateDealItems(state, action.player, action.to, action.give, action.take);
+    }
+
+    case 'RESPOND_DEAL': {
+      const p = state.proposals.find((x) => x.id === action.proposal);
+      if (!p) return fail('no such proposal');
+      if (p.to !== action.player) return fail('not addressed to you');
+      if (action.accept) return validateDealItems(state, p.from, p.to, p.give, p.take);
+      return ok;
+    }
+
+    case 'DENOUNCE': {
+      const t = state.players[action.target];
+      if (!t || action.target === action.player) return fail('invalid target');
+      if (!t.alive) return fail('that empire has fallen');
+      if (!hasMet(state, action.player, action.target)) return fail('you have not met this power');
+      if (state.relations[action.player][action.target].denounced) return fail('already denounced');
+      return ok;
+    }
   }
+}
+
+function isEmptyDeal(d: DealItems): boolean {
+  return d.gold === 0 && !d.goldPerTurn && !d.openBorders && !d.peace && !d.friendship;
+}
+
+function validateDealItems(
+  state: GameState,
+  from: number,
+  to: number,
+  give: DealItems,
+  take: DealItems,
+): Validation {
+  if (atWar(state, from, to)) {
+    if (!give.peace || !take.peace) return fail('you are at war — only peace can be negotiated');
+    if (give.friendship || take.friendship) return fail('cannot declare friendship during war');
+  } else if (give.peace || take.peace) {
+    return fail('you are not at war');
+  }
+  if (give.friendship || take.friendship) {
+    if (!give.friendship || !take.friendship) return fail('friendship must be mutual');
+    if (state.relations[from][to].friends) return fail('already friends');
+  }
+  if (give.gold < 0 || take.gold < 0) return fail('gold cannot be negative');
+  if (give.gold > state.players[from].gold) return fail('you cannot afford that gold');
+  if (take.gold > state.players[to].gold) return fail('they cannot afford that gold');
+  for (const gpt of [give.goldPerTurn, take.goldPerTurn]) {
+    if (gpt && (gpt.amount <= 0 || gpt.turns <= 0)) return fail('invalid per-turn payment');
+  }
+  if (isEmptyDeal(give) && isEmptyDeal(take)) return fail('the deal is empty');
+  return { ok: true };
 }
 
 function ownUnit(

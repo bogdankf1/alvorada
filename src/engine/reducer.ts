@@ -3,7 +3,7 @@
  * Validation guards the door; handlers below assume legal input.
  */
 import { produce } from 'immer';
-import type { Action, Ctx, GameState } from './types';
+import type { Action, Ctx, GameState, Proposal } from './types';
 import { validateAction } from './validate';
 import { purchaseCost } from './selectors';
 import { pushEvent } from './events';
@@ -13,6 +13,8 @@ import { foundCity, placeProducedUnit } from './systems/cities';
 import { handleEndTurn } from './systems/turn';
 import { checkElimination } from './systems/victory';
 import { recomputeVisibility } from './map/visibility';
+import { applyDeal, applyDenounce, enterWar, pushProposal } from './systems/diplomacy';
+import { resolveProposal } from './diplomacy-eval';
 
 export class ActionError extends Error {
   constructor(
@@ -133,10 +135,7 @@ function handle(ctx: Ctx, state: GameState, action: Action): void {
     }
 
     case 'DECLARE_WAR': {
-      state.relations[action.player][action.target].status = 'war';
-      state.relations[action.target][action.player].status = 'war';
-      state.relations[action.player][action.target].since = state.turn;
-      state.relations[action.target][action.player].since = state.turn;
+      enterWar(ctx, state, action.player, action.target);
       pushEvent(state, {
         player: null,
         type: 'war',
@@ -145,9 +144,54 @@ function handle(ctx: Ctx, state: GameState, action: Action): void {
       break;
     }
 
+    case 'PROPOSE_DEAL': {
+      const toName = state.players[action.to].name;
+      if (state.players[action.to].controller === 'ai') {
+        const probe: Proposal = { id: -1, from: action.player, to: action.to, give: action.give, take: action.take, expiresTurn: 0 };
+        const res = resolveProposal(ctx, state, probe, state.players[action.player].controller === 'human');
+        if (res.kind === 'accept') {
+          applyDeal(ctx, state, action.player, action.to, action.give, action.take);
+          pushEvent(state, { player: action.player, type: 'dealAccepted', msg: `${toName} accepted your proposal` });
+        } else if (res.kind === 'counter') {
+          pushProposal(ctx, state, action.to, action.player, res.give, res.take);
+          pushEvent(state, { player: action.player, type: 'dealCounter', msg: `${toName} counters your proposal` });
+        } else {
+          pushEvent(state, { player: action.player, type: 'dealRejected', msg: `${toName} rejected your proposal` });
+        }
+      } else {
+        pushProposal(ctx, state, action.player, action.to, action.give, action.take);
+        pushEvent(state, { player: action.to, type: 'dealOffer', msg: `${state.players[action.player].name} proposes a deal` });
+      }
+      break;
+    }
+
+    case 'RESPOND_DEAL': {
+      const idx = state.proposals.findIndex((p) => p.id === action.proposal);
+      if (idx < 0) break;
+      const p = state.proposals[idx];
+      state.proposals.splice(idx, 1);
+      if (action.accept) {
+        applyDeal(ctx, state, p.from, p.to, p.give, p.take);
+        pushEvent(state, { player: p.from, type: 'dealAccepted', msg: `${state.players[p.to].name} accepted your proposal` });
+      } else {
+        pushEvent(state, { player: p.from, type: 'dealRejected', msg: `${state.players[p.to].name} rejected your proposal` });
+      }
+      break;
+    }
+
+    case 'DENOUNCE': {
+      applyDenounce(ctx, state, action.player, action.target);
+      break;
+    }
+
     case 'END_TURN': {
       handleEndTurn(ctx, state);
       break;
+    }
+
+    default: {
+      const _exhaustive: never = action;
+      throw new Error(`unhandled action: ${(_exhaustive as Action).type}`);
     }
   }
 }
