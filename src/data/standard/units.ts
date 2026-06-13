@@ -113,4 +113,39 @@ export const UNITS: Record<string, UnitDef> = {
     requiresTech: 'mathematics',
     art: { glyph: 'catapult' },
   },
+  pikeman: {
+    id: 'pikeman', name: 'Pikeman', cost: 72, moves: 2, sight: 2, strength: 18,
+    class: 'melee', domain: 'land', bonuses: [{ vsClass: 'mounted', pct: 50 }],
+    requiresTech: 'feudalism', art: { glyph: 'spear' },
+  },
+  crossbowman: {
+    id: 'crossbowman', name: 'Crossbowman', cost: 80, moves: 2, sight: 2, strength: 14,
+    ranged: { strength: 18, range: 2 }, class: 'ranged', domain: 'land',
+    requiresTech: 'machinery', art: { glyph: 'bow' },
+  },
+  trebuchet: {
+    id: 'trebuchet', name: 'Trebuchet', cost: 96, moves: 2, sight: 2, strength: 8,
+    ranged: { strength: 20, range: 2 }, class: 'siege', domain: 'land',
+    bonuses: [{ vsCity: true, pct: 100 }], requiresTech: 'machinery', art: { glyph: 'catapult' },
+  },
+  knight: {
+    id: 'knight', name: 'Knight', cost: 96, moves: 4, sight: 2, strength: 24,
+    class: 'mounted', domain: 'land', requiresTech: 'chivalry', requiresResource: 'horses',
+    art: { glyph: 'horse' },
+  },
+  musketman: {
+    id: 'musketman', name: 'Musketman', cost: 120, moves: 2, sight: 2, strength: 30,
+    class: 'melee', domain: 'land', requiresTech: 'gunpowder', art: { glyph: 'sword' },
+  },
+  cannon: {
+    id: 'cannon', name: 'Cannon', cost: 140, moves: 2, sight: 2, strength: 10,
+    ranged: { strength: 32, range: 2 }, class: 'siege', domain: 'land',
+    bonuses: [{ vsCity: true, pct: 100 }], requiresTech: 'metallurgy', requiresResource: 'iron',
+    art: { glyph: 'catapult' },
+  },
+  cuirassier: {
+    id: 'cuirassier', name: 'Cuirassier', cost: 150, moves: 4, sight: 2, strength: 34,
+    class: 'mounted', domain: 'land', requiresTech: 'metallurgy', requiresResource: 'horses',
+    art: { glyph: 'horse' },
+  },
 };
