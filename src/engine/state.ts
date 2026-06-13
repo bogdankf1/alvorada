@@ -54,6 +54,7 @@ export function initialState(config: GameConfig, ctx: Ctx): GameState {
     visibility: players.map(() => new Array<number>(tiles.length).fill(0)),
     nextUnitId: 1,
     nextCityId: 1,
+    wondersBuilt: {},
     eventSeq: 0,
     events: [],
     winner: null,

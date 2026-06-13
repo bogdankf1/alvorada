@@ -166,9 +166,10 @@ export interface GameState {
   visibility: number[][]; // [player][tileIndex] -> VIS_*
   nextUnitId: number;
   nextCityId: number;
+  wondersBuilt: Record<string, CityId>; // wonderId -> the city that built it (global uniqueness)
   eventSeq: number;
   events: GameEvent[]; // bounded ring, audience-tagged
-  winner: { player: PlayerId; victory: 'conquest' | 'score' } | null;
+  winner: { player: PlayerId; victory: 'conquest' | 'score' | 'science' } | null;
 }
 
 /** Engine context: rules travel beside state so content is never imported by logic. */

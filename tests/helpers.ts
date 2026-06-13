@@ -74,6 +74,7 @@ export function flatWorld(w = 12, h = 10, playerCount = 2): GameState {
     visibility: players.map(() => new Array<number>(w * h).fill(0)),
     nextUnitId: 1,
     nextCityId: 1,
+    wondersBuilt: {},
     eventSeq: 0,
     events: [],
     winner: null,

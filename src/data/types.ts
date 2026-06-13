@@ -88,6 +88,13 @@ export interface UnitDef {
   art: { glyph: string };
 }
 
+export type WonderEffect =
+  | { kind: 'empireYields'; yields: PartialYields } // added to every city the owner holds
+  | { kind: 'cityDefense'; strength: number } // +strength to all owner cities
+  | { kind: 'freeTech' } // grant the cheapest available tech, once
+  | { kind: 'freeUnit'; unit: string; count: number } // spawn units in the city, once
+  | { kind: 'cultureBurst'; amount: number }; // add culture to the city, once
+
 export interface BuildingDef {
   id: string;
   name: string;
@@ -97,6 +104,8 @@ export interface BuildingDef {
   defense?: { strength: number };
   requiresTech?: string;
   unbuildable?: boolean; // e.g. palace: granted, never produced
+  wonder?: boolean; // a one-per-game World Wonder
+  effect?: WonderEffect; // optional signature effect (beyond `yields`)
   art: { glyph: string };
 }
 
