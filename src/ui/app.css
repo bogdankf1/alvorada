@@ -373,6 +373,16 @@
   font-size: 11.5px;
   padding: 3px 8px;
 }
+.prod-item .wonder-tag {
+  font-family: var(--font-display);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--brass-bright);
+  border: 1px solid var(--brass);
+  padding: 1px 5px;
+  margin-right: 2px;
+}
 .bld-list {
   display: flex;
   flex-wrap: wrap;

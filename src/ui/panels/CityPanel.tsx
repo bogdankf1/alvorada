@@ -12,6 +12,18 @@ import type { ProductionItem } from '../../engine/types';
 import { YIELD_COLORS, YIELD_ICONS, IconCog, IconPeople } from '../icons';
 import { YIELD_KEYS } from '../../data/types';
 
+function wonderBlurb(b: import('../../data/types').BuildingDef): string {
+  const e = b.effect;
+  if (!e) return 'World Wonder';
+  switch (e.kind) {
+    case 'empireYields': return 'World Wonder — bonus yields in every city';
+    case 'cityDefense': return `World Wonder — +${e.strength} defense in all your cities`;
+    case 'freeTech': return 'World Wonder — grants a free technology';
+    case 'freeUnit': return `World Wonder — grants ${e.count} ${e.unit}(s)`;
+    case 'cultureBurst': return `World Wonder — +${e.amount} culture`;
+  }
+}
+
 export function CityPanel() {
   const game = useApp((s) => s.game);
   const viewer = useApp((s) => s.viewingPlayer);
@@ -116,6 +128,9 @@ export function CityPanel() {
                     }
                   >
                     <span className="nm">{itemName(item)}</span>
+                    {item.kind === 'building' && gameCtx.rules.buildings[item.id].wonder && (
+                      <span className="wonder-tag" title={wonderBlurb(gameCtx.rules.buildings[item.id])}>Wonder</span>
+                    )}
                     {isCurrent && <span className="cur-tag">Building</span>}
                     <span className="turns">{turns !== null ? `${turns}t` : '—'}</span>
                     {player.gold >= price && (
