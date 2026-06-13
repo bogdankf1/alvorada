@@ -106,15 +106,17 @@ export function CityPanel() {
                 const cost = itemCost(gameCtx, item);
                 const turns = total.production > 0 ? Math.ceil(cost / total.production) : null;
                 const price = purchaseCost(gameCtx, item);
+                const isCurrent = current?.kind === item.kind && current?.id === item.id;
                 return (
                   <div
                     key={`${item.kind}:${item.id}`}
-                    className="prod-item"
+                    className={`prod-item ${isCurrent ? 'is-current' : ''}`}
                     onClick={() =>
                       humanDispatch({ type: 'SET_PRODUCTION', player: viewer, city: city.id, item })
                     }
                   >
                     <span className="nm">{itemName(item)}</span>
+                    {isCurrent && <span className="cur-tag">Building</span>}
                     <span className="turns">{turns !== null ? `${turns}t` : '—'}</span>
                     {player.gold >= price && (
                       <button
