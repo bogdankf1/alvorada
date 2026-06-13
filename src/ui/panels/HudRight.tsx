@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { gameCtx } from '../../app/driver';
 import { focusCamera, useApp } from '../../app/store';
-import { endTurnBlocker, endTurnRequest, idleUnits, selectNextIdleUnit } from '../actions';
+import { endTurnRequest, turnGate } from '../actions';
 import { axialOfIndex, hexToPixel } from '../../engine/hex';
 import { sortedIds, VIS_UNSEEN } from '../../engine/types';
 import { HEX, PALETTE } from '../map/art';
@@ -14,44 +14,33 @@ export function HudRight() {
   if (!game) return null;
 
   const myTurn = !aiThinking && game.currentPlayer === viewer && game.phase === 'playing';
-  const blocker = myTurn ? endTurnBlocker() : null;
-  const idle = myTurn ? idleUnits() : [];
+  const gate = myTurn ? turnGate() : null;
 
   let label = 'End Turn';
   let sub: string | null = null;
   if (!myTurn) {
     label = game.phase === 'ended' ? 'Game Over' : 'Rivals Move…';
-  } else if (blocker?.kind === 'research') {
+  } else if (gate?.kind === 'research') {
     label = 'Research';
     sub = 'choose what to study';
-  } else if (blocker?.kind === 'production') {
+  } else if (gate?.kind === 'production') {
     label = 'Production';
-    sub = `${game.cities[blocker.city]?.name ?? 'a city'} needs orders`;
-  } else if (idle.length > 0) {
-    sub = `${idle.length} unit${idle.length > 1 ? 's' : ''} idle — N to cycle`;
+    sub = `${game.cities[gate.city]?.name ?? 'a city'} needs orders`;
+  } else if (gate?.kind === 'idle') {
+    label = 'Next Unit';
+    sub = `${gate.count} unit${gate.count > 1 ? 's' : ''} need${gate.count > 1 ? '' : 's'} orders`;
   }
+  const ready = myTurn && gate?.kind === 'ready';
 
   return (
     <div className="hud-right">
       <div
-        className={`end-turn ${myTurn && !blocker ? 'is-ready' : ''} ${!myTurn ? 'is-waiting' : ''}`}
+        className={`end-turn ${ready ? 'is-ready' : ''} ${!myTurn ? 'is-waiting' : ''}`}
         onClick={() => myTurn && endTurnRequest()}
-        title="Enter"
+        title={ready ? 'End turn (Enter)' : 'Enter'}
       >
         {label}
-        {sub && (
-          <span
-            className="sub"
-            onClick={(e) => {
-              if (idle.length > 0 && !blocker) {
-                e.stopPropagation();
-                selectNextIdleUnit();
-              }
-            }}
-          >
-            {sub}
-          </span>
-        )}
+        {sub && <span className="sub">{sub}</span>}
       </div>
       <Minimap />
     </div>

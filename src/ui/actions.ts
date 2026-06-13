@@ -28,14 +28,20 @@ export function isMyTurn(): boolean {
   );
 }
 
-export type EndTurnBlocker =
+/**
+ * What stands between the player and ending the turn, in priority order:
+ * pick research → set a city's production → give idle units orders → ready.
+ * The End Turn button reads its label/action straight from this.
+ */
+export type TurnGate =
   | { kind: 'research' }
   | { kind: 'production'; city: number }
-  | null;
+  | { kind: 'idle'; count: number }
+  | { kind: 'ready' };
 
-export function endTurnBlocker(): EndTurnBlocker {
+export function turnGate(): TurnGate {
   const { game, viewingPlayer } = appStore.get();
-  if (!game) return null;
+  if (!game) return { kind: 'ready' };
   const player = game.players[viewingPlayer];
   if (!player.researching && availableTechs(gameCtx, game, viewingPlayer).length > 0) {
     return { kind: 'research' };
@@ -45,34 +51,47 @@ export function endTurnBlocker(): EndTurnBlocker {
       return { kind: 'production', city: c.id };
     }
   }
-  return null;
+  const idle = idleUnits();
+  if (idle.length > 0) return { kind: 'idle', count: idle.length };
+  return { kind: 'ready' };
 }
 
-/** End the turn, or steer the player to what still needs a decision. */
+/**
+ * One click on End Turn: resolve the next gate. Steer to research/production,
+ * cycle to the next idle unit, or — only when nothing remains — end the turn.
+ * Idle units are gated like Civ: orders first, the turn ends after.
+ */
 export function endTurnRequest(): void {
   if (!isMyTurn()) return;
-  const blocker = endTurnBlocker();
   const { game, viewingPlayer } = appStore.get();
   if (!game) return;
-  if (blocker?.kind === 'research') {
-    appStore.set({ overlay: 'tech' });
-    return;
+  const gate = turnGate();
+  switch (gate.kind) {
+    case 'research':
+      appStore.set({ overlay: 'tech' });
+      return;
+    case 'production': {
+      const city = game.cities[gate.city];
+      appStore.set({ selectedCity: gate.city, selectedUnit: null });
+      focusCamera(city.q, city.r);
+      return;
+    }
+    case 'idle':
+      selectNextIdleUnit();
+      return;
+    case 'ready':
+      appStore.set({ selectedUnit: null, selectedCity: null });
+      humanDispatch({ type: 'END_TURN', player: viewingPlayer });
+      return;
   }
-  if (blocker?.kind === 'production') {
-    const city = game.cities[blocker.city];
-    appStore.set({ selectedCity: blocker.city, selectedUnit: null });
-    focusCamera(city.q, city.r);
-    return;
-  }
-  appStore.set({ selectedUnit: null, selectedCity: null });
-  humanDispatch({ type: 'END_TURN', player: viewingPlayer });
 }
 
+/** Units that still need their first order this turn (untouched, can still act). */
 export function idleUnits(): number[] {
   const { game, viewingPlayer } = appStore.get();
   if (!game) return [];
   return playerUnits(game, viewingPlayer)
-    .filter((u) => u.moves > 0 && !u.order && u.stance !== 'fortified')
+    .filter((u) => u.moves > 0 && !u.acted && !u.order && u.stance !== 'fortified')
     .map((u) => u.id);
 }
 
