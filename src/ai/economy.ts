@@ -12,6 +12,7 @@ import {
   canProduce,
   cityDistanceOk,
   empireHappiness,
+  hasMet,
   isCivilian,
   isImpassable,
   isWater,
@@ -79,6 +80,25 @@ export function desiredCities(state: GameState): number {
   if (state.turn < 55) return 3;
   if (state.turn < 95) return 4;
   return 5;
+}
+
+function activeTradeCount(ctx: Ctx, state: GameState, pid: PlayerId): number {
+  const routes = Object.values(state.tradeRoutes).filter((r) => r.owner === pid).length;
+  const caravans = playerUnits(state, pid).filter((u) => ctx.rules.units[u.def].abilities?.includes('trade')).length;
+  return routes + caravans;
+}
+
+function hasTradeTarget(ctx: Ctx, state: GameState, pid: PlayerId): boolean {
+  const range = ctx.rules.settings.tradeRoute.caravanRange;
+  const mine = playerCities(state, pid);
+  if (mine.length >= 2 && mine.some((a) => mine.some((b) => a.id !== b.id && hexDistance({ q: a.q, r: a.r }, { q: b.q, r: b.r }) <= range)))
+    return true;
+  for (const p of state.players) {
+    if (!p.alive || p.id === pid || !hasMet(state, pid, p.id) || atWar(state, pid, p.id)) continue;
+    for (const c of playerCities(state, p.id))
+      if (mine.some((o) => hexDistance({ q: o.q, r: o.r }, { q: c.q, r: c.r }) <= range)) return true;
+  }
+  return false;
 }
 
 function threatNear(ctx: Ctx, state: GameState, city: City): number {
@@ -177,6 +197,16 @@ export function pickProduction(
   const workers = myUnits.filter((u) => ctx.rules.units[u.def].abilities?.includes('improve')).length;
   if (workers < Math.min(myCities.length, 3) && canProduce(ctx, state, city, { kind: 'unit', id: 'worker' }).ok) {
     return { item: { kind: 'unit', id: 'worker' }, reason: 'fields need hands' };
+  }
+
+  // 4b. a caravan opens trade income once the homeland is tended
+  if (
+    ctx.rules.units.caravan &&
+    activeTradeCount(ctx, state, pid) < Math.ceil(myCities.length / 2) &&
+    hasTradeTarget(ctx, state, pid) &&
+    canProduce(ctx, state, city, { kind: 'unit', id: 'caravan' }).ok
+  ) {
+    return { item: { kind: 'unit', id: 'caravan' }, reason: 'a caravan to open a trade route' };
   }
 
   // 5. keep pace militarily with known rivals

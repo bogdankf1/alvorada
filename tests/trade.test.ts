@@ -7,6 +7,8 @@ import { processTradeRoutes } from '../src/engine/systems/trade';
 import { captureCity } from '../src/engine/systems/cities';
 import { axialOfIndex } from '../src/engine/hex';
 import { VIS_EXPLORED } from '../src/engine/types';
+import { pickProduction } from '../src/ai/economy';
+import { decide } from '../src/ai/decide';
 
 export function twoCities(): ReturnType<typeof flatWorld> {
   let s = flatWorld(24, 12, 2);
@@ -204,5 +206,32 @@ describe('trade route reachability', () => {
     });
     expect(result.ok).toBe(false);
     expect((result as { ok: false; reason: string }).reason).toBe('no land route to that city');
+  });
+});
+
+describe('AI trade', () => {
+  it('builds a caravan once the homeland is tended and trade is possible', () => {
+    let s = twoCities(); // 2 cities, currency, within range
+    s.turn = 10; // desiredCities=2 (met) and no scout rule pressure handled below
+    const ids = Object.keys(s.cities).map(Number);
+    for (const cid of ids) spawn(s, 0, 'warrior', s.cities[cid].q, s.cities[cid].r); // garrisons
+    spawn(s, 0, 'scout', 6, 6); // satisfies the early-scout rule
+    spawn(s, 0, 'worker', 5, 6);
+    spawn(s, 0, 'worker', 6, 7); // workers >= min(cities,3)
+    refreshVis(s);
+    const pick = pickProduction(ctx, s, s.cities[ids[0]]);
+    expect(pick?.item).toEqual({ kind: 'unit', id: 'caravan' });
+  });
+
+  it('a caravan next to a valid target establishes the route', () => {
+    let s = twoCities();
+    s.turn = 10;
+    s.players[0].researching = 'pottery'; // research phase satisfied
+    const [, c1] = Object.keys(s.cities).map(Number);
+    for (const cid of Object.keys(s.cities).map(Number)) s.cities[cid].production.item = { kind: 'building', id: 'monument' };
+    const car = spawn(s, 0, 'caravan', 11, 5); // adjacent to the city at (12,5)
+    refreshVis(s);
+    const d = decide(ctx, s, 0);
+    expect(d.action).toEqual({ type: 'ESTABLISH_TRADE_ROUTE', player: 0, unit: car.id, targetCity: c1 });
   });
 });

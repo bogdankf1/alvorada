@@ -10,6 +10,7 @@ import {
   atWar,
   cityAt,
   cityDistanceOk,
+  hasMet,
   isCivilian,
   militaryAt,
   militaryPower,
@@ -142,6 +143,7 @@ function considerWar(ctx: Ctx, state: GameState, pid: PlayerId): AiDecision | nu
 
 function decideUnit(ctx: Ctx, state: GameState, unit: Unit): AiDecision | null {
   const def = ctx.rules.units[unit.def];
+  if (def.abilities?.includes('trade')) return decideCaravan(ctx, state, unit);
   if (def.abilities?.includes('foundCity')) return decideSettler(ctx, state, unit);
   if (def.abilities?.includes('improve')) return decideWorker(ctx, state, unit);
   if (unit.def === 'scout') return decideScout(ctx, state, unit) ?? decideMilitary(ctx, state, unit);
@@ -206,6 +208,46 @@ function decideWorker(ctx: Ctx, state: GameState, unit: Unit): AiDecision | null
     };
   }
   return moveAlong(ctx, state, unit, target, `worker walks to a ${job.improvement} site`);
+}
+
+function pickTradeTarget(ctx: Ctx, state: GameState, unit: Unit): City | null {
+  const pid = unit.owner;
+  const here = { q: unit.q, r: unit.r };
+  const range = ctx.rules.settings.tradeRoute.caravanRange;
+  const myCities = playerCities(state, pid);
+  const withinRangeOfOwn = (c: City) =>
+    myCities.some((o) => o.id !== c.id && hexDistance({ q: o.q, r: o.r }, { q: c.q, r: c.r }) <= range);
+  const routed = new Set(Object.values(state.tradeRoutes).filter((r) => r.owner === pid).map((r) => r.toCity));
+
+  const cand: { c: City; domestic: boolean; dist: number }[] = [];
+  if (myCities.length >= 2)
+    for (const c of myCities) {
+      if (routed.has(c.id) || !withinRangeOfOwn(c)) continue;
+      cand.push({ c, domestic: true, dist: hexDistance(here, { q: c.q, r: c.r }) });
+    }
+  for (const p of state.players) {
+    if (!p.alive || p.id === pid || !hasMet(state, pid, p.id) || atWar(state, pid, p.id)) continue;
+    for (const c of playerCities(state, p.id)) {
+      const idx = tileIndex({ q: c.q, r: c.r }, state.mapW, state.mapH);
+      if (state.visibility[pid][idx] === VIS_UNSEEN) continue;
+      if (routed.has(c.id) || !withinRangeOfOwn(c)) continue;
+      cand.push({ c, domestic: false, dist: hexDistance(here, { q: c.q, r: c.r }) });
+    }
+  }
+  cand.sort((a, b) => (a.domestic === b.domestic ? 0 : a.domestic ? -1 : 1) || a.dist - b.dist || a.c.id - b.c.id);
+  return cand[0]?.c ?? null;
+}
+
+function decideCaravan(ctx: Ctx, state: GameState, unit: Unit): AiDecision | null {
+  const target = pickTradeTarget(ctx, state, unit);
+  if (!target) return null;
+  if (hexDistance({ q: unit.q, r: unit.r }, { q: target.q, r: target.r }) <= 1) {
+    const action = { type: 'ESTABLISH_TRADE_ROUTE' as const, player: unit.owner, unit: unit.id, targetCity: target.id };
+    // Return null gracefully if the action would be invalid (e.g. no land route to target)
+    // The outer tryDecision in decide() will validate and fall through to SKIP if needed.
+    return { action, reason: `establishing a trade route to ${target.name}` };
+  }
+  return moveAlong(ctx, state, unit, { q: target.q, r: target.r }, `caravan bound for ${target.name}`);
 }
 
 function decideScout(ctx: Ctx, state: GameState, unit: Unit): AiDecision | null {
