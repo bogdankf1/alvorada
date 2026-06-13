@@ -22,6 +22,8 @@ interface DebugApi {
   prodOptions(cityId: number): { kind: string; id: string; wonder: boolean }[];
   happiness(): { happy: number; unhappy: number; net: number; tier: string; connectedLuxuries: string[] } | null;
   setSpecialists(cityId: number, specialist: string, count: number): void;
+  establishRoute(unitId: number, targetCity: number): void;
+  listRoutes(): { id: number; owner: number; fromCity: number; toCity: number; kind: string; expires: number }[];
   debugAutoplay(turns: number): Promise<void>;
 }
 
@@ -78,6 +80,15 @@ export function installDebugBridge(): void {
 
     setSpecialists(cityId: number, specialist: string, count: number) {
       humanDispatch({ type: 'SET_SPECIALISTS', player: appStore.get().viewingPlayer, city: cityId, specialist: specialist as never, count });
+    },
+
+    establishRoute(unitId: number, targetCity: number) {
+      humanDispatch({ type: 'ESTABLISH_TRADE_ROUTE', player: appStore.get().viewingPlayer, unit: unitId, targetCity });
+    },
+
+    listRoutes() {
+      const g = appStore.get().game;
+      return g ? Object.values(g.tradeRoutes) : [];
     },
 
     /** Plays the viewer's turns with the AI brain — fills the world for visual checks. */

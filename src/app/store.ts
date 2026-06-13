@@ -38,6 +38,7 @@ export interface AppState {
   diploTarget: PlayerId | null;
   draftDeal: DraftDeal | null;
   proposalModal: number | null; // proposal id to show in the incoming-offer modal
+  tradeRouteUnit: number | null; // caravan awaiting a trade-route target
   winnerSeen: boolean;
 }
 
@@ -58,6 +59,7 @@ const initial: AppState = {
   diploTarget: null,
   draftDeal: null,
   proposalModal: null,
+  tradeRouteUnit: null,
   winnerSeen: false,
 };
 

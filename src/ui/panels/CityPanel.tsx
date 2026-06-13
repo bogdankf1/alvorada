@@ -195,6 +195,20 @@ export function CityPanel() {
           </div>
         )}
 
+        {(() => {
+          const routes = Object.values(game.tradeRoutes).filter((r) => r.fromCity === city.id || r.toCity === city.id);
+          return routes.length > 0 ? (
+            <div className="city-routes">
+              <h4>Trade Routes</h4>
+              {routes.map((r) => (
+                <div key={r.id} className="route-row">
+                  {(game.cities[r.fromCity]?.name ?? '—')} → {(game.cities[r.toCity]?.name ?? '—')} · {r.kind} · {Math.max(0, r.expires - game.turn)}t
+                </div>
+              ))}
+            </div>
+          ) : null;
+        })()}
+
         {city.hp < gameCtx.rules.settings.cityMaxHp && (
           <>
             <div className="city-section-title">City Defense</div>

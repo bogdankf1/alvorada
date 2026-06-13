@@ -74,6 +74,11 @@ export function UnitPanel() {
               imp.id,
             ),
           )}
+          {def.abilities?.includes('trade') && (
+            <button className="btn" onClick={() => appStore.set({ tradeRouteUnit: unit.id })}>
+              Establish Trade Route
+            </button>
+          )}
           {tryButton('Fortify', { type: 'FORTIFY', player: viewer, unit: unit.id })}
           {tryButton('Skip', { type: 'SKIP_UNIT', player: viewer, unit: unit.id })}
           <button
