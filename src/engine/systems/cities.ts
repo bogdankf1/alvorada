@@ -6,6 +6,7 @@ import type { City, Ctx, GameState, PlayerId, Unit } from '../types';
 import { sortedIds } from '../types';
 import { axialOfIndex, hexDistance, hexesWithin, ring, tileIndex } from '../hex';
 import {
+  availableTechs,
   borderThreshold,
   cityYields,
   civilianAt,
@@ -103,6 +104,40 @@ export function placeProducedUnit(ctx: Ctx, state: GameState, city: City, defId:
   return null;
 }
 
+/** Fire a completed wonder's effect, record global uniqueness, and refund any racing cities. */
+export function completeWonder(ctx: Ctx, state: GameState, city: City, wonderId: string): void {
+  state.wondersBuilt[wonderId] = city.id;
+  const eff = ctx.rules.buildings[wonderId].effect;
+  if (eff) {
+    if (eff.kind === 'freeTech') {
+      const avail = availableTechs(ctx, state, city.owner);
+      if (avail.length) {
+        const pick = [...avail].sort(
+          (a, b) => ctx.rules.techs[a].cost - ctx.rules.techs[b].cost || (a < b ? -1 : 1),
+        )[0];
+        state.players[city.owner].techs.push(pick);
+        pushEvent(state, { player: city.owner, type: 'techDone', msg: `${ctx.rules.techs[pick].name} revealed by ${ctx.rules.buildings[wonderId].name}!` });
+      }
+    } else if (eff.kind === 'freeUnit') {
+      for (let i = 0; i < eff.count; i++) placeProducedUnit(ctx, state, city, eff.unit);
+    } else if (eff.kind === 'cultureBurst') {
+      city.culture += eff.amount;
+    }
+    // empireYields / cityDefense are ongoing (read by selectors) — nothing to fire here
+  }
+  // refund any other city racing the same wonder
+  for (const id of sortedIds(state.cities)) {
+    const other = state.cities[id];
+    if (other.id === city.id) continue;
+    if (other.production.item?.kind === 'building' && other.production.item.id === wonderId) {
+      state.players[other.owner].gold += Math.floor(other.production.progress);
+      other.production = { item: null, progress: 0 };
+      pushEvent(state, { player: other.owner, type: 'dealBroken', msg: `${other.name}'s ${ctx.rules.buildings[wonderId].name} was finished elsewhere — effort refunded`, q: other.q, r: other.r });
+    }
+  }
+  pushEvent(state, { player: null, type: 'wonderBuilt', msg: `${state.players[city.owner].name} has completed ${ctx.rules.buildings[wonderId].name}!`, q: city.q, r: city.r });
+}
+
 function pickBorderTile(ctx: Ctx, state: GameState, city: City): number | null {
   const maxR = ctx.rules.settings.borderMaxRadius;
   let best: { idx: number; dist: number; value: number } | null = null;
@@ -152,6 +187,7 @@ export function processCity(ctx: Ctx, state: GameState, city: City): CityTurnOut
           q: city.q,
           r: city.r,
         });
+        if (ctx.rules.buildings[item.id].wonder) completeWonder(ctx, state, city, item.id);
       } else {
         const def = ctx.rules.units[item.id];
         const isSettler = !!def.abilities?.includes('foundCity');

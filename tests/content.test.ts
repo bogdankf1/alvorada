@@ -103,3 +103,74 @@ describe('wonders: ongoing effects', () => {
     expect(cityStrength(ctx, s, s.cities[id])).toBe(before + 6);
   });
 });
+
+const endTurn = (s: ReturnType<typeof flatWorld>) => applyAction(ctx, s, { type: 'END_TURN', player: s.currentPlayer });
+const fullRound = (s: ReturnType<typeof flatWorld>) => {
+  const n = s.players.filter((p) => p.alive).length;
+  for (let i = 0; i < n; i++) s = endTurn(s);
+  return s;
+};
+
+describe('wonders: completion', () => {
+  function builtWonder(wonderId: string, tech: string) {
+    let s = flatWorld(14, 12, 2);
+    const settler = spawn(s, 0, 'settler', 5, 5);
+    spawn(s, 1, 'warrior', 1, 10);
+    refreshVis(s);
+    s = applyAction(ctx, s, { type: 'FOUND_CITY', player: 0, unit: settler.id });
+    s = thaw(s);
+    s.players[0].techs.push(tech);
+    const id = Object.keys(s.cities).map(Number)[0];
+    // jump production almost to completion, then finish on the next turn
+    s.cities[id].production.item = { kind: 'building', id: wonderId };
+    s.cities[id].production.progress = ctx.rules.buildings[wonderId].cost; // already paid
+    let guard = 0;
+    while (s.wondersBuilt[wonderId] === undefined && guard < 6) { s = fullRound(s); guard++; }
+    return { s, id };
+  }
+
+  it('completing freeUnit (Pyramids) records the wonder and spawns 2 workers', () => {
+    const { s, id } = builtWonder('pyramids', 'masonry');
+    expect(s.wondersBuilt['pyramids']).toBe(id);
+    expect(Object.values(s.units).filter((u) => u.owner === 0 && u.def === 'worker').length).toBe(2);
+  });
+
+  it('completing freeTech (Great Library) grants a tech', () => {
+    let s = flatWorld(14, 12, 2);
+    const settler = spawn(s, 0, 'settler', 5, 5);
+    spawn(s, 1, 'warrior', 1, 10);
+    refreshVis(s);
+    s = applyAction(ctx, s, { type: 'FOUND_CITY', player: 0, unit: settler.id });
+    s = thaw(s);
+    s.players[0].techs.push('writing');
+    const before = s.players[0].techs.length;
+    const id = Object.keys(s.cities).map(Number)[0];
+    s.cities[id].production.item = { kind: 'building', id: 'great_library' };
+    s.cities[id].production.progress = ctx.rules.buildings.great_library.cost;
+    let guard = 0;
+    while (s.wondersBuilt['great_library'] === undefined && guard < 6) { s = fullRound(s); guard++; }
+    expect(s.players[0].techs.length).toBeGreaterThan(before); // free tech granted
+  });
+
+  it('a city racing a just-finished wonder is cleared and refunded gold', () => {
+    // city 0 finishes hanging_gardens; another owned city racing it is refunded
+    let s = flatWorld(18, 12, 2);
+    const a = spawn(s, 0, 'settler', 4, 5);
+    const b = spawn(s, 0, 'settler', 12, 6);
+    spawn(s, 1, 'warrior', 1, 10);
+    refreshVis(s);
+    s = applyAction(ctx, s, { type: 'FOUND_CITY', player: 0, unit: a.id });
+    s = applyAction(ctx, s, { type: 'FOUND_CITY', player: 0, unit: b.id });
+    s = thaw(s);
+    s.players[0].techs.push('mathematics');
+    const [c0, c1] = Object.keys(s.cities).map(Number);
+    s.cities[c0].production = { item: { kind: 'building', id: 'hanging_gardens' }, progress: ctx.rules.buildings.hanging_gardens.cost };
+    s.cities[c1].production = { item: { kind: 'building', id: 'hanging_gardens' }, progress: 40 };
+    const goldBefore = s.players[0].gold;
+    let guard = 0;
+    while (s.wondersBuilt['hanging_gardens'] === undefined && guard < 6) { s = fullRound(s); guard++; }
+    // the racing city's item was cleared and ~40 gold refunded
+    expect(s.cities[c1].production.item).toBeNull();
+    expect(s.players[0].gold).toBeGreaterThan(goldBefore);
+  });
+});
