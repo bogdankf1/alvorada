@@ -250,6 +250,16 @@ describe('happiness & specialist buildings', () => {
   });
 });
 
+describe('caravan', () => {
+  it('is a civilian trade unit gated by currency', () => {
+    const u = STANDARD_RULESET.units.caravan;
+    expect(u).toBeDefined();
+    expect(u.class).toBe('civilian');
+    expect(u.abilities).toContain('trade');
+    expect(u.requiresTech).toBe('currency');
+  });
+});
+
 import { pickProduction, pickResearch } from '../src/ai/economy';
 
 describe('AI breadth', () => {

@@ -148,4 +148,9 @@ export const UNITS: Record<string, UnitDef> = {
     class: 'mounted', domain: 'land', requiresTech: 'metallurgy', requiresResource: 'horses',
     art: { glyph: 'horse' },
   },
+  caravan: {
+    id: 'caravan', name: 'Caravan', cost: 50, moves: 2, sight: 1, strength: 0,
+    class: 'civilian', domain: 'land', abilities: ['trade'],
+    requiresTech: 'currency', art: { glyph: 'gear' },
+  },
 };
