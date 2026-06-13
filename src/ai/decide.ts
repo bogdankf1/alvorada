@@ -20,6 +20,7 @@ import { validateAction } from '../engine/validate';
 import { findPath } from '../engine/map/pathfind';
 import { cityStrength } from '../engine/systems/combat';
 import { bestWorkerJob, knownGoodSpots, knownPower, pickProduction, pickResearch } from './economy';
+import { initiateDiplomacy } from './diplomacy';
 
 export interface AiDecision {
   action: Action;
@@ -45,6 +46,22 @@ export function decide(ctx: Ctx, state: GameState, pid: PlayerId): AiDecision {
         reason: pick.reason,
       });
       if (d) return d;
+    }
+  }
+
+  // 1b. diplomacy: at most one initiation per turn
+  // skip if a proposal was already sent this turn (AI-to-AI resolves immediately, leaving an event)
+  const alreadyProposed = state.events.some(
+    (e) =>
+      e.turn === state.turn &&
+      e.player === pid &&
+      (e.type === 'dealAccepted' || e.type === 'dealRejected' || e.type === 'dealCounter'),
+  );
+  if (!alreadyProposed) {
+    const diplo = initiateDiplomacy(ctx, state, pid);
+    if (diplo) {
+      const v = tryDecision({ action: diplo, reason: diploReason(diplo, state) });
+      if (v) return v;
     }
   }
 
@@ -385,4 +402,12 @@ function campaignOrders(ctx: Ctx, state: GameState, unit: Unit): AiDecision | nu
         action: { type: 'FORTIFY', player: pid, unit: unit.id },
         reason: `holding at ${staging.name} until the host is ready`,
       };
+}
+
+function diploReason(action: Action, state: GameState): string {
+  if (action.type !== 'PROPOSE_DEAL') return 'diplomacy';
+  const to = state.players[action.to].name;
+  if (action.give.peace) return `suing ${to} for peace`;
+  if (action.give.friendship) return `offering friendship to ${to}`;
+  return `proposing a deal to ${to}`;
 }
