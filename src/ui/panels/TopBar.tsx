@@ -19,6 +19,7 @@ export function TopBar() {
     gold += y.gold;
   }
 
+  const pending = game.proposals.filter((p) => p.to === viewer).length;
   const tech = player.researching ? gameCtx.rules.techs[player.researching] : null;
   const progress = tech ? Math.min(1, player.science / tech.cost) : 0;
   const turnsLeft = tech && science > 0 ? Math.ceil((tech.cost - player.science) / science) : null;
@@ -69,6 +70,13 @@ export function TopBar() {
         <span className="num">{score}</span>
         <span className="per-turn">/ {gameCtx.rules.settings.victory.scoreThreshold}</span>
       </span>
+      <button
+        className="btn btn--ghost"
+        onClick={() => appStore.set({ overlay: 'diplomacy' })}
+        title="Foreign affairs (G)"
+      >
+        Powers{pending > 0 ? ` ●` : ''}
+      </button>
       <button
         className="btn btn--ghost"
         onClick={() => appStore.set((s) => ({ aiLogOpen: !s.aiLogOpen }))}
