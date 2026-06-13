@@ -95,4 +95,8 @@ export const BUILDINGS: Record<string, BuildingDef> = {
     id: 'monastery', name: 'Monastery', cost: 96, yields: { culture: 2, science: 1 },
     requiresTech: 'theology', art: { glyph: 'temple' },
   },
+  cathedral: {
+    id: 'cathedral', name: 'Cathedral', cost: 150, yields: { culture: 4 },
+    requiresTech: 'architecture', art: { glyph: 'temple' },
+  },
 };

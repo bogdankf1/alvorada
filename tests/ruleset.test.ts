@@ -8,7 +8,9 @@ describe('standard ruleset', () => {
   });
 
   it('every non-starting tech unlocks something or leads somewhere', () => {
+    const CAPSTONE = 'scientific_method'; // science-victory capstone — intentionally terminal
     for (const tech of Object.values(STANDARD_RULESET.techs)) {
+      if (tech.id === CAPSTONE) continue;
       const unlocks = techUnlocks(STANDARD_RULESET, tech.id);
       const leadsTo = Object.values(STANDARD_RULESET.techs).some((t) =>
         t.prereqs.includes(tech.id),
