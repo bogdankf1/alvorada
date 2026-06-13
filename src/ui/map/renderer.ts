@@ -566,7 +566,9 @@ export class MapRenderer {
     const selCity = this.overlay.selectedCity !== null ? s.cities[this.overlay.selectedCity] : null;
     const target = sel ?? selCity;
     if (target) {
-      const pos = this.animatedPos(target as Unit) ?? hexToPixel({ q: target.q, r: target.r }, HEX);
+      const pos = sel
+        ? this.unitRenderPos(s, sel, this.animatedPos(sel))
+        : hexToPixel({ q: target.q, r: target.r }, HEX);
       const pulse = 0.55 + 0.3 * Math.sin(t / 510);
       hexPath(g, pos.x, pos.y, HEX - 2);
       g.strokeStyle = css(rgb(PALETTE.ivory), pulse);
@@ -620,83 +622,110 @@ export class MapRenderer {
     return null;
   }
 
+  /**
+   * Where a unit is drawn, and whether it's the tile's primary (centered) unit.
+   * When a military and a civilian share a tile one tucks to the corner; the
+   * *selected* unit is always primary so the selection ring lands on it.
+   */
+  unitRenderPos(s: GameState, u: Unit, anim: { x: number; y: number } | null): {
+    x: number;
+    y: number;
+    primary: boolean;
+  } {
+    const base = anim ?? hexToPixel({ q: u.q, r: u.r }, HEX);
+    if (anim) return { x: base.x, y: base.y, primary: true };
+    const partner = coLocatedPartner(s, this.rules, u);
+    if (!partner) return { x: base.x, y: base.y, primary: true };
+    const sel = this.overlay.selectedUnit;
+    let tuck: boolean;
+    if (sel === u.id) tuck = false;
+    else if (sel === partner.id) tuck = true;
+    else tuck = this.rules.units[u.def].class === 'civilian'; // default: civilian under escort
+    return { x: base.x + (tuck ? 10 : 0), y: base.y + (tuck ? -9 : 0), primary: !tuck };
+  }
+
   private paintUnits(g: CanvasRenderingContext2D, s: GameState, t: number): void {
     const vis = s.visibility[this.viewer];
+    const list: { u: Unit; x: number; y: number; primary: boolean; spent: boolean }[] = [];
     for (const id of sortedIds(s.units)) {
       const u = s.units[id];
       const idx = tileIndex({ q: u.q, r: u.r }, s.mapW, s.mapH);
-      const animPos = this.animatedPos(u);
-      if (u.owner !== this.viewer && vis[idx] !== VIS_VISIBLE && !animPos) continue;
-      const p = animPos ?? hexToPixel({ q: u.q, r: u.r }, HEX);
-      const civilian = this.rules.units[u.def].class === 'civilian';
-      const color = s.players[u.owner].color;
-      const spent = u.owner === this.viewer && u.moves <= 0 && !animPos;
-      const tucked = civilian && militaryShares(s, this.rules, u); // offset under an escort
-      const x = p.x + (tucked ? 10 : 0);
-      const y = p.y + (tucked ? -9 : 0);
-
-      g.save();
-      g.globalAlpha = spent ? 0.62 : 1;
-      // shadow
-      g.beginPath();
-      g.ellipse(x + 1.5, y + 12, 9.5, 3.2, 0, 0, Math.PI * 2);
-      g.fillStyle = 'rgba(10,14,10,0.3)';
-      g.fill();
-
-      if (civilian) {
-        chamferRect(g, x - 10.5, y - 10.5, 21, 21, 4);
-        g.fillStyle = shade(color, -0.12);
-        g.fill();
-        g.strokeStyle = shade(color, -0.45);
-        g.lineWidth = 2;
-        g.stroke();
-        chamferRect(g, x - 8, y - 8, 16, 16, 3);
-        g.strokeStyle = 'rgba(255,255,255,0.35)';
-        g.lineWidth = 1;
-        g.stroke();
-      } else {
-        g.beginPath();
-        g.arc(x, y, 12, 0, Math.PI * 2);
-        g.fillStyle = shade(color, -0.08);
-        g.fill();
-        g.strokeStyle = shade(color, -0.45);
-        g.lineWidth = 2.2;
-        g.stroke();
-        g.beginPath();
-        g.arc(x, y, 9.6, 0, Math.PI * 2);
-        g.strokeStyle = 'rgba(255,255,255,0.3)';
-        g.lineWidth = 1;
-        g.stroke();
-      }
-      g.save();
-      g.translate(x, y);
-      paintGlyph(g, this.rules.units[u.def].art.glyph);
-      g.restore();
-
-      // hp arc
-      if (u.hp < 100) {
-        const frac = u.hp / 100;
-        g.beginPath();
-        g.arc(x, y, 14.4, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * frac);
-        g.strokeStyle = frac > 0.6 ? '#7DA34C' : frac > 0.3 ? '#D9A441' : '#C25B4A';
-        g.lineWidth = 2.6;
-        g.lineCap = 'round';
-        g.stroke();
-      }
-      // fortify chevron
-      if (u.stance === 'fortified') {
-        g.beginPath();
-        g.moveTo(x - 5, y + 17.5);
-        g.lineTo(x, y + 14);
-        g.lineTo(x + 5, y + 17.5);
-        g.strokeStyle = css(rgb(PALETTE.brass), 0.95);
-        g.lineWidth = 2.2;
-        g.lineCap = 'round';
-        g.stroke();
-      }
-      g.restore();
-      void t;
+      const anim = this.animatedPos(u);
+      if (u.owner !== this.viewer && vis[idx] !== VIS_VISIBLE && !anim) continue;
+      const pos = this.unitRenderPos(s, u, anim);
+      const spent = u.owner === this.viewer && u.moves <= 0 && !anim;
+      list.push({ u, x: pos.x, y: pos.y, primary: pos.primary, spent });
     }
+    // tucked units paint first so the primary (and any selected) unit sits on top
+    list.sort((a, b) => (a.primary === b.primary ? a.u.id - b.u.id : a.primary ? 1 : -1));
+    for (const e of list) this.drawUnit(g, s, e.u, e.x, e.y, e.spent);
+    void t;
+  }
+
+  private drawUnit(g: CanvasRenderingContext2D, s: GameState, u: Unit, x: number, y: number, spent: boolean): void {
+    const civilian = this.rules.units[u.def].class === 'civilian';
+    const color = s.players[u.owner].color;
+
+    g.save();
+    g.globalAlpha = spent ? 0.62 : 1;
+    // shadow
+    g.beginPath();
+    g.ellipse(x + 1.5, y + 12, 9.5, 3.2, 0, 0, Math.PI * 2);
+    g.fillStyle = 'rgba(10,14,10,0.3)';
+    g.fill();
+
+    if (civilian) {
+      chamferRect(g, x - 10.5, y - 10.5, 21, 21, 4);
+      g.fillStyle = shade(color, -0.12);
+      g.fill();
+      g.strokeStyle = shade(color, -0.45);
+      g.lineWidth = 2;
+      g.stroke();
+      chamferRect(g, x - 8, y - 8, 16, 16, 3);
+      g.strokeStyle = 'rgba(255,255,255,0.35)';
+      g.lineWidth = 1;
+      g.stroke();
+    } else {
+      g.beginPath();
+      g.arc(x, y, 12, 0, Math.PI * 2);
+      g.fillStyle = shade(color, -0.08);
+      g.fill();
+      g.strokeStyle = shade(color, -0.45);
+      g.lineWidth = 2.2;
+      g.stroke();
+      g.beginPath();
+      g.arc(x, y, 9.6, 0, Math.PI * 2);
+      g.strokeStyle = 'rgba(255,255,255,0.3)';
+      g.lineWidth = 1;
+      g.stroke();
+    }
+    g.save();
+    g.translate(x, y);
+    paintGlyph(g, this.rules.units[u.def].art.glyph);
+    g.restore();
+
+    // hp arc
+    if (u.hp < 100) {
+      const frac = u.hp / 100;
+      g.beginPath();
+      g.arc(x, y, 14.4, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * frac);
+      g.strokeStyle = frac > 0.6 ? '#7DA34C' : frac > 0.3 ? '#D9A441' : '#C25B4A';
+      g.lineWidth = 2.6;
+      g.lineCap = 'round';
+      g.stroke();
+    }
+    // fortify chevron
+    if (u.stance === 'fortified') {
+      g.beginPath();
+      g.moveTo(x - 5, y + 17.5);
+      g.lineTo(x, y + 14);
+      g.lineTo(x + 5, y + 17.5);
+      g.strokeStyle = css(rgb(PALETTE.brass), 0.95);
+      g.lineWidth = 2.2;
+      g.lineCap = 'round';
+      g.stroke();
+    }
+    g.restore();
   }
 
   /** City whose nameplate covers the world point, if any. */
@@ -890,14 +919,15 @@ function cityIdAt(state: GameState, a: Axial): number | null {
   return null;
 }
 
-/** True when a military unit stands on the same tile as this civilian. */
-function militaryShares(state: GameState, rules: Ruleset, civ: Unit): boolean {
+/** The opposite-category unit (military↔civilian) sharing this unit's tile, if any. */
+function coLocatedPartner(state: GameState, rules: Ruleset, u: Unit): Unit | null {
+  const uCivilian = rules.units[u.def].class === 'civilian';
   for (const id of sortedIds(state.units)) {
-    const u = state.units[id];
-    if (u.id !== civ.id && u.q === civ.q && u.r === civ.r && rules.units[u.def].class !== 'civilian')
-      return true;
+    const o = state.units[id];
+    if (o.id === u.id || o.q !== u.q || o.r !== u.r) continue;
+    if (rules.units[o.def].class === 'civilian' !== uCivilian) return o;
   }
-  return false;
+  return null;
 }
 
 function tilesStamp(s: GameState): string {
