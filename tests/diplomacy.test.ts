@@ -279,3 +279,28 @@ describe('diplomacy validation hardening', () => {
     expect(s.relations[0][1].goldPerTurn).toBe(0); // flow collapsed
   });
 });
+
+import { initiateDiplomacy } from '../src/ai/diplomacy';
+
+describe('AI diplomacy initiation', () => {
+  it('an AI losing a war proposes peace to its attacker', () => {
+    const s = flatWorld(16, 10, 2);
+    meet(s, 0, 1);
+    declareWarBetween(s, 0, 1);
+    // player 0 is strong, player 1 is weak → player 1 should sue for peace
+    spawn(s, 0, 'swordsman', 3, 3);
+    spawn(s, 0, 'swordsman', 3, 4);
+    spawn(s, 1, 'warrior', 9, 6);
+    const action = initiateDiplomacy(ctx, s, 1);
+    expect(action?.type).toBe('PROPOSE_DEAL');
+    if (action?.type === 'PROPOSE_DEAL') {
+      expect(action.give.peace && action.take.peace).toBe(true);
+      expect(action.to).toBe(0);
+    }
+  });
+
+  it('returns null when there is nothing worth proposing', () => {
+    const s = flatWorld(16, 10, 2); // unmet, at peace
+    expect(initiateDiplomacy(ctx, s, 1)).toBeNull();
+  });
+});
