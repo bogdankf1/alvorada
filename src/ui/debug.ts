@@ -21,6 +21,7 @@ interface DebugApi {
   animProbe(id: number): { x: number; y: number; anims: number } | null;
   prodOptions(cityId: number): { kind: string; id: string; wonder: boolean }[];
   happiness(): { happy: number; unhappy: number; net: number; tier: string; connectedLuxuries: string[] } | null;
+  setSpecialists(cityId: number, specialist: string, count: number): void;
   debugAutoplay(turns: number): Promise<void>;
 }
 
@@ -73,6 +74,10 @@ export function installDebugBridge(): void {
     happiness() {
       const g = appStore.get().game;
       return g ? empireHappiness(gameCtx, g, appStore.get().viewingPlayer) : null;
+    },
+
+    setSpecialists(cityId: number, specialist: string, count: number) {
+      humanDispatch({ type: 'SET_SPECIALISTS', player: appStore.get().viewingPlayer, city: cityId, specialist: specialist as never, count });
     },
 
     /** Plays the viewer's turns with the AI brain — fills the world for visual checks. */

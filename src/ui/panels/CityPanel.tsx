@@ -2,6 +2,7 @@ import { gameCtx } from '../../app/driver';
 import { appStore, useApp } from '../../app/store';
 import { humanDispatch, isMyTurn } from '../actions';
 import {
+  allocateCitizens,
   cityYields,
   growthThreshold,
   itemCost,
@@ -9,6 +10,7 @@ import {
   purchaseCost,
 } from '../../engine/selectors';
 import type { ProductionItem } from '../../engine/types';
+import type { SpecialistType } from '../../data/types';
 import { YIELD_COLORS, YIELD_ICONS, IconCog, IconPeople } from '../icons';
 import { YIELD_KEYS } from '../../data/types';
 
@@ -35,6 +37,13 @@ export function CityPanel() {
   if (!city) return null;
   const mine = city.owner === viewer;
   const { total } = cityYields(gameCtx, game, city);
+  const alloc = allocateCitizens(gameCtx, game, city);
+  const slotTotals: Partial<Record<SpecialistType, number>> = {};
+  for (const b of city.buildings) {
+    const d = gameCtx.rules.buildings[b];
+    if (d.specialistSlots) slotTotals[d.specialistSlots.type] = (slotTotals[d.specialistSlots.type] ?? 0) + d.specialistSlots.count;
+  }
+  const specialistTypes = (Object.keys(slotTotals) as SpecialistType[]).sort();
   const need = growthThreshold(city.pop);
   const net = total.food - city.pop * gameCtx.rules.settings.foodConsumptionPerPop;
   const growTurns = net > 0 ? Math.ceil((need - city.food) / net) : null;
@@ -164,6 +173,27 @@ export function CityPanel() {
             </span>
           ))}
         </div>
+
+        {specialistTypes.length > 0 && (
+          <div className="city-specialists">
+            <h4>Specialists</h4>
+            {specialistTypes.map((t) => {
+              const assigned = alloc.specialists[t] ?? 0;
+              const total = slotTotals[t] ?? 0;
+              const pinned = city.forcedSpecialists?.[t] ?? assigned;
+              const set = (count: number) =>
+                humanDispatch({ type: 'SET_SPECIALISTS', player: viewer, city: city.id, specialist: t, count });
+              return (
+                <div key={t} className="specialist-row">
+                  <span className="spec-name">{gameCtx.rules.specialists[t].name}</span>
+                  <span className="spec-count">{assigned}/{total}</span>
+                  <button className="btn btn--xs" disabled={pinned <= 0} onClick={() => set(Math.max(0, pinned - 1))}>−</button>
+                  <button className="btn btn--xs" disabled={assigned >= total} onClick={() => set(Math.min(total, pinned + 1))}>+</button>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {city.hp < gameCtx.rules.settings.cityMaxHp && (
           <>
