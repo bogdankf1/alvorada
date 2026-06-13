@@ -558,6 +558,22 @@ export class MapRenderer {
         g.fill();
       }
     }
+    // trade routes
+    for (const id of Object.keys(s.tradeRoutes).map(Number).sort((a, b) => a - b)) {
+      const route = s.tradeRoutes[id];
+      if (route.path.length < 2) continue;
+      g.strokeStyle = 'rgba(190,150,70,0.55)';
+      g.lineWidth = 2;
+      g.setLineDash([5, 4]);
+      g.beginPath();
+      route.path.forEach((idx, i) => {
+        const p = hexToPixel(axialOfIndex(idx, s.mapW), HEX);
+        if (i === 0) g.moveTo(p.x, p.y);
+        else g.lineTo(p.x, p.y);
+      });
+      g.stroke();
+      g.setLineDash([]);
+    }
   }
 
   private paintOverlaysOver(g: CanvasRenderingContext2D, s: GameState, t: number): void {
