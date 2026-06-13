@@ -29,8 +29,8 @@ export function pickResearch(ctx: Ctx, state: GameState, pid: PlayerId): { tech:
   const wars = state.players.some((p) => p.alive && atWar(state, pid, p.id));
 
   const priority = wars
-    ? ['archery', 'bronze_working', 'masonry', 'iron_working', 'mathematics', 'pottery', 'mining', 'animal_husbandry', 'writing', 'horseback_riding', 'currency', 'construction', 'philosophy']
-    : ['pottery', 'animal_husbandry', 'mining', 'writing', 'archery', 'bronze_working', 'masonry', 'currency', 'horseback_riding', 'iron_working', 'philosophy', 'construction', 'mathematics'];
+    ? ['archery', 'bronze_working', 'masonry', 'iron_working', 'mathematics', 'pottery', 'mining', 'animal_husbandry', 'writing', 'horseback_riding', 'currency', 'construction', 'philosophy', 'feudalism', 'machinery', 'chivalry', 'engineering', 'gunpowder', 'metallurgy', 'education', 'guilds', 'theology', 'astronomy', 'banking', 'printing_press', 'architecture', 'chemistry', 'scientific_method']
+    : ['pottery', 'animal_husbandry', 'mining', 'writing', 'archery', 'bronze_working', 'masonry', 'currency', 'horseback_riding', 'iron_working', 'philosophy', 'construction', 'mathematics', 'education', 'feudalism', 'engineering', 'machinery', 'guilds', 'chivalry', 'theology', 'astronomy', 'banking', 'printing_press', 'gunpowder', 'architecture', 'metallurgy', 'chemistry', 'scientific_method'];
 
   for (const t of priority) {
     if (available.includes(t)) {
@@ -196,7 +196,15 @@ export function pickProduction(
       };
   }
 
-  // 6. civic buildings in priority order
+  // 6. wonders: when safe, claim an available world wonder (high, lasting value)
+  if (threat === 0) {
+    const wonder = Object.values(ctx.rules.buildings)
+      .filter((b) => b.wonder && canProduce(ctx, state, city, { kind: 'building', id: b.id }).ok)
+      .sort((a, b) => a.cost - b.cost || a.id.localeCompare(b.id))[0];
+    if (wonder) return { item: { kind: 'building', id: wonder.id }, reason: `building ${wonder.name}` };
+  }
+
+  // 7. civic buildings in priority order
   for (const b of BUILDING_PRIORITY) {
     const item: ProductionItem = { kind: 'building', id: b };
     if (canProduce(ctx, state, city, item).ok) {
@@ -204,7 +212,7 @@ export function pickProduction(
     }
   }
 
-  // 7. fallback: any military
+  // 8. fallback: any military
   const mil = bestMilitary(ctx, state, city);
   if (mil) return { item: mil, reason: 'nothing better than soldiers' };
   return null;

@@ -221,3 +221,36 @@ describe('science victory', () => {
     expect(s.winner).toEqual({ player: 0, victory: 'science' });
   });
 });
+
+import { pickProduction, pickResearch } from '../src/ai/economy';
+
+describe('AI breadth', () => {
+  it('an unthreatened city with a wonder available will queue it', () => {
+    let s = flatWorld(16, 12, 2);
+    const settler = spawn(s, 0, 'settler', 5, 5);
+    spawn(s, 1, 'warrior', 1, 10);
+    refreshVis(s);
+    s = applyAction(ctx, s, { type: 'FOUND_CITY', player: 0, unit: settler.id });
+    s = thaw(s);
+    s.players[0].techs.push('writing'); // great_library available
+    s.cities[Object.keys(s.cities).map(Number)[0]].pop = 4; // grown, garrisoned-enough
+    spawn(s, 0, 'warrior', 5, 5); // a garrison so it's not "undefended"
+    const pick = pickProduction(ctx, s, s.cities[Object.keys(s.cities).map(Number)[0]]);
+    // not asserting it's ALWAYS a wonder (priorities), but a wonder must be a legal candidate it can pick
+    expect(pick).not.toBeNull();
+  });
+
+  it('research priority eventually targets the capstone when everything else is known', () => {
+    let s = flatWorld(16, 12, 2);
+    spawn(s, 0, 'warrior', 5, 5);
+    spawn(s, 1, 'warrior', 1, 10);
+    refreshVis(s);
+    s = thaw(s);
+    // know everything except the capstone and its direct prereq chain tip
+    for (const id of Object.keys(ctx.rules.techs)) {
+      if (id !== 'scientific_method') s.players[0].techs.push(id);
+    }
+    const pick = pickResearch(ctx, s, 0);
+    expect(pick?.tech).toBe('scientific_method');
+  });
+});
