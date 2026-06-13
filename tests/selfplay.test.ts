@@ -95,3 +95,18 @@ describe('balance telemetry', () => {
     expect(rows.length).toBe(4);
   }, 120_000);
 });
+
+describe('AI diplomacy in self-play', () => {
+  it('rivals meet and at least one diplomacy action occurs over a long game', () => {
+    const { state, log } = runGame(424242, 120);
+    const diploActions = log.filter(
+      (a) => a.type === 'PROPOSE_DEAL' || a.type === 'DENOUNCE' || a.type === 'RESPOND_DEAL',
+    ).length;
+    // met someone
+    const metSomeone = state.players.some((_p, i) =>
+      state.players.some((_, j) => i !== j && state.relations[i][j].met),
+    );
+    expect(metSomeone).toBe(true);
+    expect(diploActions).toBeGreaterThan(0);
+  }, 120_000);
+});
