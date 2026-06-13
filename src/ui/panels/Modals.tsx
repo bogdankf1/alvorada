@@ -112,7 +112,9 @@ export function VictoryOverlay() {
             ? `${winner.name} of ${gameCtx.rules.civs[winner.civ].name} ${
                 game.winner!.victory === 'conquest'
                   ? 'has conquered the known world'
-                  : 'leads civilization into a new age'
+                  : game.winner!.victory === 'science'
+                    ? 'ushers in a new age of reason'
+                    : 'leads civilization into a new age'
               } — turn ${game.turn}`
             : 'Your last city is lost, your people scattered.'}
         </div>
