@@ -100,7 +100,8 @@ describe('AI diplomacy in self-play', () => {
   it('rivals meet and at least one diplomacy action occurs over a long game', () => {
     const { state, log } = runGame(424242, 120);
     const diploActions = log.filter(
-      (a) => a.type === 'PROPOSE_DEAL' || a.type === 'DENOUNCE' || a.type === 'RESPOND_DEAL',
+      // AI-only game: PROPOSE_DEAL auto-resolves and AIs denounce; RESPOND_DEAL is human-only
+      (a) => a.type === 'PROPOSE_DEAL' || a.type === 'DENOUNCE',
     ).length;
     // met someone
     const metSomeone = state.players.some((_p, i) =>

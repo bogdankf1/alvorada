@@ -37,6 +37,11 @@ const FRIENDSHIP_GATE_PENALTY = -1000; // below the trust bar: won't befriend at
 
 const BAND_ORDER: AttitudeBand[] = ['hostile', 'wary', 'neutral', 'cordial', 'friendly'];
 
+/** Ordinal of an attitude band (hostile=0 … friendly=4); the one place the order lives. */
+export function bandRank(band: AttitudeBand): number {
+  return BAND_ORDER.indexOf(band);
+}
+
 // Whether any two owned territories are adjacent. Scans tiles (~hundreds–1300 at game
 // scale) — microseconds, and this is the engine layer (no render loop).
 function territoriesTouch(state: GameState, a: PlayerId, b: PlayerId): boolean {
@@ -122,7 +127,7 @@ function sideValue(
   }
   if (items.friendship) {
     const band = attitude(ctx, state, owner, counterparty).band;
-    v += BAND_ORDER.indexOf(band) >= BAND_ORDER.indexOf(d.minFriendBand) ? FRIENDSHIP_VALUE : FRIENDSHIP_GATE_PENALTY;
+    v += bandRank(band) >= bandRank(d.minFriendBand) ? FRIENDSHIP_VALUE : FRIENDSHIP_GATE_PENALTY;
   }
   return v;
 }

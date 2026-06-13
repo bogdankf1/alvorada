@@ -299,6 +299,35 @@ describe('AI diplomacy initiation', () => {
     }
   });
 
+  it('sweetens a peace offer with gold when decisively outmatched', () => {
+    const s = flatWorld(16, 10, 2);
+    meet(s, 0, 1);
+    declareWarBetween(s, 0, 1);
+    s.players[1].gold = 200;
+    // player 0 vastly stronger (>2x) → player 1 sweetens the peace bribe
+    for (let i = 0; i < 4; i++) spawn(s, 0, 'swordsman', 3 + (i % 3), 3 + Math.floor(i / 3));
+    spawn(s, 1, 'warrior', 9, 6);
+    const action = initiateDiplomacy(ctx, s, 1);
+    expect(action?.type).toBe('PROPOSE_DEAL');
+    if (action?.type === 'PROPOSE_DEAL') expect(action.give.gold).toBeGreaterThan(0);
+  });
+
+  it('offers friendship to a warm, peaceful, met rival', () => {
+    const s = flatWorld(16, 10, 2);
+    meet(s, 0, 1);
+    // lift player 1's view of player 0 to at least the friendship band via mutual friendship... no —
+    // instead engineer a warm attitude: friendship factor not yet set, so use favorable dealings.
+    // Simplest: grant player 0 → player 1 open borders + gold/turn so player 1 sees "favorable dealings",
+    // pushing the band to cordial (neutral 0 + favorableDeal 15 = 15 = cordial threshold).
+    s.relations[0][1].openBordersUntil = s.turn + 10; // player 0 grants player 1 passage (favorable to 1)
+    const action = initiateDiplomacy(ctx, s, 1);
+    expect(action?.type).toBe('PROPOSE_DEAL');
+    if (action?.type === 'PROPOSE_DEAL') {
+      expect(action.give.friendship && action.take.friendship).toBe(true);
+      expect(action.to).toBe(0);
+    }
+  });
+
   it('returns null when there is nothing worth proposing', () => {
     const s = flatWorld(16, 10, 2); // unmet, at peace
     expect(initiateDiplomacy(ctx, s, 1)).toBeNull();

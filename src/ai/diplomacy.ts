@@ -5,10 +5,14 @@
  * sorted iteration, integer math, first sensible action wins.
  */
 import type { Action, Ctx, GameState, PlayerId } from '../engine/types';
-import { attitude } from '../engine/diplomacy-eval';
+import { attitude, bandRank } from '../engine/diplomacy-eval';
 import { atWar, hasMet, militaryPower } from '../engine/selectors';
 
-const ORDER = ['hostile', 'wary', 'neutral', 'cordial', 'friendly'] as const;
+// AI policy thresholds for suing for peace. (Attitude/friendship thresholds live in
+// ruleset settings; these few war-pressure ratios are AI judgment, kept named here.)
+const PEACE_WHEN_OUTMATCHED = 1.4; // sue for peace once the enemy is this much stronger
+const SWEETEN_WHEN_OUTMATCHED = 2; // throw in gold once they're this much stronger
+const SWEETEN_MAX_GOLD = 50; // ceiling on the peace bribe
 
 /** At most one diplomacy action per call (non-spammy). Returns null if nothing fits. */
 export function initiateDiplomacy(ctx: Ctx, state: GameState, pid: PlayerId): Action | null {
@@ -23,9 +27,9 @@ export function initiateDiplomacy(ctx: Ctx, state: GameState, pid: PlayerId): Ac
     if (!atWar(state, pid, o)) continue;
     const mine = militaryPower(ctx, state, pid);
     const theirs = militaryPower(ctx, state, o);
-    if (theirs > mine * 1.4) {
+    if (theirs > mine * PEACE_WHEN_OUTMATCHED) {
       // offer peace; sweeten with a little gold if we have it and we're really behind
-      const sweeten = theirs > mine * 2 ? Math.min(state.players[pid].gold, 50) : 0;
+      const sweeten = theirs > mine * SWEETEN_WHEN_OUTMATCHED ? Math.min(state.players[pid].gold, SWEETEN_MAX_GOLD) : 0;
       // avoid re-proposing the same pending offer
       if (!state.proposals.some((pr) => pr.from === pid && pr.to === o)) {
         return {
@@ -40,7 +44,7 @@ export function initiateDiplomacy(ctx: Ctx, state: GameState, pid: PlayerId): Ac
   for (const o of others) {
     if (atWar(state, pid, o) || state.relations[pid][o].friends) continue;
     const band = attitude(ctx, state, pid, o).band;
-    if (ORDER.indexOf(band) >= ORDER.indexOf(d.minFriendBand)) {
+    if (bandRank(band) >= bandRank(d.minFriendBand)) {
       if (!state.proposals.some((pr) => pr.from === pid && pr.to === o)) {
         return {
           type: 'PROPOSE_DEAL', player: pid, to: o,
