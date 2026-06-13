@@ -7,7 +7,7 @@ import type { Ctx, GameState, PlayerId, TradeRoute, Unit, City } from '../types'
 import { sortedIds } from '../types';
 import { tileIndex } from '../hex';
 import { atWar, isCivilian, tradeOrigin } from '../selectors';
-import { findPath } from '../map/pathfind';
+import { landPath } from '../map/pathfind';
 import { recomputeVisibility } from '../map/visibility';
 import { pushEvent } from '../events';
 
@@ -15,8 +15,7 @@ export function establishTradeRoute(ctx: Ctx, state: GameState, unit: Unit, targ
   const pid = unit.owner;
   const origin = tradeOrigin(ctx, state, pid, target);
   if (!origin) return; // validation guarantees one; defensive
-  const probe: Unit = { ...unit, q: origin.q, r: origin.r };
-  const steps = findPath(ctx, state, probe, { q: target.q, r: target.r }) ?? [];
+  const steps = landPath(ctx, state, { q: origin.q, r: origin.r }, { q: target.q, r: target.r }) ?? [];
   const path = [
     tileIndex({ q: origin.q, r: origin.r }, state.mapW, state.mapH),
     ...steps.map((a) => tileIndex(a, state.mapW, state.mapH)),

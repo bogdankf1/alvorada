@@ -169,6 +169,58 @@ export function findPath(ctx: Ctx, state: GameState, unit: Unit, dest: Axial): A
   return path;
 }
 
+/**
+ * Border-agnostic land A* — blocks ONLY impassable terrain (water/mountains).
+ * Ignores tile ownership, units, fog, and cities. Used for trade-route paths
+ * and land-connectivity validation so political borders never affect routing.
+ * Returns the step list EXCLUDING the start tile, or null if unreachable.
+ */
+export function landPath(ctx: Ctx, state: GameState, from: Axial, to: Axial): Axial[] | null {
+  const W = state.mapW;
+  const H = state.mapH;
+  const start = tileIndex(from, W, H);
+  const goal = tileIndex(to, W, H);
+  if (goal < 0 || start === goal) return null;
+  if (isImpassable(ctx, state, goal)) return null;
+
+  const dist = new Map<number, number>();
+  const prev = new Map<number, number>();
+  const heap = new MinHeap();
+  const h0 = hexDistance(from, to);
+  dist.set(start, 0);
+  heap.push({ idx: start, f: h0, h: h0 });
+
+  while (heap.size) {
+    const cur = heap.pop()!;
+    if (cur.idx === goal) break;
+    const curDist = dist.get(cur.idx)!;
+    if (cur.f - cur.h > curDist) continue; // stale entry
+    const a = axialOfIndex(cur.idx, W);
+    for (const nb of neighbors(a)) {
+      const j = tileIndex(nb, W, H);
+      if (j < 0 || isImpassable(ctx, state, j)) continue;
+      const nd = curDist + 1; // uniform step cost
+      const old = dist.get(j);
+      if (old === undefined || nd < old) {
+        dist.set(j, nd);
+        prev.set(j, cur.idx);
+        const h = hexDistance(nb, to);
+        heap.push({ idx: j, f: nd + h, h });
+      }
+    }
+  }
+
+  if (!dist.has(goal)) return null;
+  const path: Axial[] = [];
+  let cur = goal;
+  while (cur !== start) {
+    path.push(axialOfIndex(cur, W));
+    cur = prev.get(cur)!;
+  }
+  path.reverse();
+  return path;
+}
+
 /** Tiles reachable this turn with remaining move points (enter-if-any-mp rule). */
 export function reachableTiles(ctx: Ctx, state: GameState, unit: Unit): Map<number, number> {
   const W = state.mapW;

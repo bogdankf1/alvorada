@@ -4,7 +4,7 @@
  */
 import type { Action, Axial, Ctx, GameState, Unit, DealItems } from './types';
 import { VIS_VISIBLE } from './types';
-import { axialOfIndex, hexDistance, neighbors, tileIndex } from './hex';
+import { hexDistance, tileIndex } from './hex';
 import {
   atWar,
   hasMet,
@@ -19,7 +19,7 @@ import {
   tileOwner,
   tradeOrigin,
 } from './selectors';
-import { moveRulesFor } from './map/pathfind';
+import { landPath, moveRulesFor } from './map/pathfind';
 
 export type Validation = { ok: true } | { ok: false; reason: string };
 
@@ -224,7 +224,7 @@ export function validateAction(ctx: Ctx, state: GameState, action: Action): Vali
         if (!hasMet(state, action.player, target.owner)) return fail('you have not met this power');
         if (atWar(state, action.player, target.owner)) return fail('cannot trade during war');
       }
-      if (!hasLandRoute(ctx, state, origin, { q: unit.q, r: unit.r }))
+      if (!landPath(ctx, state, { q: origin.q, r: origin.r }, { q: unit.q, r: unit.r }))
         return fail('no land route to that city');
       const dup = Object.values(state.tradeRoutes).some(
         (r) => r.owner === action.player && r.fromCity === origin.id && r.toCity === target.id,
@@ -314,28 +314,6 @@ function validateDealItems(
   return { ok: true };
 }
 
-/** BFS terrain-only reachability: can a land unit reach `dest` from `origin`
- *  ignoring political borders? Returns false only when water/mountains block
- *  every path — i.e. there is literally no land corridor between the cities. */
-function hasLandRoute(ctx: Ctx, state: GameState, origin: { q: number; r: number }, dest: { q: number; r: number }): boolean {
-  const start = tileIndex(origin, state.mapW, state.mapH);
-  const goal = tileIndex(dest, state.mapW, state.mapH);
-  if (start === goal) return true;
-  const visited = new Set<number>([start]);
-  const queue: number[] = [start];
-  while (queue.length) {
-    const cur = queue.shift()!;
-    for (const nb of neighbors(axialOfIndex(cur, state.mapW))) {
-      const j = tileIndex(nb, state.mapW, state.mapH);
-      if (j < 0 || visited.has(j)) continue;
-      if (isImpassable(ctx, state, j)) continue;
-      if (j === goal) return true;
-      visited.add(j);
-      queue.push(j);
-    }
-  }
-  return false;
-}
 
 function ownUnit(
   state: GameState,

@@ -155,6 +155,23 @@ describe('trade route severance', () => {
   });
 });
 
+describe('trade route path corridor', () => {
+  it('an international route stores a multi-tile land corridor (not just the origin tile)', () => {
+    let s = metPeaceCities();
+    const theirCity = Object.values(s.cities).find((c) => c.owner === 1)!;
+    const myCity = Object.values(s.cities).find((c) => c.owner === 0)!;
+    const car = spawn(s, 0, 'caravan', theirCity.q - 1, theirCity.r);
+    refreshVis(s);
+    s = applyAction(ctx, s, { type: 'ESTABLISH_TRADE_ROUTE', player: 0, unit: car.id, targetCity: theirCity.id });
+    s = thaw(s);
+    const route = Object.values(s.tradeRoutes)[0];
+    expect(route.kind).toBe('international');
+    expect(route.path.length).toBeGreaterThan(1);
+    expect(route.path[0]).toBe(idxOf(s, myCity.q, myCity.r));
+    expect(route.path[route.path.length - 1]).toBe(idxOf(s, theirCity.q, theirCity.r));
+  });
+});
+
 describe('trade route reachability', () => {
   it('rejects establish when no land route exists between origin and target', () => {
     // twoCities: 24x12 grassland map, city A at (4,5), city B at (12,5), player 0 owns both.
