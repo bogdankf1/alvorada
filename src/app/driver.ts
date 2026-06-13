@@ -40,6 +40,9 @@ const TOAST_TYPES = new Set([
   'dealBroken',
   'denounce',
   'wonderBuilt',
+  'unhappy',
+  'veryUnhappy',
+  'luxuryConnected',
 ]);
 
 export interface DispatchResult {

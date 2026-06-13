@@ -6,7 +6,7 @@
 import type { Ctx, GameState, PlayerId } from '../types';
 import { sortedIds } from '../types';
 import { tileIndex } from '../hex';
-import { cityAt, tileOwner, playerCities } from '../selectors';
+import { cityAt, tileOwner, playerCities, empireHappiness } from '../selectors';
 import { recomputeVisibility } from '../map/visibility';
 import { pushEvent } from '../events';
 import { findPath } from '../map/pathfind';
@@ -68,7 +68,12 @@ export function beginTurn(ctx: Ctx, state: GameState, pid: PlayerId): void {
         const imp = ctx.rules.improvements[u.order.improvement];
         const tile = state.tiles[idx];
         if (imp.clearsFeature) tile.feature = null;
-        else tile.improvement = imp.id;
+        else {
+          tile.improvement = imp.id;
+          const res = tile.resource ? ctx.rules.resources[tile.resource] : null;
+          if (res && res.kind === 'luxury' && res.improvedBy === imp.id)
+            pushEvent(state, { player: pid, type: 'luxuryConnected', msg: `${res.name} now graces your cities` });
+        }
         u.order = null;
         pushEvent(state, {
           player: pid,
@@ -135,6 +140,13 @@ export function beginTurn(ctx: Ctx, state: GameState, pid: PlayerId): void {
 
   // 3b. diplomacy obligations: pay tribute, expire pacts & stale proposals, decay grudges
   processObligations(ctx, state, pid);
+
+  // 3c. happiness mood: warn while the empire is unhappy
+  const mood = empireHappiness(ctx, state, pid);
+  if (mood.tier === 'veryUnhappy')
+    pushEvent(state, { player: pid, type: 'veryUnhappy', msg: `${player.name}'s empire is in turmoil (happiness ${mood.net})` });
+  else if (mood.tier === 'unhappy')
+    pushEvent(state, { player: pid, type: 'unhappy', msg: `${player.name}'s people are unhappy (happiness ${mood.net})` });
 
   // 4. fresh eyes
   recomputeVisibility(ctx, state, pid);

@@ -112,3 +112,16 @@ describe('occupied cities', () => {
     expect(before - empireHappiness(ctx, s, 1).unhappy).toBe(3); // occupiedExtra cleared
   });
 });
+
+describe('happiness events', () => {
+  it('an unhappy empire emits a warning event at its turn start', () => {
+    let s = flatWorld(16, 12, 1);
+    const settler = spawn(s, 0, 'settler', 5, 5);
+    refreshVis(s);
+    s = applyAction(ctx, s, { type: 'FOUND_CITY', player: 0, unit: settler.id });
+    s = thaw(s);
+    s.cities[Object.keys(s.cities).map(Number)[0]].pop = 30; // deeply unhappy
+    s = applyAction(ctx, s, { type: 'END_TURN', player: 0 }); // single player → wraps to its own turn start
+    expect(s.events.some((e) => e.type === 'unhappy' || e.type === 'veryUnhappy')).toBe(true);
+  });
+});
