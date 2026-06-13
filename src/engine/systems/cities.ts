@@ -20,6 +20,7 @@ import {
 import { recomputeVisibility } from '../map/visibility';
 import { pushEvent } from '../events';
 import { captureCivilian } from './movement';
+import { checkScienceVictory } from './victory';
 
 export function nextCityName(ctx: Ctx, state: GameState, pid: PlayerId): string {
   const player = state.players[pid];
@@ -117,6 +118,7 @@ export function completeWonder(ctx: Ctx, state: GameState, city: City, wonderId:
         )[0];
         state.players[city.owner].techs.push(pick);
         pushEvent(state, { player: city.owner, type: 'techDone', msg: `${ctx.rules.techs[pick].name} revealed by ${ctx.rules.buildings[wonderId].name}!` });
+        checkScienceVictory(ctx, state, city.owner); // a free capstone tech still wins
       }
     } else if (eff.kind === 'freeUnit') {
       for (let i = 0; i < eff.count; i++) placeProducedUnit(ctx, state, city, eff.unit);
