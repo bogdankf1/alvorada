@@ -65,6 +65,16 @@ export function atWar(state: GameState, a: PlayerId, b: PlayerId): boolean {
   return a !== b && state.relations[a][b].status === 'war';
 }
 
+export function hasMet(state: GameState, a: PlayerId, b: PlayerId): boolean {
+  return a === b || state.relations[a][b].met;
+}
+
+export function metPlayers(state: GameState, viewer: PlayerId): PlayerId[] {
+  return state.players
+    .filter((p) => p.alive && p.id !== viewer && state.relations[viewer][p.id].met)
+    .map((p) => p.id);
+}
+
 export function tileOwner(state: GameState, idx: number): PlayerId | null {
   const cityId = state.tiles[idx].ownerCity;
   return cityId === null ? null : (state.cities[cityId]?.owner ?? null);

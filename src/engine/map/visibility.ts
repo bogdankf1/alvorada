@@ -36,6 +36,23 @@ export function recomputeVisibility(ctx: Ctx, state: GameState, player: PlayerId
     const ownerCity = state.tiles[i].ownerCity;
     if (ownerCity !== null && state.cities[ownerCity]?.owner === player) vis[i] = VIS_VISIBLE;
   }
+
+  // first contact: meeting a rival's unit or city on a visible tile sets `met` both ways
+  const mark = (other: PlayerId) => {
+    if (other === player) return;
+    state.relations[player][other].met = true;
+    state.relations[other][player].met = true;
+  };
+  for (const id of sortedIds(state.units)) {
+    const u = state.units[id];
+    if (u.owner === player) continue;
+    if (vis[tileIndex({ q: u.q, r: u.r }, state.mapW, state.mapH)] === VIS_VISIBLE) mark(u.owner);
+  }
+  for (const id of sortedIds(state.cities)) {
+    const c = state.cities[id];
+    if (c.owner === player) continue;
+    if (vis[tileIndex({ q: c.q, r: c.r }, state.mapW, state.mapH)] === VIS_VISIBLE) mark(c.owner);
+  }
 }
 
 export function isVisible(state: GameState, player: PlayerId, idx: number): boolean {
