@@ -1,11 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { ctx, flatWorld, spawn, refreshVis, thaw, declareWarBetween } from './helpers';
+import { ctx, flatWorld, spawn, refreshVis, thaw, declareWarBetween, idxOf } from './helpers';
 import { applyAction } from '../src/engine/reducer';
 import { validateAction } from '../src/engine/validate';
 import { cityYields } from '../src/engine/selectors';
 import { processTradeRoutes } from '../src/engine/systems/trade';
 import { captureCity } from '../src/engine/systems/cities';
 import { axialOfIndex } from '../src/engine/hex';
+import { VIS_EXPLORED } from '../src/engine/types';
 
 export function twoCities(): ReturnType<typeof flatWorld> {
   let s = flatWorld(24, 12, 2);
@@ -151,5 +152,40 @@ describe('trade route severance', () => {
     expect(Object.keys(s.tradeRoutes).length).toBe(1);
     captureCity(ctx, s, s.cities[c1], 1);
     expect(Object.keys(s.tradeRoutes).length).toBe(0);
+  });
+});
+
+describe('trade route reachability', () => {
+  it('rejects establish when no land route exists between origin and target', () => {
+    // twoCities: 24x12 grassland map, city A at (4,5), city B at (12,5), player 0 owns both.
+    const s = twoCities();
+    const [c0, c1] = Object.keys(s.cities).map(Number);
+
+    // Cut a 3-column-wide water barrier (q=7,8,9) across the full map height.
+    // This severs all land paths between the two cities.
+    for (let q = 7; q <= 9; q++) {
+      for (let r = 0; r < s.mapH; r++) {
+        const idx = idxOf(s, q, r);
+        s.tiles[idx].terrain = 'ocean';
+        // Mark as explored for player 0 so pathfinding treats it as impassable water.
+        s.visibility[0][idx] = VIS_EXPLORED;
+      }
+    }
+
+    const car = spawn(s, 0, 'caravan', 11, 5); // adjacent to city B at (12,5)
+    refreshVis(s);
+
+    // Sanity: target city exists and is accessible placement-wise (caravan is adjacent).
+    expect(s.cities[c1]).toBeDefined();
+    void c0;
+
+    const result = validateAction(ctx, s, {
+      type: 'ESTABLISH_TRADE_ROUTE',
+      player: 0,
+      unit: car.id,
+      targetCity: c1,
+    });
+    expect(result.ok).toBe(false);
+    expect((result as { ok: false; reason: string }).reason).toBe('no land route to that city');
   });
 });
