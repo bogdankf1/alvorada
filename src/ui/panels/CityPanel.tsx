@@ -21,6 +21,7 @@ function wonderBlurb(b: import('../../data/types').BuildingDef): string {
     case 'freeTech': return 'World Wonder — grants a free technology';
     case 'freeUnit': return `World Wonder — grants ${e.count} ${e.unit}(s)`;
     case 'cultureBurst': return `World Wonder — +${e.amount} culture`;
+    case 'happiness': return `World Wonder — +${e.amount} empire happiness`;
   }
 }
 

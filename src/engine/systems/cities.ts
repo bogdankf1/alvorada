@@ -125,10 +125,10 @@ export function completeWonder(ctx: Ctx, state: GameState, city: City, wonderId:
     } else if (eff.kind === 'cultureBurst') {
       city.culture += eff.amount;
     } else {
-      // empireYields / cityDefense are ongoing (read by selectors) — nothing to fire here.
+      // empireYields / cityDefense / happiness are ongoing (read by selectors) — nothing to fire here.
       // This assignment is a compile-time exhaustiveness guard: if a new ONE-TIME effect
       // kind is added, TypeScript will error here until it's handled above.
-      const _ongoing: { kind: 'empireYields' } | { kind: 'cityDefense' } = eff;
+      const _ongoing: { kind: 'empireYields' } | { kind: 'cityDefense' } | { kind: 'happiness' } = eff;
       void _ongoing;
     }
   }

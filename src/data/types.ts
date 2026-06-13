@@ -16,8 +16,14 @@ export type PartialYields = Partial<Yields>;
 export const YIELD_KEYS = ['food', 'production', 'gold', 'science', 'culture'] as const;
 export type YieldKey = (typeof YIELD_KEYS)[number];
 
+export type SpecialistType = 'scientist' | 'merchant' | 'artist' | 'engineer';
+export interface SpecialistDef {
+  name: string;
+  yields: PartialYields;
+}
+
 export type UnitClass = 'civilian' | 'melee' | 'ranged' | 'mounted' | 'siege';
-export type UnitAbility = 'foundCity' | 'improve';
+export type UnitAbility = 'foundCity' | 'improve' | 'trade';
 
 export interface TerrainDef {
   id: string;
@@ -51,8 +57,9 @@ export interface FeatureDef {
 export interface ResourceDef {
   id: string;
   name: string;
-  kind: 'bonus' | 'strategic';
+  kind: 'bonus' | 'strategic' | 'luxury';
   yields: PartialYields; // delta, applies once the owner has revealedBy
+  happiness?: number; // luxury only: empire happiness when connected (default settings.happiness.luxuryHappiness)
   revealedBy?: string; // tech id; undefined = visible from the start
   improvedBy?: string; // improvement id that activates it (undefined = unimprovable)
   bonusImproved?: PartialYields; // extra delta once the matching improvement exists
@@ -93,7 +100,8 @@ export type WonderEffect =
   | { kind: 'cityDefense'; strength: number } // +strength to all owner cities
   | { kind: 'freeTech' } // grant the cheapest available tech, once
   | { kind: 'freeUnit'; unit: string; count: number } // spawn units in the city, once
-  | { kind: 'cultureBurst'; amount: number }; // add culture to the city, once
+  | { kind: 'cultureBurst'; amount: number } // add culture to the city, once
+  | { kind: 'happiness'; amount: number }; // empire-wide happiness while the owner holds the wonder
 
 export interface BuildingDef {
   id: string;
@@ -106,6 +114,9 @@ export interface BuildingDef {
   unbuildable?: boolean; // e.g. palace: granted, never produced
   wonder?: boolean; // a one-per-game World Wonder
   effect?: WonderEffect; // optional signature effect (beyond `yields`)
+  happiness?: number; // empire-wide happiness contributed per city that has this building
+  pacifies?: boolean; // clears an occupied city's unrest (Courthouse)
+  specialistSlots?: { type: SpecialistType; count: number };
   art: { glyph: string };
 }
 
@@ -129,6 +140,28 @@ export interface CivDef {
 export interface EraDef {
   id: string;
   name: string;
+}
+
+export interface HappinessSettings {
+  baseEmpire: number;
+  perCity: number;
+  perPop: number;
+  occupiedExtra: number;
+  luxuryHappiness: number;
+  unhappyGrowthDivisor: number;
+  veryUnhappyAt: number;
+  veryUnhappyProdPenaltyPct: number;
+}
+export interface TradeRouteSettings {
+  caravanRange: number;
+  duration: number;
+  domestic: PartialYields;
+  international: PartialYields;
+  internationalScience: number;
+  internationalScienceTech: string;
+  destinationGold: number;
+  friendshipBonusPct: number;
+  pillageBounty: number;
 }
 
 export interface RulesetSettings {
@@ -157,6 +190,8 @@ export interface RulesetSettings {
   borderMaxRadius: number;
   score: { city: number; pop: number; tech: number; strengthPer: number };
   victory: { scoreThreshold: number; turnLimit: number; scienceCapstone: string };
+  happiness: HappinessSettings;
+  tradeRoute: TradeRouteSettings;
   startingUnits: string[];
   diplomacy: DiplomacySettings;
 }
@@ -172,6 +207,7 @@ export interface Ruleset {
   buildings: Record<string, BuildingDef>;
   techs: Record<string, TechDef>;
   civs: Record<string, CivDef>;
+  specialists: Record<SpecialistType, SpecialistDef>;
   eras: EraDef[];
   settings: RulesetSettings;
 }

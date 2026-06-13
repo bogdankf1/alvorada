@@ -1,4 +1,4 @@
-import type { Ruleset, RulesetSettings } from '../types';
+import type { Ruleset, RulesetSettings, SpecialistType, SpecialistDef } from '../types';
 import { TERRAINS, ELEVATIONS, FEATURES } from './terrain';
 import { RESOURCES, IMPROVEMENTS } from './resources';
 import { UNITS } from './units';
@@ -35,6 +35,27 @@ const SETTINGS: RulesetSettings = {
   // leader actually reach the science capstone (~turn 200-250) before the score/timeout
   // ending preempts it — so science is a reachable race, not a dead victory path.
   victory: { scoreThreshold: 600, turnLimit: 260, scienceCapstone: 'scientific_method' },
+  happiness: {
+    baseEmpire: 9,
+    perCity: 2,
+    perPop: 1,
+    occupiedExtra: 3,
+    luxuryHappiness: 4,
+    unhappyGrowthDivisor: 4,
+    veryUnhappyAt: -10,
+    veryUnhappyProdPenaltyPct: 33,
+  },
+  tradeRoute: {
+    caravanRange: 12,
+    duration: 30,
+    domestic: { food: 1, production: 1 },
+    international: { gold: 4 },
+    internationalScience: 2,
+    internationalScienceTech: 'guilds',
+    destinationGold: 2,
+    friendshipBonusPct: 50,
+    pillageBounty: 25,
+  },
   startingUnits: ['settler', 'warrior'],
   diplomacy: {
     termLength: 30,
@@ -64,6 +85,13 @@ const SETTINGS: RulesetSettings = {
   },
 };
 
+const SPECIALISTS: Record<SpecialistType, SpecialistDef> = {
+  scientist: { name: 'Scientist', yields: { science: 3 } },
+  merchant: { name: 'Merchant', yields: { gold: 3 } },
+  artist: { name: 'Artist', yields: { culture: 3 } },
+  engineer: { name: 'Engineer', yields: { production: 2 } },
+};
+
 export const STANDARD_RULESET: Ruleset = {
   id: 'standard',
   terrains: TERRAINS,
@@ -75,6 +103,7 @@ export const STANDARD_RULESET: Ruleset = {
   buildings: BUILDINGS,
   techs: TECHS,
   civs: CIVS,
+  specialists: SPECIALISTS,
   eras: ERAS,
   settings: SETTINGS,
 };
