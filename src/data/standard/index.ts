@@ -39,6 +39,8 @@ const SETTINGS: RulesetSettings = {
     proposalTtl: 1,
     grudgeOnWar: 30,
     grudgeOnCapture: 20,
+    grudgeOnDenounce: 10,
+    grudgeOnBrokenDeal: 5,
     grudgeDecay: 2,
     attitude: {
       atWar: -60,

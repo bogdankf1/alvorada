@@ -221,6 +221,7 @@ export function validateAction(ctx: Ctx, state: GameState, action: Action): Vali
       const p = state.proposals.find((x) => x.id === action.proposal);
       if (!p) return fail('no such proposal');
       if (p.to !== action.player) return fail('not addressed to you');
+      if (state.turn > p.expiresTurn) return fail('that proposal has expired');
       if (action.accept) return validateDealItems(state, p.from, p.to, p.give, p.take);
       return ok;
     }
@@ -230,6 +231,7 @@ export function validateAction(ctx: Ctx, state: GameState, action: Action): Vali
       if (!t || action.target === action.player) return fail('invalid target');
       if (!t.alive) return fail('that empire has fallen');
       if (!hasMet(state, action.player, action.target)) return fail('you have not met this power');
+      if (atWar(state, action.player, action.target)) return fail('you are already at war');
       if (state.relations[action.player][action.target].denounced) return fail('already denounced');
       return ok;
     }
@@ -257,11 +259,14 @@ function validateDealItems(
     if (!give.friendship || !take.friendship) return fail('friendship must be mutual');
     if (state.relations[from][to].friends) return fail('already friends');
   }
+  // Number.isInteger rejects NaN/Infinity/fractions — important at a future network boundary
+  if (!Number.isInteger(give.gold) || !Number.isInteger(take.gold)) return fail('invalid gold amount');
   if (give.gold < 0 || take.gold < 0) return fail('gold cannot be negative');
   if (give.gold > state.players[from].gold) return fail('you cannot afford that gold');
   if (take.gold > state.players[to].gold) return fail('they cannot afford that gold');
   for (const gpt of [give.goldPerTurn, take.goldPerTurn]) {
-    if (gpt && (gpt.amount <= 0 || gpt.turns <= 0)) return fail('invalid per-turn payment');
+    if (gpt && (!Number.isInteger(gpt.amount) || !Number.isInteger(gpt.turns) || gpt.amount <= 0 || gpt.turns <= 0))
+      return fail('invalid per-turn payment');
   }
   if (isEmptyDeal(give) && isEmptyDeal(take)) return fail('the deal is empty');
   return { ok: true };

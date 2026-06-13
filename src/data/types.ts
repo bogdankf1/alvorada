@@ -175,6 +175,8 @@ export interface DiplomacySettings {
   proposalTtl: number; // turns a pending proposal stays open
   grudgeOnWar: number; // grudge stamped on the victim when war is declared
   grudgeOnCapture: number; // extra grudge when a city is captured
+  grudgeOnDenounce: number; // grudge stamped on the denounced party
+  grudgeOnBrokenDeal: number; // grudge when a gold-per-turn obligation can't be paid
   grudgeDecay: number; // grudge lost per turn
   attitude: {
     atWar: number;

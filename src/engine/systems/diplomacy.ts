@@ -77,7 +77,7 @@ export function applyDenounce(ctx: Ctx, state: GameState, from: PlayerId, to: Pl
     state.relations[from][to].friends = false;
     state.relations[to][from].friends = false;
   }
-  state.relations[to][from].grudge += Math.floor(ctx.rules.settings.diplomacy.grudgeOnWar / 3);
+  state.relations[to][from].grudge += ctx.rules.settings.diplomacy.grudgeOnDenounce;
   pushEvent(state, {
     player: null,
     type: 'denounce',
@@ -109,7 +109,7 @@ export function pushProposal(
 export function processObligations(ctx: Ctx, state: GameState, p: PlayerId): void {
   const decay = ctx.rules.settings.diplomacy.grudgeDecay;
   for (const o of state.players) {
-    if (o.id === p) continue;
+    if (o.id === p || !o.alive) continue; // skip self and the fallen
     const out = state.relations[p][o.id];
     if (out.goldPerTurn > 0) {
       if (state.turn > out.goldUntil) {
@@ -121,7 +121,7 @@ export function processObligations(ctx: Ctx, state: GameState, p: PlayerId): voi
       } else {
         out.goldPerTurn = 0;
         out.goldUntil = 0;
-        state.relations[o.id][p].grudge += 5;
+        state.relations[o.id][p].grudge += ctx.rules.settings.diplomacy.grudgeOnBrokenDeal;
         pushEvent(state, { player: o.id, type: 'dealBroken', msg: `${state.players[p].name} failed to pay tribute owed to you` });
         pushEvent(state, { player: p, type: 'dealBroken', msg: `You could not pay tribute owed to ${state.players[o.id].name}` });
       }

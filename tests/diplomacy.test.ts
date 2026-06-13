@@ -251,3 +251,31 @@ describe('capture grudge', () => {
     expect(draft.relations[1][0].grudge).toBeGreaterThanOrEqual(ctx.rules.settings.diplomacy.grudgeOnCapture);
   });
 });
+
+describe('diplomacy validation hardening', () => {
+  it('rejects denouncing a power you are already at war with', () => {
+    const s = flatWorld(16, 10, 2);
+    meet(s, 0, 1);
+    declareWarBetween(s, 0, 1);
+    expect(validateAction(ctx, s, { type: 'DENOUNCE', player: 0, target: 1 }).ok).toBe(false);
+  });
+
+  it('rejects non-integer / NaN gold in a proposal', () => {
+    const s = flatWorld(16, 10, 2);
+    meet(s, 0, 1);
+    s.players[0].gold = 100;
+    expect(validateAction(ctx, s, { type: 'PROPOSE_DEAL', player: 0, to: 1, give: { gold: NaN }, take: { gold: 0 } }).ok).toBe(false);
+    expect(validateAction(ctx, s, { type: 'PROPOSE_DEAL', player: 0, to: 1, give: { gold: 2.5 }, take: { gold: 0 } }).ok).toBe(false);
+  });
+
+  it('broken tribute stamps the data-driven grudge on the stiffed party', () => {
+    let s = flatWorld(16, 10, 2);
+    meet(s, 0, 1);
+    s.players[0].gold = 0; // cannot pay
+    s.relations[0][1].goldPerTurn = 10;
+    s.relations[0][1].goldUntil = s.turn + 5;
+    s = fullRound2(s); // player 0's turn-start tries to pay, fails
+    expect(s.relations[1][0].grudge).toBe(ctx.rules.settings.diplomacy.grudgeOnBrokenDeal);
+    expect(s.relations[0][1].goldPerTurn).toBe(0); // flow collapsed
+  });
+});
