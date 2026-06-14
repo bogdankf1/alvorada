@@ -9,7 +9,7 @@ import type { Action, GameConfig, GameState } from '../src/engine/types';
 import { initialState } from '../src/engine/state';
 import { applyAction } from '../src/engine/reducer';
 import { gameHash } from '../src/engine/serialize';
-import { computeScore, empireHappiness, playerCities } from '../src/engine/selectors';
+import { computeScore, empireHappiness, influence, playerCities } from '../src/engine/selectors';
 import { decide } from '../src/ai/decide';
 import { ctx } from './helpers';
 
@@ -106,6 +106,10 @@ describe('balance telemetry', () => {
       score: computeScore(ctx, state, p.id),
       happiness: empireHappiness(ctx, state, p.id).net,
       routes: Object.values(state.tradeRoutes).filter((r) => r.owner === p.id).length,
+      faith: p.faith,
+      policies: p.policies.length,
+      religion: !!state.religions['rel_' + p.id],
+      influence: influence(ctx, state, p.id),
     }));
     console.table(rows);
     expect(rows.length).toBe(4);
@@ -158,4 +162,19 @@ describe('city & economy depth in self-play', () => {
     for (const a of log) replay = applyAction(ctx, replay, a);
     expect(gameHash(replay)).toBe(gameHash(state));
   }, 200_000);
+});
+
+describe('culture & religion in self-play', () => {
+  it('religions are founded and spread, and policies are adopted (and it replays)', () => {
+    const { state, log } = runGame(4242, 260);
+    const religions = Object.keys(state.religions).length;
+    expect(religions, 'religions founded').toBeGreaterThan(0);
+    const converted = Object.values(state.cities).filter((c) => c.religion).length;
+    expect(converted, 'cities following a religion').toBeGreaterThan(religions); // spread beyond holy cities
+    const policies = state.players.reduce((n, p) => n + p.policies.length, 0);
+    expect(policies, 'policies adopted').toBeGreaterThan(0);
+    let replay = initialState(config(4242), ctx);
+    for (const a of log) replay = applyAction(ctx, replay, a);
+    expect(gameHash(replay)).toBe(gameHash(state));
+  }, 300_000);
 });
