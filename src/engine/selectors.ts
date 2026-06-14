@@ -66,12 +66,14 @@ export function atWar(state: GameState, a: PlayerId, b: PlayerId): boolean {
 }
 
 export function hasMet(state: GameState, a: PlayerId, b: PlayerId): boolean {
-  return a === b || state.relations[a][b].met;
+  if (a === b) return true;
+  if (state.players[a].barbarian || state.players[b].barbarian) return false;
+  return state.relations[a][b].met;
 }
 
 export function metPlayers(state: GameState, viewer: PlayerId): PlayerId[] {
   return state.players
-    .filter((p) => p.alive && p.id !== viewer && state.relations[viewer][p.id].met)
+    .filter((p) => p.alive && !p.barbarian && p.id !== viewer && state.relations[viewer][p.id].met)
     .map((p) => p.id);
 }
 

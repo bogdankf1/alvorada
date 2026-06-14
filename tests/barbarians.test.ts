@@ -62,6 +62,8 @@ describe('clearing camps', () => {
 
 import { checkElimination } from '../src/engine/systems/victory';
 import { barbarianDecide } from '../src/ai/barbarian';
+import { hasMet, metPlayers } from '../src/engine/selectors';
+import { validateAction } from '../src/engine/validate';
 
 describe('barbarian AI', () => {
   it('attacks an adjacent enemy unit', () => {
@@ -112,5 +114,41 @@ describe('conquest victory with barbarians present', () => {
     expect(s.winner).toEqual({ player: 0, victory: 'conquest' });
     // Barbarian is still alive but did not prevent conquest
     expect(s.players[2].alive).toBe(true);
+  });
+});
+
+describe('barbarians are never a diplomatic party', () => {
+  it('hasMet returns false for barbarians even when the raw met flag is set', () => {
+    const s = barbFixture();
+    // Simulate player 0 having seen a barbarian unit (what visibility.ts does)
+    s.relations[0][2].met = true;
+    s.relations[2][0].met = true;
+    expect(hasMet(s, 0, 2)).toBe(false);
+  });
+
+  it('metPlayers does not include the barbarian faction', () => {
+    const s = barbFixture();
+    s.relations[0][2].met = true;
+    s.relations[2][0].met = true;
+    // Also meet player 1 so we confirm real players still appear
+    s.relations[0][1].met = true;
+    const met = metPlayers(s, 0);
+    expect(met).not.toContain(2);
+    expect(met).toContain(1);
+  });
+
+  it('PROPOSE_DEAL to the barbarian faction fails validation', () => {
+    const s = barbFixture();
+    s.relations[0][2].met = true;
+    s.relations[2][0].met = true;
+    s.currentPlayer = 0;
+    const propose = {
+      type: 'PROPOSE_DEAL' as const,
+      player: 0 as const,
+      to: 2 as const,
+      give: { gold: 0, peace: true },
+      take: { gold: 0, peace: true },
+    };
+    expect(validateAction(ctx2, s, propose).ok).toBe(false);
   });
 });
