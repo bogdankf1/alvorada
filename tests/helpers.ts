@@ -48,6 +48,7 @@ export function flatWorld(w = 12, h = 10, playerCount = 2): GameState {
     science: 0,
     gold: 0,
     faith: 0,
+    pantheon: null as string | null,
     nextCityName: 0,
   }));
   return {
@@ -78,6 +79,7 @@ export function flatWorld(w = 12, h = 10, playerCount = 2): GameState {
     wondersBuilt: {},
     tradeRoutes: {},
     nextTradeRouteId: 1,
+    religions: {},
     eventSeq: 0,
     events: [],
     winner: null,

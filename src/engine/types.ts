@@ -62,6 +62,8 @@ export interface City {
   hp: number;
   occupied?: boolean; // captured; adds unrest until a pacifying building is built
   forcedSpecialists?: Partial<Record<SpecialistType, number>>; // manual pinned minimums
+  religion?: string | null;                    // majority religion id
+  religiousPressure?: Record<string, number>;  // accumulated pressure per religion
 }
 
 export interface TradeRoute {
@@ -72,6 +74,15 @@ export interface TradeRoute {
   kind: 'domestic' | 'international';
   expires: number; // absolute turn the route ends
   path: number[]; // tile indices, origin→destination (pillage + rendering)
+}
+
+export interface ReligionState {
+  id: string;            // `rel_${founder}` — at most one religion per player
+  name: string;
+  founder: PlayerId;
+  holyCity: CityId;
+  founderBelief: string; // belief id (kind 'founder')
+  followerBelief: string;// belief id (kind 'follower')
 }
 
 export interface RelationState {
@@ -129,6 +140,7 @@ export interface Player {
   science: number; // stored toward current research
   gold: number;
   faith: number; // accumulates each turn like science/gold
+  pantheon: string | null; // chosen pantheon belief id
   nextCityName: number;
 }
 
@@ -182,6 +194,7 @@ export interface GameState {
   wondersBuilt: Record<string, CityId>; // wonderId -> the city that built it (global uniqueness)
   tradeRoutes: Record<number, TradeRoute>;
   nextTradeRouteId: number;
+  religions: Record<string, ReligionState>;
   eventSeq: number;
   events: GameEvent[]; // bounded ring, audience-tagged
   winner: { player: PlayerId; victory: 'conquest' | 'score' | 'science' } | null;
