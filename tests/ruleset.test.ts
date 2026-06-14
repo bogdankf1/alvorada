@@ -59,4 +59,10 @@ describe('standard ruleset', () => {
     const kinds = new Set(Object.values(STANDARD_RULESET.beliefs).map((b) => b.kind));
     expect(kinds).toEqual(new Set(['pantheon', 'founder', 'follower']));
   });
+
+  it('policy tree is valid and rooted', () => {
+    expect(validateRuleset(STANDARD_RULESET)).toEqual([]);
+    const roots = Object.values(STANDARD_RULESET.policies).filter((p) => p.prereqs.length === 0);
+    expect(roots.length).toBeGreaterThanOrEqual(3); // one opener per branch
+  });
 });

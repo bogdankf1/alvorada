@@ -31,6 +31,7 @@ export interface CivicEffect {
   influenceMult?: number;                                      // % tourism/influence (policies)
 }
 export interface BeliefDef { id: string; name: string; kind: BeliefKind; effect: CivicEffect; }
+export interface PolicyDef { id: string; name: string; branch: string; cost: number; prereqs: string[]; effect: CivicEffect; }
 export interface ReligionSettings {
   pantheonCost: number; religionCost: number; religionTech: string; maxReligions: number;
   spreadRange: number; pressurePerCity: number; holyCityBonus: number; holyCityFaithDiv: number;
@@ -224,6 +225,7 @@ export interface Ruleset {
   civs: Record<string, CivDef>;
   specialists: Record<SpecialistType, SpecialistDef>;
   beliefs: Record<string, BeliefDef>;
+  policies: Record<string, PolicyDef>;
   eras: EraDef[];
   settings: RulesetSettings;
 }

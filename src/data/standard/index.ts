@@ -6,6 +6,7 @@ import { BUILDINGS } from './buildings';
 import { TECHS, ERAS } from './techs';
 import { CIVS } from './civs';
 import { BELIEFS } from './beliefs';
+import { POLICIES } from './policies';
 
 const SETTINGS: RulesetSettings = {
   workRadius: 2,
@@ -117,6 +118,7 @@ export const STANDARD_RULESET: Ruleset = {
   civs: CIVS,
   specialists: SPECIALISTS,
   beliefs: BELIEFS,
+  policies: POLICIES,
   eras: ERAS,
   settings: SETTINGS,
 };

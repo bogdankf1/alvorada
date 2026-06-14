@@ -92,6 +92,13 @@ export function validateRuleset(rules: Ruleset): string[] {
   if (!(rules.settings.religion.religionTech in rules.techs))
     errors.push(`settings: unknown religionTech ${rules.settings.religion.religionTech}`);
 
+  for (const pol of Object.values(rules.policies)) {
+    for (const pre of pol.prereqs)
+      if (!(pre in rules.policies)) errors.push(`policy ${pol.id}: unknown prereq ${pre}`);
+    const pb = pol.effect.perBuilding;
+    if (pb && !(pb.building in rules.buildings)) errors.push(`policy ${pol.id}: unknown perBuilding ${pb.building}`);
+  }
+
   return errors;
 }
 
