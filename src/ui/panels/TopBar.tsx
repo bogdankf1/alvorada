@@ -1,7 +1,7 @@
 import { gameCtx } from '../../app/driver';
 import { appStore, useApp } from '../../app/store';
 import { cityYields, computeScore, currentEra, empireHappiness, happinessBreakdown, playerCities } from '../../engine/selectors';
-import { IconAmphora, IconCoin, IconLaurel, IconScroll, YIELD_COLORS } from '../icons';
+import { IconAmphora, IconCoin, IconFlame, IconLaurel, IconScroll, YIELD_COLORS } from '../icons';
 
 export function TopBar() {
   const game = useApp((s) => s.game);
@@ -12,11 +12,13 @@ export function TopBar() {
   let science = 0;
   let culture = 0;
   let gold = 0;
+  let faith = 0;
   for (const c of playerCities(game, viewer)) {
     const y = cityYields(gameCtx, game, c).total;
     science += y.science;
     culture += y.culture;
     gold += y.gold;
+    faith += y.faith;
   }
 
   const hap = empireHappiness(gameCtx, game, viewer);
@@ -66,6 +68,11 @@ export function TopBar() {
         <IconCoin />
         <span className="num">{player.gold}</span>
         <span className="per-turn">+{gold}</span>
+      </span>
+      <span className="yield-chip" style={{ color: YIELD_COLORS.faith }} title="Faith">
+        <IconFlame />
+        <span className="num">{player.faith}</span>
+        <span className="per-turn">+{faith}</span>
       </span>
       <span
         className="yield-chip"
