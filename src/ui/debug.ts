@@ -29,6 +29,7 @@ interface DebugApi {
   foundReligion(name: string, holyCity: number, founderBelief: string, followerBelief: string): void;
   influence(): Record<number, number>;
   religions(): import('../engine/types').ReligionState[];
+  choosePromotion(unitId: number, promotion: string): void;
   debugAutoplay(turns: number): Promise<void>;
 }
 
@@ -119,6 +120,10 @@ export function installDebugBridge(): void {
     religions() {
       const g = appStore.get().game;
       return g ? Object.values(g.religions) : [];
+    },
+
+    choosePromotion(unitId: number, promotion: string) {
+      humanDispatch({ type: 'CHOOSE_PROMOTION', player: appStore.get().viewingPlayer, unit: unitId, promotion });
     },
 
     /** Plays the viewer's turns with the AI brain — fills the world for visual checks. */

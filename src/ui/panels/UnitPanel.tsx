@@ -2,6 +2,7 @@ import { gameCtx } from '../../app/driver';
 import { appStore, useApp } from '../../app/store';
 import { humanDispatch, isMyTurn } from '../actions';
 import { validateAction } from '../../engine/validate';
+import { promotionSlots, pendingPromotions, availablePromotions } from '../../engine/selectors';
 import type { Action } from '../../engine/types';
 import { IconBoots, IconShield } from '../icons';
 
@@ -63,6 +64,30 @@ export function UnitPanel() {
       </div>
       {unit.stance === 'fortified' && <div style={{ color: 'var(--brass)', fontSize: 12 }}>Fortified</div>}
       {orderLabel && <div style={{ color: 'var(--ivory-dim)', fontSize: 12 }}>{orderLabel}</div>}
+
+      {def.class !== 'civilian' && (() => {
+        const xp = unit.xp ?? 0;
+        const slots = promotionSlots(gameCtx, unit);
+        const nextT = gameCtx.rules.settings.combat.promotionThresholds[slots] ?? null;
+        const pending = pendingPromotions(gameCtx, unit);
+        return (
+          <div className="unit-xp">
+            <div className="label" style={{ fontSize: 12, color: 'var(--ivory-dim)' }}>XP {xp}{nextT !== null ? ` / ${nextT}` : ' · veteran'}</div>
+            {nextT !== null && <div className="bar"><i style={{ width: `${Math.min(100, (xp / nextT) * 100)}%`, background: 'var(--brass)' }} /></div>}
+            {(unit.promotions ?? []).length > 0 && (
+              <div className="bld-list">{(unit.promotions ?? []).map((id) => <span key={id} className="bld-chip">{gameCtx.rules.promotions[id].name}</span>)}</div>
+            )}
+            {pending > 0 && isMyTurn() && (
+              <div className="promo-pick">
+                <div className="label" style={{ fontSize: 12, marginTop: 4 }}>Choose a promotion:</div>
+                {availablePromotions(gameCtx, unit).map((p) => (
+                  <button key={p.id} className="btn btn--xs" onClick={() => humanDispatch({ type: 'CHOOSE_PROMOTION', player: viewer, unit: unit.id, promotion: p.id })}>{p.name}</button>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {mine && (
         <div className="unit-actions">
