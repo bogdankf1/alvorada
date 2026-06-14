@@ -232,6 +232,7 @@ export type Action =
   | { type: 'FOUND_PANTHEON'; player: PlayerId; belief: string }
   | { type: 'FOUND_RELIGION'; player: PlayerId; name: string; holyCity: CityId; founderBelief: string; followerBelief: string }
   | { type: 'ADOPT_POLICY'; player: PlayerId; policy: string }
+  | { type: 'CHOOSE_PROMOTION'; player: PlayerId; unit: UnitId; promotion: string }
   | { type: 'END_TURN'; player: PlayerId };
 
 export type ActionType = Action['type'];

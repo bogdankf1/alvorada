@@ -3,6 +3,7 @@ import { ctx, flatWorld, spawn, refreshVis, declareWarBetween } from './helpers'
 import { promotionSlots, pendingPromotions, availablePromotions } from '../src/engine/selectors';
 import { applyAction } from '../src/engine/reducer';
 import { attackStrength, defenseStrength } from '../src/engine/systems/combat';
+import { validateAction } from '../src/engine/validate';
 
 describe('promotion selectors', () => {
   it('XP crosses thresholds into promotion slots', () => {
@@ -42,5 +43,21 @@ describe('combat XP & promotion bonuses', () => {
     u.promotions = ['combat_i']; // +15% attack & defense
     expect(attackStrength(ctx, u, {})).toBe(before.atk + Math.floor((8 * 15) / 100));
     expect(defenseStrength(ctx, s, u)).toBe(before.def + Math.floor((8 * 15) / 100));
+  });
+});
+
+describe('CHOOSE_PROMOTION', () => {
+  it('promotes a unit with a pending slot from its available set', () => {
+    const s = flatWorld(12, 10, 2);
+    const u = spawn(s, 0, 'warrior', 5, 5, { xp: 30 });
+    const s2 = applyAction(ctx, s, { type: 'CHOOSE_PROMOTION', player: 0, unit: u.id, promotion: 'combat_i' });
+    expect(s2.units[u.id].promotions).toContain('combat_i');
+  });
+  it('rejects no-slot or an unavailable promotion', () => {
+    const s = flatWorld(12, 10, 2);
+    const u0 = spawn(s, 0, 'warrior', 5, 5, { xp: 5 });
+    expect(validateAction(ctx, s, { type: 'CHOOSE_PROMOTION', player: 0, unit: u0.id, promotion: 'combat_i' }).ok).toBe(false);
+    const u1 = spawn(s, 0, 'warrior', 6, 5, { xp: 30 });
+    expect(validateAction(ctx, s, { type: 'CHOOSE_PROMOTION', player: 0, unit: u1.id, promotion: 'accuracy' }).ok).toBe(false);
   });
 });

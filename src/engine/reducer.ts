@@ -217,6 +217,13 @@ function handle(ctx: Ctx, state: GameState, action: Action): void {
       break;
     }
 
+    case 'CHOOSE_PROMOTION': {
+      const unit = state.units[action.unit];
+      if (!unit.promotions) unit.promotions = [];
+      unit.promotions.push(action.promotion);
+      break;
+    }
+
     case 'END_TURN': {
       handleEndTurn(ctx, state);
       break;

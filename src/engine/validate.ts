@@ -15,6 +15,8 @@ import {
   isImpassable,
   isWater,
   militaryAt,
+  pendingPromotions,
+  availablePromotions,
   purchaseCost,
   tileOwner,
   tradeOrigin,
@@ -310,6 +312,14 @@ export function validateAction(ctx: Ctx, state: GameState, action: Action): Vali
       if (p.policies.includes(action.policy)) return fail('already adopted');
       if (!pol.prereqs.every((pre) => p.policies.includes(pre))) return fail('prerequisite policy not yet adopted');
       if (p.policyProgress < pol.cost) return fail('not enough culture');
+      return ok;
+    }
+
+    case 'CHOOSE_PROMOTION': {
+      const v = ownUnit(state, action.player, action.unit);
+      if (!v.unit) return v.error!;
+      if (pendingPromotions(ctx, v.unit) <= 0) return fail('no promotion available');
+      if (!availablePromotions(ctx, v.unit).some((p) => p.id === action.promotion)) return fail('promotion not available to this unit');
       return ok;
     }
   }

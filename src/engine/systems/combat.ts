@@ -6,7 +6,7 @@
  */
 import type { City, Ctx, GameState, Unit } from '../types';
 import { tileIndex } from '../hex';
-import { cityAt, civilianAt, defenseBonusAt, militaryAt, promotionBonus, wonderOwnerEffects } from '../selectors';
+import { cityAt, civilianAt, defenseBonusAt, militaryAt, pendingPromotions, promotionBonus, wonderOwnerEffects } from '../selectors';
 import { recomputeVisibility } from '../map/visibility';
 import { pushEvent } from '../events';
 import { captureCity } from './cities';
@@ -99,9 +99,12 @@ function isCappedTarget(state: GameState, defenderOwner?: number): boolean {
   return defenderOwner !== undefined && !!state.players[defenderOwner].barbarian;
 }
 
-function awardXp(ctx: Ctx, unit: Unit, amount: number, capped: boolean): void {
+function awardXp(ctx: Ctx, state: GameState, unit: Unit, amount: number, capped: boolean): void {
   if (capped && (unit.xp ?? 0) >= ctx.rules.settings.combat.xpVsBarbCap) return;
+  const before = pendingPromotions(ctx, unit);
   unit.xp = (unit.xp ?? 0) + amount;
+  if (pendingPromotions(ctx, unit) > before && !state.players[unit.owner].barbarian)
+    pushEvent(state, { player: unit.owner, type: 'promotionReady', msg: `${ctx.rules.units[unit.def].name} can be promoted`, q: unit.q, r: unit.r });
 }
 
 /** Melee attack on a tile holding an enemy unit or city. */
@@ -130,8 +133,8 @@ export function resolveMeleeAttack(
 
   const c = ctx.rules.settings.combat;
   const capped = isCappedTarget(state, defender.owner);
-  awardXp(ctx, attacker, c.xpPerAttack + (defender.hp <= 0 ? c.xpPerKill : 0), capped);
-  if (defender.hp > 0 && attacker.hp > 0) awardXp(ctx, defender, c.xpPerDefend, !!state.players[attacker.owner].barbarian);
+  awardXp(ctx, state, attacker, c.xpPerAttack + (defender.hp <= 0 ? c.xpPerKill : 0), capped);
+  if (defender.hp > 0 && attacker.hp > 0) awardXp(ctx, state, defender, c.xpPerDefend, !!state.players[attacker.owner].barbarian);
 
   if (defender.hp <= 0) {
     // if both fall, the field belongs to the attacker (survives at 1 hp)
@@ -158,7 +161,7 @@ function resolveCityMelee(ctx: Ctx, state: GameState, attacker: Unit, city: City
 
   attacker.hp -= dmgToAttacker;
   spendAttack(attacker);
-  awardXp(ctx, attacker, ctx.rules.settings.combat.xpPerAttack, true);
+  awardXp(ctx, state, attacker, ctx.rules.settings.combat.xpPerAttack, true);
   if (attacker.hp <= 0) {
     pushEvent(state, {
       player: attacker.owner,
@@ -203,7 +206,7 @@ export function resolveRangedAttack(
     const dmg = damageFor(ctx, attEff, defEff);
     city.hp = Math.max(1, city.hp - dmg);
     spendAttack(attacker);
-    awardXp(ctx, attacker, ctx.rules.settings.combat.xpPerAttack, true);
+    awardXp(ctx, state, attacker, ctx.rules.settings.combat.xpPerAttack, true);
     pushEvent(state, {
       player: city.owner,
       type: 'cityBombarded',
@@ -219,7 +222,7 @@ export function resolveRangedAttack(
   const defEff = defenseStrength(ctx, state, defender);
   defender.hp -= damageFor(ctx, attEff, defEff);
   spendAttack(attacker);
-  awardXp(ctx, attacker, ctx.rules.settings.combat.xpPerAttack + (defender.hp <= 0 ? ctx.rules.settings.combat.xpPerKill : 0), isCappedTarget(state, defender.owner));
+  awardXp(ctx, state, attacker, ctx.rules.settings.combat.xpPerAttack + (defender.hp <= 0 ? ctx.rules.settings.combat.xpPerKill : 0), isCappedTarget(state, defender.owner));
   if (defender.hp <= 0) {
     killUnit(ctx, state, defender, attacker);
     checkElimination(ctx, state);
