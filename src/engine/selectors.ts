@@ -313,6 +313,54 @@ export function empireHappiness(ctx: Ctx, state: GameState, pid: PlayerId): Happ
   return { happy, unhappy, net, tier, connectedLuxuries: lux };
 }
 
+/** Itemized happiness sources for the UI: positive = helping, negative = hurting. Sums to empireHappiness().net. */
+export function happinessBreakdown(
+  ctx: Ctx,
+  state: GameState,
+  pid: PlayerId,
+): { label: string; amount: number }[] {
+  const h = ctx.rules.settings.happiness;
+  const cities = playerCities(state, pid);
+  const out: { label: string; amount: number }[] = [];
+
+  // helping
+  out.push({ label: 'Empire base', amount: h.baseEmpire });
+  const lux = connectedLuxuries(ctx, state, pid);
+  if (lux.length) {
+    const amount = lux.reduce((s, id) => s + (ctx.rules.resources[id].happiness ?? h.luxuryHappiness), 0);
+    out.push({ label: `Luxuries: ${lux.map((id) => ctx.rules.resources[id].name).join(', ')}`, amount });
+  }
+  const byBuilding: Record<string, { name: string; count: number; each: number }> = {};
+  for (const c of cities)
+    for (const b of c.buildings) {
+      const def = ctx.rules.buildings[b];
+      if (!def.happiness) continue;
+      if (!byBuilding[def.id]) byBuilding[def.id] = { name: def.name, count: 0, each: def.happiness };
+      byBuilding[def.id].count += 1;
+    }
+  for (const id of Object.keys(byBuilding).sort()) {
+    const e = byBuilding[id];
+    out.push({ label: e.count > 1 ? `${e.name} ×${e.count}` : e.name, amount: e.each * e.count });
+  }
+  for (const wid of Object.keys(state.wondersBuilt).sort()) {
+    const city = state.cities[state.wondersBuilt[wid]];
+    if (!city || city.owner !== pid) continue;
+    const eff = ctx.rules.buildings[wid]?.effect;
+    if (eff?.kind === 'happiness') out.push({ label: ctx.rules.buildings[wid].name, amount: eff.amount });
+  }
+
+  // hurting
+  if (cities.length) out.push({ label: `Cities ×${cities.length}`, amount: -cities.length * h.perCity });
+  const pop = cities.reduce((s, c) => s + c.pop, 0);
+  if (pop) out.push({ label: `Population ×${pop}`, amount: -pop * h.perPop });
+  const occ = cities.filter(
+    (c) => c.occupied && !c.buildings.some((b) => ctx.rules.buildings[b].pacifies),
+  ).length;
+  if (occ) out.push({ label: `Occupied cities ×${occ}`, amount: -occ * h.occupiedExtra });
+
+  return out;
+}
+
 export function growthThreshold(pop: number): number {
   const p = pop - 1;
   return 15 + 8 * p + Math.floor(p * Math.sqrt(p));

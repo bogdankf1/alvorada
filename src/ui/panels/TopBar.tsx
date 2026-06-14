@@ -1,6 +1,6 @@
 import { gameCtx } from '../../app/driver';
 import { appStore, useApp } from '../../app/store';
-import { cityYields, computeScore, currentEra, empireHappiness, playerCities } from '../../engine/selectors';
+import { cityYields, computeScore, currentEra, empireHappiness, happinessBreakdown, playerCities } from '../../engine/selectors';
 import { IconAmphora, IconCoin, IconLaurel, IconScroll, YIELD_COLORS } from '../icons';
 
 export function TopBar() {
@@ -21,6 +21,13 @@ export function TopBar() {
 
   const hap = empireHappiness(gameCtx, game, viewer);
   const hapColor = hap.tier === 'content' ? '#7DBE7D' : hap.tier === 'unhappy' ? '#D9A441' : '#C75450';
+  const hapItems = happinessBreakdown(gameCtx, game, viewer);
+  const tierWord = hap.tier === 'content' ? 'content' : hap.tier === 'unhappy' ? 'unhappy' : 'very unhappy';
+  const helping = hapItems.filter((x) => x.amount > 0).map((x) => `  +${x.amount}  ${x.label}`).join('\n');
+  const hurting = hapItems.filter((x) => x.amount < 0).map((x) => `  −${-x.amount}  ${x.label}`).join('\n');
+  const hapTitle =
+    `HAPPINESS  ${hap.net >= 0 ? '+' : '−'}${Math.abs(hap.net)}  (${tierWord})\n\nHelping\n${helping}` +
+    (hurting ? `\n\nHurting\n${hurting}` : '');
 
   const pending = game.proposals.filter((p) => p.to === viewer && game.turn <= p.expiresTurn).length;
   const tech = player.researching ? gameCtx.rules.techs[player.researching] : null;
@@ -63,7 +70,7 @@ export function TopBar() {
       <span
         className="yield-chip"
         style={{ color: hapColor }}
-        title={`Happiness ${hap.net} (+${hap.happy} / −${hap.unhappy})\nLuxuries connected: ${hap.connectedLuxuries.length}`}
+        title={hapTitle}
       >
         <span style={{ fontWeight: 700 }}>☺</span>
         <span className="per-turn">{hap.net}</span>

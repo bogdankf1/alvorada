@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { ctx, flatWorld, spawn, refreshVis, thaw, customCtx } from './helpers';
 import { applyAction } from '../src/engine/reducer';
-import { empireHappiness, connectedLuxuries, cityYields, canProduce } from '../src/engine/selectors';
+import { empireHappiness, happinessBreakdown, connectedLuxuries, cityYields, canProduce } from '../src/engine/selectors';
 import { processCity, captureCity } from '../src/engine/systems/cities';
 
 /** Found one city for player 0 and return the thawed state + city id. */
@@ -139,5 +139,32 @@ describe('AI happiness response', () => {
     const unhappy = customCtx((r) => { r.settings.happiness.perCity = 1000; });
     const pick = pickProduction(unhappy, s, c);
     expect(pick?.item).toEqual({ kind: 'building', id: 'colosseum' });
+  });
+});
+
+describe('happinessBreakdown', () => {
+  it('itemizes helping and hurting sources that sum to the net', () => {
+    const { s, id } = oneCity();
+    const c = s.cities[id];
+    c.pop = 3;
+    c.buildings.push('colosseum'); // +3 happy
+    const bd = happinessBreakdown(ctx, s, 0);
+    expect(bd.reduce((t, x) => t + x.amount, 0)).toBe(empireHappiness(ctx, s, 0).net);
+    expect(bd.find((x) => x.label === 'Empire base')?.amount).toBe(9);
+    expect(bd.some((x) => x.label === 'Colosseum' && x.amount === 3)).toBe(true);
+    expect(bd.some((x) => x.label.startsWith('Cities') && x.amount < 0)).toBe(true);
+    expect(bd.some((x) => x.label.startsWith('Population') && x.amount < 0)).toBe(true);
+  });
+
+  it('groups a connected luxury as a positive named source', () => {
+    const { s, id } = oneCity();
+    const c = s.cities[id];
+    const i = 6 * s.mapW + 5;
+    s.tiles[i].ownerCity = c.id;
+    s.tiles[i].resource = 'wine';
+    s.tiles[i].improvement = 'plantation';
+    const lux = happinessBreakdown(ctx, s, 0).find((x) => x.label.startsWith('Luxuries'));
+    expect(lux?.amount).toBe(4); // luxuryHappiness
+    expect(lux?.label).toContain('Wine');
   });
 });
