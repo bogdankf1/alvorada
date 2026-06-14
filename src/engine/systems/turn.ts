@@ -37,6 +37,10 @@ export function handleEndTurn(ctx: Ctx, state: GameState): void {
 
   state.currentPlayer = next;
   beginTurn(ctx, state, next);
+  // Barbarian turns are fully resolved in beginTurn (no interactive actions); auto-advance.
+  if (state.players[next].barbarian && state.phase === 'playing') {
+    handleEndTurn(ctx, state);
+  }
 }
 
 function healAmount(ctx: Ctx, state: GameState, pid: PlayerId, idx: number, q: number, r: number): number {

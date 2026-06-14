@@ -47,7 +47,7 @@ describe('AI self-play', () => {
   it('plays 120 turns legally and the empire-building milestones land', () => {
     const { state } = runGame(31415, 120);
 
-    const alive = state.players.filter((p) => p.alive);
+    const alive = state.players.filter((p) => p.alive && !p.barbarian);
     expect(alive.length).toBeGreaterThanOrEqual(1);
     for (const p of alive) {
       const cities = playerCities(state, p.id);
@@ -108,7 +108,7 @@ describe('AI self-play', () => {
 describe('balance telemetry', () => {
   it('prints milestone table (eyeball check, no hard assertions)', () => {
     const { state } = runGame(8128, 100);
-    const rows = state.players.map((p) => ({
+    const rows = state.players.filter((p) => !p.barbarian).map((p) => ({
       civ: ctx.rules.civs[p.civ].name,
       alive: p.alive,
       cities: playerCities(state, p.id).length,

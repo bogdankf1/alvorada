@@ -29,4 +29,5 @@ export const CIVS: Record<string, CivDef> = {
     color: '#2E8C83',
     cityNames: ['Athens', 'Sparta', 'Corinth', 'Argos', 'Knossos', 'Mycenae', 'Delphi', 'Eretria', 'Thebes-Boeotia', 'Rhodes'],
   },
+  barbarians: { id: 'barbarians', name: 'Barbarians', leader: 'Barbarian Clans', color: '#8a4a3a', cityNames: ['Encampment'] },
 };

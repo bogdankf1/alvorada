@@ -8,6 +8,7 @@ import { tileIndex } from './hex';
 import { generateMap } from './map/generate';
 import { recomputeVisibility } from './map/visibility';
 import { SCHEMA_VERSION } from './serialize';
+import { placeCamps } from './systems/barbarians';
 
 export function initialState(config: GameConfig, ctx: Ctx): GameState {
   const { rules } = ctx;
@@ -37,6 +38,12 @@ export function initialState(config: GameConfig, ctx: Ctx): GameState {
     };
   });
 
+  players.push({
+    id: playerCount, name: 'Barbarians', civ: 'barbarians', color: rules.civs.barbarians.color,
+    controller: 'ai', alive: true, techs: [], researching: null, science: 0, gold: 0,
+    faith: 0, pantheon: null, policies: [], policyProgress: 0, cultureTotal: 0, nextCityName: 0, barbarian: true,
+  });
+
   const relations: RelationState[][] = players.map(() => players.map(() => blankRelation()));
 
   const state: GameState = {
@@ -63,10 +70,19 @@ export function initialState(config: GameConfig, ctx: Ctx): GameState {
     tradeRoutes: {},
     nextTradeRouteId: 1,
     religions: {},
+    camps: [],
+    nextCampId: 1,
     eventSeq: 0,
     events: [],
     winner: null,
   };
+
+  const barb = playerCount;
+  for (let x = 0; x < players.length; x++) {
+    if (x === barb) continue;
+    relations[barb][x].status = 'war'; relations[barb][x].since = 1;
+    relations[x][barb].status = 'war'; relations[x][barb].since = 1;
+  }
 
   for (let p = 0; p < playerCount; p++) {
     const start = starts[p];
@@ -91,6 +107,8 @@ export function initialState(config: GameConfig, ctx: Ctx): GameState {
     tiles[idx].feature = null;
   }
 
-  for (let p = 0; p < playerCount; p++) recomputeVisibility(ctx, state, p);
+  placeCamps(ctx, state, starts);
+
+  for (let p = 0; p < state.players.length; p++) recomputeVisibility(ctx, state, p);
   return state;
 }

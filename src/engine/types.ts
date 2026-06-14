@@ -201,6 +201,8 @@ export interface GameState {
   tradeRoutes: Record<number, TradeRoute>;
   nextTradeRouteId: number;
   religions: Record<string, ReligionState>;
+  camps: { id: number; q: number; r: number }[];
+  nextCampId: number;
   eventSeq: number;
   events: GameEvent[]; // bounded ring, audience-tagged
   winner: { player: PlayerId; victory: 'conquest' | 'score' | 'science' | 'culture' } | null;

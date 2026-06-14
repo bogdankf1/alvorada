@@ -13,6 +13,7 @@ import { pushEvent } from '../events';
 export function checkElimination(ctx: Ctx, state: GameState): void {
   for (const p of state.players) {
     if (!p.alive) continue;
+    if (p.barbarian) continue; // barbarians have no cities; they persist until the last camp is cleared
     const cities = playerCities(state, p.id);
     if (cities.length > 0) continue;
     const canRefound = playerUnits(state, p.id).some((u) =>
