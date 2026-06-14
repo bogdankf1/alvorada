@@ -6,7 +6,7 @@
 import type { Ctx, GameState, PlayerId } from '../types';
 import { sortedIds } from '../types';
 import { tileIndex } from '../hex';
-import { cityAt, tileOwner, playerCities, empireHappiness } from '../selectors';
+import { cityAt, tileOwner, playerCities, empireHappiness, unitHasPromoFlag, promotionHealBonus, promotionMovementBonus } from '../selectors';
 import { recomputeVisibility } from '../map/visibility';
 import { pushEvent } from '../events';
 import { findPath } from '../map/pathfind';
@@ -57,11 +57,11 @@ export function beginTurn(ctx: Ctx, state: GameState, pid: PlayerId): void {
     const def = ctx.rules.units[u.def];
     const idx = tileIndex({ q: u.q, r: u.r }, state.mapW, state.mapH);
 
-    if (!u.acted && u.hp < 100) {
-      u.hp = Math.min(100, u.hp + healAmount(ctx, state, pid, idx, u.q, u.r));
+    if (u.hp < 100 && (!u.acted || unitHasPromoFlag(ctx, u, 'healAlways'))) {
+      u.hp = Math.min(100, u.hp + healAmount(ctx, state, pid, idx, u.q, u.r) + promotionHealBonus(ctx, u));
     }
     u.acted = false;
-    u.moves = def.moves;
+    u.moves = def.moves + promotionMovementBonus(ctx, u);
 
     if (u.order?.kind === 'build') {
       u.moves = 0;

@@ -61,3 +61,18 @@ describe('CHOOSE_PROMOTION', () => {
     expect(validateAction(ctx, s, { type: 'CHOOSE_PROMOTION', player: 0, unit: u1.id, promotion: 'accuracy' }).ok).toBe(false);
   });
 });
+
+describe('promotion turn effects', () => {
+  it('mobility grants +1 move at turn start', () => {
+    let s = flatWorld(12, 10, 1);
+    const u = spawn(s, 0, 'warrior', 5, 5, { promotions: ['mobility'] });
+    s = applyAction(ctx, s, { type: 'END_TURN', player: 0 });
+    expect(s.units[u.id].moves).toBe(ctx.rules.units.warrior.moves + 1);
+  });
+  it('march heals even after acting; medic adds extra healing', () => {
+    let s = flatWorld(12, 10, 1);
+    const u = spawn(s, 0, 'warrior', 5, 5, { promotions: ['medic', 'march'], hp: 50, acted: true });
+    s = applyAction(ctx, s, { type: 'END_TURN', player: 0 });
+    expect(s.units[u.id].hp).toBeGreaterThan(55); // base heal (neutral) + medic bonus, despite acted
+  });
+});
