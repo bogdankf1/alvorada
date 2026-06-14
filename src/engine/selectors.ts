@@ -299,7 +299,7 @@ export function empireCivicEffects(ctx: Ctx, state: GameState, pid: PlayerId): C
   if (p.pantheon) out.push(ctx.rules.beliefs[p.pantheon].effect);
   const mine = state.religions['rel_' + pid];
   if (mine) out.push(ctx.rules.beliefs[mine.founderBelief].effect);
-  // adopted policies are added in Phase 4
+  for (const id of p.policies) out.push(ctx.rules.policies[id].effect);
   return out;
 }
 

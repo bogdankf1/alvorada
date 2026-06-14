@@ -302,6 +302,16 @@ export function validateAction(ctx: Ctx, state: GameState, action: Action): Vali
       if (!lb || lb.kind !== 'follower') return fail('invalid follower belief');
       return ok;
     }
+
+    case 'ADOPT_POLICY': {
+      const p = state.players[action.player];
+      const pol = ctx.rules.policies[action.policy];
+      if (!pol) return fail('unknown policy');
+      if (p.policies.includes(action.policy)) return fail('already adopted');
+      if (!pol.prereqs.every((pre) => p.policies.includes(pre))) return fail('prerequisite policy not yet adopted');
+      if (p.policyProgress < pol.cost) return fail('not enough culture');
+      return ok;
+    }
   }
 }
 

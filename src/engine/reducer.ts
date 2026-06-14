@@ -209,6 +209,14 @@ function handle(ctx: Ctx, state: GameState, action: Action): void {
       break;
     }
 
+    case 'ADOPT_POLICY': {
+      const p = state.players[action.player];
+      p.policyProgress -= ctx.rules.policies[action.policy].cost;
+      p.policies.push(action.policy);
+      pushEvent(state, { player: action.player, type: 'policyAdopted', msg: `${p.name} adopts ${ctx.rules.policies[action.policy].name}` });
+      break;
+    }
+
     case 'END_TURN': {
       handleEndTurn(ctx, state);
       break;
