@@ -3,7 +3,7 @@
  * facts — validation, the reducer, the AI, and the UI all ask these same
  * questions, which is what keeps their answers consistent.
  */
-import type { PartialYields, SpecialistType, Yields } from '../data/types';
+import type { CivicEffect, PartialYields, SpecialistType, Yields } from '../data/types';
 import { addYields, emptyYields, YIELD_KEYS } from '../data/types';
 import type { Axial, City, Ctx, GameState, PlayerId, ProductionItem, TradeRoute, Unit } from './types';
 import { sortedIds } from './types';
@@ -244,6 +244,9 @@ export function cityYields(ctx: Ctx, state: GameState, city: City): CityYieldBre
     if (route.toCity === city.id && route.kind === 'international') total.gold += s.tradeRoute.destinationGold;
   }
 
+  for (const eff of empireCivicEffects(ctx, state, city.owner)) applyCivicEffect(total, eff, city);
+  // follower belief is added in Phase 3
+
   if (empireHappiness(ctx, state, city.owner).tier === 'veryUnhappy') {
     total.production = Math.floor((total.production * (100 - s.happiness.veryUnhappyProdPenaltyPct)) / 100);
   }
@@ -282,6 +285,24 @@ export function connectedLuxuries(ctx: Ctx, state: GameState, pid: PlayerId): st
   return [...set].sort();
 }
 
+export function empireCivicEffects(ctx: Ctx, state: GameState, pid: PlayerId): CivicEffect[] {
+  const out: CivicEffect[] = [];
+  const p = state.players[pid];
+  if (p.pantheon) out.push(ctx.rules.beliefs[p.pantheon].effect);
+  const mine = state.religions['rel_' + pid];
+  if (mine) out.push(ctx.rules.beliefs[mine.founderBelief].effect);
+  // adopted policies are added in Phase 4
+  return out;
+}
+
+function applyCivicEffect(total: Yields, eff: CivicEffect, city: City): void {
+  if (eff.yields) addYields(total, eff.yields);
+  if (eff.perBuilding) {
+    const n = city.buildings.filter((b) => b === eff.perBuilding!.building).length;
+    if (n) for (const k of YIELD_KEYS) total[k] += (eff.perBuilding.yields[k] ?? 0) * n;
+  }
+}
+
 export interface HappinessReport {
   happy: number;
   unhappy: number;
@@ -308,6 +329,9 @@ export function empireHappiness(ctx: Ctx, state: GameState, pid: PlayerId): Happ
     const eff = ctx.rules.buildings[wid]?.effect;
     if (eff?.kind === 'happiness') happy += eff.amount;
   }
+  for (const eff of empireCivicEffects(ctx, state, pid)) happy += eff.happiness ?? 0;
+  // follower-belief happiness (per following city) is added in Phase 3
+
   const net = happy - unhappy;
   const tier = net >= 0 ? 'content' : net <= h.veryUnhappyAt ? 'veryUnhappy' : 'unhappy';
   return { happy, unhappy, net, tier, connectedLuxuries: lux };
