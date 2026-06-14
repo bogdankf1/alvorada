@@ -31,6 +31,23 @@ export interface CivicEffect {
   influenceMult?: number;                                      // % tourism/influence (policies)
 }
 export interface BeliefDef { id: string; name: string; kind: BeliefKind; effect: CivicEffect; }
+
+export interface PromotionEffect {
+  attackPct?: number;
+  defensePct?: number;
+  vsClassPct?: { class: UnitClass; pct: number };
+  vsCityPct?: number;
+  movement?: number;
+  healPerTurn?: number;
+  healAlways?: boolean;
+  ignoreZoc?: boolean;
+}
+export interface PromotionDef {
+  id: string; name: string;
+  classes?: UnitClass[]; // which unit classes may take it (undefined = any)
+  requires?: string[];   // prerequisite promotion ids
+  effect: PromotionEffect;
+}
 export interface PolicyDef { id: string; name: string; branch: string; cost: number; prereqs: string[]; effect: CivicEffect; }
 export interface ReligionSettings {
   pantheonCost: number; religionCost: number; religionTech: string; maxReligions: number;
@@ -208,6 +225,8 @@ export interface RulesetSettings {
   religion: ReligionSettings;
   happiness: HappinessSettings;
   tradeRoute: TradeRouteSettings;
+  combat: { xpPerAttack: number; xpPerKill: number; xpPerDefend: number; xpVsBarbCap: number; promotionThresholds: number[] };
+  barbarians: { campCount: number; startSafeRadius: number; spawnRadius: number; spawnEveryTurns: number; maxNearCamp: number; campBounty: number };
   startingUnits: string[];
   diplomacy: DiplomacySettings;
 }
@@ -226,6 +245,7 @@ export interface Ruleset {
   specialists: Record<SpecialistType, SpecialistDef>;
   beliefs: Record<string, BeliefDef>;
   policies: Record<string, PolicyDef>;
+  promotions: Record<string, PromotionDef>;
   eras: EraDef[];
   settings: RulesetSettings;
 }

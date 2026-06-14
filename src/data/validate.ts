@@ -99,6 +99,16 @@ export function validateRuleset(rules: Ruleset): string[] {
     if (pb && !(pb.building in rules.buildings)) errors.push(`policy ${pol.id}: unknown perBuilding ${pb.building}`);
   }
 
+  const unitClasses = new Set(Object.values(rules.units).map((u) => u.class));
+  for (const pr of Object.values(rules.promotions)) {
+    for (const c of pr.classes ?? [])
+      if (!unitClasses.has(c)) errors.push(`promotion ${pr.id}: unknown unit class ${c}`);
+    for (const req of pr.requires ?? [])
+      if (!(req in rules.promotions)) errors.push(`promotion ${pr.id}: unknown prereq ${req}`);
+    if (pr.effect.vsClassPct && !unitClasses.has(pr.effect.vsClassPct.class))
+      errors.push(`promotion ${pr.id}: unknown vsClass ${pr.effect.vsClassPct.class}`);
+  }
+
   return errors;
 }
 

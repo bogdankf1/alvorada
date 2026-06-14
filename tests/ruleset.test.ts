@@ -65,4 +65,10 @@ describe('standard ruleset', () => {
     const roots = Object.values(STANDARD_RULESET.policies).filter((p) => p.prereqs.length === 0);
     expect(roots.length).toBeGreaterThanOrEqual(3); // one opener per branch
   });
+
+  it('promotions are valid and the prereq chains resolve', () => {
+    expect(validateRuleset(STANDARD_RULESET)).toEqual([]);
+    expect(STANDARD_RULESET.promotions.combat_ii.requires).toEqual(['combat_i']);
+    expect(STANDARD_RULESET.promotions.march.requires).toEqual(['medic']);
+  });
 });

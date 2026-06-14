@@ -7,6 +7,7 @@ import { TECHS, ERAS } from './techs';
 import { CIVS } from './civs';
 import { BELIEFS } from './beliefs';
 import { POLICIES } from './policies';
+import { PROMOTIONS } from './promotions';
 
 const SETTINGS: RulesetSettings = {
   workRadius: 2,
@@ -79,6 +80,8 @@ const SETTINGS: RulesetSettings = {
     pillageBounty: 25,
   },
   religion: { pantheonCost: 20, religionCost: 60, religionTech: 'theology', maxReligions: 4, spreadRange: 6, pressurePerCity: 2, holyCityBonus: 30, holyCityFaithDiv: 2 },
+  combat: { xpPerAttack: 4, xpPerKill: 6, xpPerDefend: 3, xpVsBarbCap: 30, promotionThresholds: [10, 25, 45, 70, 100] },
+  barbarians: { campCount: 6, startSafeRadius: 6, spawnRadius: 2, spawnEveryTurns: 6, maxNearCamp: 2, campBounty: 25 },
   startingUnits: ['settler', 'warrior'],
   diplomacy: {
     termLength: 30,
@@ -129,6 +132,7 @@ export const STANDARD_RULESET: Ruleset = {
   specialists: SPECIALISTS,
   beliefs: BELIEFS,
   policies: POLICIES,
+  promotions: PROMOTIONS,
   eras: ERAS,
   settings: SETTINGS,
 };
