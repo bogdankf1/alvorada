@@ -277,6 +277,31 @@ export function validateAction(ctx: Ctx, state: GameState, action: Action): Vali
       if (state.relations[action.player][action.target].denounced) return fail('already denounced');
       return ok;
     }
+
+    case 'FOUND_PANTHEON': {
+      const p = state.players[action.player];
+      const bel = ctx.rules.beliefs[action.belief];
+      if (!bel || bel.kind !== 'pantheon') return fail('not a pantheon belief');
+      if (p.pantheon) return fail('you already have a pantheon');
+      if (p.faith < ctx.rules.settings.religion.pantheonCost) return fail('not enough faith');
+      return ok;
+    }
+
+    case 'FOUND_RELIGION': {
+      const p = state.players[action.player];
+      const r = ctx.rules.settings.religion;
+      if (!p.techs.includes(r.religionTech)) return fail(`requires ${ctx.rules.techs[r.religionTech].name}`);
+      if (state.religions['rel_' + action.player]) return fail('you already founded a religion');
+      if (Object.keys(state.religions).length >= r.maxReligions) return fail('no religions remain to be founded');
+      if (p.faith < r.religionCost) return fail('not enough faith');
+      const city = state.cities[action.holyCity];
+      if (!city || city.owner !== action.player) return fail('holy city must be yours');
+      const fb = ctx.rules.beliefs[action.founderBelief];
+      const lb = ctx.rules.beliefs[action.followerBelief];
+      if (!fb || fb.kind !== 'founder') return fail('invalid founder belief');
+      if (!lb || lb.kind !== 'follower') return fail('invalid follower belief');
+      return ok;
+    }
   }
 }
 

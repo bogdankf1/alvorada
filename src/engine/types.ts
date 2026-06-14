@@ -223,6 +223,8 @@ export type Action =
   | { type: 'PROPOSE_DEAL'; player: PlayerId; to: PlayerId; give: DealItems; take: DealItems }
   | { type: 'RESPOND_DEAL'; player: PlayerId; proposal: number; accept: boolean }
   | { type: 'DENOUNCE'; player: PlayerId; target: PlayerId }
+  | { type: 'FOUND_PANTHEON'; player: PlayerId; belief: string }
+  | { type: 'FOUND_RELIGION'; player: PlayerId; name: string; holyCity: CityId; founderBelief: string; followerBelief: string }
   | { type: 'END_TURN'; player: PlayerId };
 
 export type ActionType = Action['type'];

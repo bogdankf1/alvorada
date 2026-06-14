@@ -15,6 +15,7 @@ import { checkElimination } from './systems/victory';
 import { recomputeVisibility } from './map/visibility';
 import { applyDeal, applyDenounce, enterWar, pushProposal } from './systems/diplomacy';
 import { establishTradeRoute } from './systems/trade';
+import { foundPantheon, foundReligion } from './systems/religion';
 import { resolveProposal } from './diplomacy-eval';
 
 export class ActionError extends Error {
@@ -195,6 +196,16 @@ function handle(ctx: Ctx, state: GameState, action: Action): void {
 
     case 'DENOUNCE': {
       applyDenounce(ctx, state, action.player, action.target);
+      break;
+    }
+
+    case 'FOUND_PANTHEON': {
+      foundPantheon(ctx, state, action.player, action.belief);
+      break;
+    }
+
+    case 'FOUND_RELIGION': {
+      foundReligion(ctx, state, action.player, action.name, action.holyCity, action.founderBelief, action.followerBelief);
       break;
     }
 
