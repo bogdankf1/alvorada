@@ -260,6 +260,15 @@ describe('caravan', () => {
   });
 });
 
+describe('faith buildings', () => {
+  const b = STANDARD_RULESET.buildings;
+  it('adds a Shrine and gives the Temple faith', () => {
+    expect(b.shrine.yields.faith).toBe(1);
+    expect(b.shrine.requiresTech).toBeUndefined(); // early, like the Monument
+    expect(b.temple.yields.faith).toBe(1);
+  });
+});
+
 import { pickProduction, pickResearch } from '../src/ai/economy';
 
 describe('AI breadth', () => {

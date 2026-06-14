@@ -17,6 +17,10 @@ export const BUILDINGS: Record<string, BuildingDef> = {
     yields: { culture: 2 },
     art: { glyph: 'obelisk' },
   },
+  shrine: {
+    id: 'shrine', name: 'Shrine', cost: 40, yields: { faith: 1 },
+    art: { glyph: 'temple' },
+  },
   granary: {
     id: 'granary',
     name: 'Granary',
@@ -57,7 +61,7 @@ export const BUILDINGS: Record<string, BuildingDef> = {
     id: 'temple',
     name: 'Temple',
     cost: 88,
-    yields: { culture: 3 },
+    yields: { culture: 3, faith: 1 },
     specialistSlots: { type: 'artist', count: 1 },
     requiresTech: 'philosophy',
     art: { glyph: 'temple' },
