@@ -6,7 +6,7 @@
  */
 import type { City, Ctx, GameState, Unit } from '../types';
 import { tileIndex } from '../hex';
-import { cityAt, civilianAt, defenseBonusAt, militaryAt, wonderOwnerEffects } from '../selectors';
+import { cityAt, civilianAt, defenseBonusAt, militaryAt, promotionBonus, wonderOwnerEffects } from '../selectors';
 import { recomputeVisibility } from '../map/visibility';
 import { pushEvent } from '../events';
 import { captureCity } from './cities';
@@ -30,7 +30,7 @@ function classBonus(ctx: Ctx, attacker: Unit, vs: { unit?: Unit; city?: boolean 
 
 export function attackStrength(ctx: Ctx, unit: Unit, vs: { unit?: Unit; city?: boolean }): number {
   const def = ctx.rules.units[unit.def];
-  return hpScaled(def.strength, unit.hp) + classBonus(ctx, unit, vs);
+  return hpScaled(def.strength, unit.hp) + classBonus(ctx, unit, vs) + promotionBonus(ctx, unit, 'attack', vs, def.strength);
 }
 
 export function rangedStrength(ctx: Ctx, unit: Unit, vs: { unit?: Unit; city?: boolean }): number {
@@ -41,7 +41,7 @@ export function rangedStrength(ctx: Ctx, unit: Unit, vs: { unit?: Unit; city?: b
     if (b.vsCity && vs.city) pct += b.pct;
     if (b.vsClass && vs.unit && ctx.rules.units[vs.unit.def].class === b.vsClass) pct += b.pct;
   }
-  return hpScaled(def.ranged.strength, unit.hp) + Math.floor((def.ranged.strength * pct) / 100);
+  return hpScaled(def.ranged.strength, unit.hp) + Math.floor((def.ranged.strength * pct) / 100) + promotionBonus(ctx, unit, 'attack', vs, def.ranged.strength);
 }
 
 export function defenseStrength(ctx: Ctx, state: GameState, unit: Unit): number {
@@ -49,6 +49,7 @@ export function defenseStrength(ctx: Ctx, state: GameState, unit: Unit): number 
   const idx = tileIndex({ q: unit.q, r: unit.r }, state.mapW, state.mapH);
   let s = hpScaled(def.strength, unit.hp) + defenseBonusAt(ctx, state, idx);
   if (unit.stance === 'fortified') s += ctx.rules.settings.fortifyBonus;
+  s += promotionBonus(ctx, unit, 'defense', {}, def.strength);
   return s;
 }
 
@@ -94,6 +95,15 @@ function spendAttack(unit: Unit): void {
   unit.stance = 'none';
 }
 
+function isCappedTarget(state: GameState, defenderOwner?: number): boolean {
+  return defenderOwner !== undefined && !!state.players[defenderOwner].barbarian;
+}
+
+function awardXp(ctx: Ctx, unit: Unit, amount: number, capped: boolean): void {
+  if (capped && (unit.xp ?? 0) >= ctx.rules.settings.combat.xpVsBarbCap) return;
+  unit.xp = (unit.xp ?? 0) + amount;
+}
+
 /** Melee attack on a tile holding an enemy unit or city. */
 export function resolveMeleeAttack(
   ctx: Ctx,
@@ -117,6 +127,11 @@ export function resolveMeleeAttack(
   attacker.hp -= dmgToAttacker;
   defender.hp -= dmgToDefender;
   spendAttack(attacker);
+
+  const c = ctx.rules.settings.combat;
+  const capped = isCappedTarget(state, defender.owner);
+  awardXp(ctx, attacker, c.xpPerAttack + (defender.hp <= 0 ? c.xpPerKill : 0), capped);
+  if (defender.hp > 0 && attacker.hp > 0) awardXp(ctx, defender, c.xpPerDefend, !!state.players[attacker.owner].barbarian);
 
   if (defender.hp <= 0) {
     // if both fall, the field belongs to the attacker (survives at 1 hp)
@@ -143,6 +158,7 @@ function resolveCityMelee(ctx: Ctx, state: GameState, attacker: Unit, city: City
 
   attacker.hp -= dmgToAttacker;
   spendAttack(attacker);
+  awardXp(ctx, attacker, ctx.rules.settings.combat.xpPerAttack, true);
   if (attacker.hp <= 0) {
     pushEvent(state, {
       player: attacker.owner,
@@ -187,6 +203,7 @@ export function resolveRangedAttack(
     const dmg = damageFor(ctx, attEff, defEff);
     city.hp = Math.max(1, city.hp - dmg);
     spendAttack(attacker);
+    awardXp(ctx, attacker, ctx.rules.settings.combat.xpPerAttack, true);
     pushEvent(state, {
       player: city.owner,
       type: 'cityBombarded',
@@ -202,6 +219,7 @@ export function resolveRangedAttack(
   const defEff = defenseStrength(ctx, state, defender);
   defender.hp -= damageFor(ctx, attEff, defEff);
   spendAttack(attacker);
+  awardXp(ctx, attacker, ctx.rules.settings.combat.xpPerAttack + (defender.hp <= 0 ? ctx.rules.settings.combat.xpPerKill : 0), isCappedTarget(state, defender.owner));
   if (defender.hp <= 0) {
     killUnit(ctx, state, defender, attacker);
     checkElimination(ctx, state);
