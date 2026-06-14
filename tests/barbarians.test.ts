@@ -17,8 +17,9 @@ describe('barbarian faction', () => {
   });
 });
 
-import { ctx as ctx2, flatWorld } from './helpers';
+import { ctx as ctx2, flatWorld, spawn, refreshVis } from './helpers';
 import { spawnBarbarians } from '../src/engine/systems/barbarians';
+import { applyAction } from '../src/engine/reducer';
 
 /** A flatWorld whose last player is the barbarian faction, at war with all, with one camp. */
 function barbFixture() {
@@ -42,5 +43,19 @@ describe('barbarian spawning', () => {
     s.turn = ctx2.rules.settings.barbarians.spawnEveryTurns + 1;
     spawnBarbarians(ctx2, s);
     expect(Object.values(s.units).filter((u) => u.owner === 2).length).toBe(0);
+  });
+});
+
+describe('clearing camps', () => {
+  it('occupying a camp tile removes it and pays a bounty + XP', () => {
+    const s = barbFixture(); // camp at (10,7), no defender in this fixture
+    const u = spawn(s, 0, 'warrior', 9, 7);
+    spawn(s, 0, 'settler', 1, 1); // keep player 0 alive through checkElimination
+    refreshVis(s);
+    const goldBefore = s.players[0].gold;
+    const s2 = applyAction(ctx2, s, { type: 'MOVE_UNIT', player: 0, unit: u.id, path: [{ q: 10, r: 7 }] });
+    expect(s2.camps.length).toBe(0);
+    expect(s2.players[0].gold).toBe(goldBefore + ctx2.rules.settings.barbarians.campBounty);
+    expect(s2.units[u.id].xp ?? 0).toBeGreaterThan(0);
   });
 });

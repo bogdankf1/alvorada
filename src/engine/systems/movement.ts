@@ -19,6 +19,7 @@ import {
 } from '../selectors';
 import { recomputeVisibility } from '../map/visibility';
 import { pushEvent } from '../events';
+import { clearCampAt } from './barbarians';
 
 /** A captured civilian changes flags; captured settlers are pressed into work crews. */
 export function captureCivilian(ctx: Ctx, state: GameState, civ: Unit, byPlayer: number): void {
@@ -121,6 +122,7 @@ export function executeMovePath(ctx: Ctx, state: GameState, unit: Unit, path: Ax
     unit.acted = true;
     unit.stance = 'none';
     steps++;
+    if (!state.players[unit.owner].barbarian) clearCampAt(ctx, state, a, unit);
     if (!unitHasPromoFlag(ctx, unit, 'ignoreZoc') && adjacentToEnemyMilitary(ctx, state, a, unit.owner)) {
       unit.moves = 0;
       zocStopped = true;

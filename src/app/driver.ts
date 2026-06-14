@@ -53,6 +53,7 @@ const TOAST_TYPES = new Set([
   'policyAdopted',
   'promotionReady',
   'barbarianSpawn',
+  'campCleared',
 ]);
 
 export interface DispatchResult {

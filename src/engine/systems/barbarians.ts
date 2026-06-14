@@ -44,6 +44,15 @@ function barbUnitForTurn(turn: number): string {
   return 'pikeman';
 }
 
+export function clearCampAt(ctx: Ctx, state: GameState, a: Axial, byUnit: Unit): void {
+  const i = state.camps.findIndex((c) => c.q === a.q && c.r === a.r);
+  if (i < 0) return;
+  state.camps.splice(i, 1);
+  state.players[byUnit.owner].gold += ctx.rules.settings.barbarians.campBounty;
+  byUnit.xp = (byUnit.xp ?? 0) + ctx.rules.settings.combat.xpPerKill;
+  pushEvent(state, { player: byUnit.owner, type: 'campCleared', msg: `Barbarian camp cleared! +${ctx.rules.settings.barbarians.campBounty} gold`, q: a.q, r: a.r });
+}
+
 export function spawnBarbarians(ctx: Ctx, state: GameState): void {
   const b = ctx.rules.settings.barbarians;
   if (state.turn % b.spawnEveryTurns !== 0) return;
