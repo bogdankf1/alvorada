@@ -16,6 +16,7 @@ import { checkCultureVictory, checkScoreVictory, checkScienceVictory } from './v
 import { processObligations } from './diplomacy';
 import { processTradeRoutes } from './trade';
 import { spreadReligions } from './religion';
+import { spawnBarbarians } from './barbarians';
 
 export function handleEndTurn(ctx: Ctx, state: GameState): void {
   const current = state.currentPlayer;
@@ -102,6 +103,9 @@ export function beginTurn(ctx: Ctx, state: GameState, pid: PlayerId): void {
       }
     }
   }
+
+  // 1d. barbarian camps spawn raiders on the barbarians' turn
+  if (state.players[pid].barbarian) spawnBarbarians(ctx, state);
 
   // 1b. trade routes: expire and pillage before cities tally their yields
   processTradeRoutes(ctx, state, pid);

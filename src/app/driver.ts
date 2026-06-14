@@ -52,6 +52,7 @@ const TOAST_TYPES = new Set([
   'cityConverted',
   'policyAdopted',
   'promotionReady',
+  'barbarianSpawn',
 ]);
 
 export interface DispatchResult {

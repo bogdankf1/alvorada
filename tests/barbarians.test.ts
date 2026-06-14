@@ -16,3 +16,31 @@ describe('barbarian faction', () => {
     expect(s.camps.length).toBe(ctx.rules.settings.barbarians.campCount);
   });
 });
+
+import { ctx as ctx2, flatWorld } from './helpers';
+import { spawnBarbarians } from '../src/engine/systems/barbarians';
+
+/** A flatWorld whose last player is the barbarian faction, at war with all, with one camp. */
+function barbFixture() {
+  const s = flatWorld(20, 14, 3);
+  const b = 2;
+  s.players[b].barbarian = true; s.players[b].civ = 'barbarians'; s.players[b].name = 'Barbarians';
+  for (let x = 0; x < 3; x++) if (x !== b) { s.relations[b][x].status = 'war'; s.relations[x][b].status = 'war'; }
+  s.camps = [{ id: 1, q: 10, r: 7 }]; s.nextCampId = 2;
+  return s;
+}
+
+describe('barbarian spawning', () => {
+  it('a camp spawns a raider on the spawn cadence', () => {
+    const s = barbFixture();
+    s.turn = ctx2.rules.settings.barbarians.spawnEveryTurns; // turn % cadence === 0
+    spawnBarbarians(ctx2, s);
+    expect(Object.values(s.units).filter((u) => u.owner === 2).length).toBeGreaterThan(0);
+  });
+  it('does not spawn off-cadence', () => {
+    const s = barbFixture();
+    s.turn = ctx2.rules.settings.barbarians.spawnEveryTurns + 1;
+    spawnBarbarians(ctx2, s);
+    expect(Object.values(s.units).filter((u) => u.owner === 2).length).toBe(0);
+  });
+});
