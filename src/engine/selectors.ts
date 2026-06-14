@@ -3,7 +3,7 @@
  * facts — validation, the reducer, the AI, and the UI all ask these same
  * questions, which is what keeps their answers consistent.
  */
-import type { BeliefDef, CivicEffect, PartialYields, SpecialistType, Yields } from '../data/types';
+import type { BeliefDef, CivicEffect, PartialYields, PromotionDef, SpecialistType, Yields } from '../data/types';
 import { addYields, emptyYields, YIELD_KEYS } from '../data/types';
 import type { Axial, City, Ctx, GameState, PlayerId, ProductionItem, TradeRoute, Unit } from './types';
 import { sortedIds } from './types';
@@ -575,4 +575,53 @@ function routeOriginYield(ctx: Ctx, state: GameState, route: TradeRoute): Partia
     }
   }
   return out;
+}
+
+// --- promotion selectors ---
+
+export function promotionSlots(ctx: Ctx, unit: Unit): number {
+  const xp = unit.xp ?? 0;
+  return ctx.rules.settings.combat.promotionThresholds.filter((t) => xp >= t).length;
+}
+
+export function pendingPromotions(ctx: Ctx, unit: Unit): number {
+  return promotionSlots(ctx, unit) - (unit.promotions?.length ?? 0);
+}
+
+export function availablePromotions(ctx: Ctx, unit: Unit): PromotionDef[] {
+  const cls = ctx.rules.units[unit.def].class;
+  const have = new Set(unit.promotions ?? []);
+  return Object.values(ctx.rules.promotions)
+    .filter((p) => !have.has(p.id) && (!p.classes || p.classes.includes(cls)) && (p.requires ?? []).every((r) => have.has(r)))
+    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+}
+
+export function unitHasPromoFlag(ctx: Ctx, unit: Unit, flag: 'ignoreZoc' | 'healAlways'): boolean {
+  return (unit.promotions ?? []).some((id) => !!ctx.rules.promotions[id]?.effect[flag]);
+}
+
+export function promotionMovementBonus(ctx: Ctx, unit: Unit): number {
+  let m = 0; for (const id of unit.promotions ?? []) m += ctx.rules.promotions[id]?.effect.movement ?? 0; return m;
+}
+
+export function promotionHealBonus(ctx: Ctx, unit: Unit): number {
+  let h = 0; for (const id of unit.promotions ?? []) h += ctx.rules.promotions[id]?.effect.healPerTurn ?? 0; return h;
+}
+
+export function promotionBonus(
+  ctx: Ctx, unit: Unit, kind: 'attack' | 'defense', vs: { unit?: Unit; city?: boolean }, base: number,
+): number {
+  let pct = 0;
+  for (const id of unit.promotions ?? []) {
+    const e = ctx.rules.promotions[id]?.effect;
+    if (!e) continue;
+    if (kind === 'attack') {
+      pct += e.attackPct ?? 0;
+      if (e.vsClassPct && vs.unit && ctx.rules.units[vs.unit.def].class === e.vsClassPct.class) pct += e.vsClassPct.pct;
+      if (e.vsCityPct && vs.city) pct += e.vsCityPct;
+    } else {
+      pct += e.defensePct ?? 0;
+    }
+  }
+  return Math.floor((base * pct) / 100);
 }

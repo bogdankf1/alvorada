@@ -40,6 +40,8 @@ export interface Unit {
   stance: Stance;
   acted: boolean; // moved/attacked since last turn-start (gates healing)
   order: UnitOrder | null;
+  xp?: number;            // combat experience
+  promotions?: string[];  // earned promotion ids
 }
 
 export interface ProductionItem {
@@ -145,6 +147,7 @@ export interface Player {
   policyProgress: number;  // empire culture accumulated toward the next policy
   cultureTotal: number;    // lifetime empire culture (drives influence)
   nextCityName: number;
+  barbarian?: boolean;
 }
 
 export interface GameEvent {
