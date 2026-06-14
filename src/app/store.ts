@@ -39,6 +39,7 @@ export interface AppState {
   draftDeal: DraftDeal | null;
   proposalModal: number | null; // proposal id to show in the incoming-offer modal
   tradeRouteUnit: number | null; // caravan awaiting a trade-route target
+  religionModal: 'pantheon' | 'religion' | null;
   winnerSeen: boolean;
 }
 
@@ -60,6 +61,7 @@ const initial: AppState = {
   draftDeal: null,
   proposalModal: null,
   tradeRouteUnit: null,
+  religionModal: null,
   winnerSeen: false,
 };
 

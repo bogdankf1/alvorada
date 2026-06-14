@@ -74,6 +74,19 @@ export function TopBar() {
         <span className="num">{player.faith}</span>
         <span className="per-turn">+{faith}</span>
       </span>
+      {!player.pantheon && player.faith >= gameCtx.rules.settings.religion.pantheonCost && (
+        <button className="btn btn--ghost" onClick={() => appStore.set({ religionModal: 'pantheon' })} title="Found Pantheon">
+          Pantheon
+        </button>
+      )}
+      {player.techs.includes(gameCtx.rules.settings.religion.religionTech) &&
+        !game.religions['rel_' + viewer] &&
+        Object.keys(game.religions).length < gameCtx.rules.settings.religion.maxReligions &&
+        player.faith >= gameCtx.rules.settings.religion.religionCost && (
+          <button className="btn btn--ghost" onClick={() => appStore.set({ religionModal: 'religion' })} title="Found Religion">
+            Religion
+          </button>
+        )}
       <span
         className="yield-chip"
         style={{ color: hapColor }}

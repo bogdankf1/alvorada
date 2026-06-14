@@ -10,7 +10,7 @@ import { Notifications } from './panels/Notifications';
 import { HudRight } from './panels/HudRight';
 import { TileInfo } from './panels/TileInfo';
 import { AiLog } from './panels/AiLog';
-import { AiThinkingBanner, GameMenu, ProposalModal, TradeRouteModal, VictoryOverlay, WarConfirm } from './panels/Modals';
+import { AiThinkingBanner, GameMenu, ProposalModal, ReligionModal, TradeRouteModal, VictoryOverlay, WarConfirm } from './panels/Modals';
 import { appStore, useApp } from '../app/store';
 import { endTurnRequest, humanDispatch, isMyTurn, selectNextIdleUnit } from './actions';
 
@@ -81,6 +81,7 @@ export function GameScreen() {
       <WarConfirm />
       <ProposalModal />
       <TradeRouteModal />
+      <ReligionModal />
       <VictoryOverlay />
     </div>
   );

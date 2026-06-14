@@ -25,6 +25,8 @@ interface DebugApi {
   establishRoute(unitId: number, targetCity: number): void;
   listRoutes(): { id: number; owner: number; fromCity: number; toCity: number; kind: string; expires: number }[];
   adoptPolicy(policy: string): void;
+  foundPantheon(belief: string): void;
+  foundReligion(name: string, holyCity: number, founderBelief: string, followerBelief: string): void;
   debugAutoplay(turns: number): Promise<void>;
 }
 
@@ -94,6 +96,14 @@ export function installDebugBridge(): void {
 
     adoptPolicy(policy: string) {
       humanDispatch({ type: 'ADOPT_POLICY', player: appStore.get().viewingPlayer, policy });
+    },
+
+    foundPantheon(belief: string) {
+      humanDispatch({ type: 'FOUND_PANTHEON', player: appStore.get().viewingPlayer, belief });
+    },
+
+    foundReligion(name: string, holyCity: number, founderBelief: string, followerBelief: string) {
+      humanDispatch({ type: 'FOUND_RELIGION', player: appStore.get().viewingPlayer, name, holyCity, founderBelief, followerBelief });
     },
 
     /** Plays the viewer's turns with the AI brain — fills the world for visual checks. */
