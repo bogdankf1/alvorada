@@ -61,6 +61,18 @@ describe('clearing camps', () => {
 });
 
 import { checkElimination } from '../src/engine/systems/victory';
+import { barbarianDecide } from '../src/ai/barbarian';
+
+describe('barbarian AI', () => {
+  it('attacks an adjacent enemy unit', () => {
+    const s = barbFixture();
+    s.currentPlayer = 2; // barbarians' turn (validateAction checks this)
+    spawn(s, 2, 'warrior', 10, 7);  // a barbarian raider
+    spawn(s, 0, 'warrior', 11, 7);  // an adjacent enemy
+    refreshVis(s);
+    expect(barbarianDecide(ctx2, s, 2).action.type).toBe('ATTACK');
+  });
+});
 
 describe('conquest victory with barbarians present', () => {
   it('barbarian always-alive does not block conquest win for the sole real survivor', () => {

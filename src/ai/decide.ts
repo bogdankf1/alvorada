@@ -25,6 +25,7 @@ import { cityStrength } from '../engine/systems/combat';
 import { bestWorkerJob, knownGoodSpots, knownPower, pickProduction, pickResearch } from './economy';
 import { initiateDiplomacy } from './diplomacy';
 import { civicAction } from './civics';
+import { barbarianDecide } from './barbarian';
 
 export interface AiDecision {
   action: Action;
@@ -43,8 +44,7 @@ export function decide(ctx: Ctx, state: GameState, pid: PlayerId): AiDecision {
     reason: 'orders issued',
   };
   if (state.phase === 'ended') return endTurn;
-  // Barbarian AI is not yet implemented; the turn is passed until a later phase routes it.
-  if (state.players[pid].barbarian) return endTurn;
+  if (state.players[pid].barbarian) return barbarianDecide(ctx, state, pid);
 
   const tryDecision = (d: AiDecision | null): AiDecision | null =>
     d && validateAction(ctx, state, d.action).ok ? d : null;
