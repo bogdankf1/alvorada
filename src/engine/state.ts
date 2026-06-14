@@ -28,6 +28,7 @@ export function initialState(config: GameConfig, ctx: Ctx): GameState {
       researching: null,
       science: 0,
       gold: 0,
+      faith: 0,
       nextCityName: 0,
     };
   });

@@ -128,6 +128,7 @@ export interface Player {
   researching: string | null;
   science: number; // stored toward current research
   gold: number;
+  faith: number; // accumulates each turn like science/gold
   nextCityName: number;
 }
 

@@ -146,7 +146,7 @@ export function allocateCitizens(
   ctx: Ctx, state: GameState, city: City,
 ): { worked: number[]; specialists: Partial<Record<SpecialistType, number>> } {
   const weight = (y: PartialYields) =>
-    (y.food ?? 0) * 4 + (y.production ?? 0) * 3 + (y.gold ?? 0) * 2 + (y.science ?? 0) * 2 + (y.culture ?? 0);
+    (y.food ?? 0) * 4 + (y.production ?? 0) * 3 + (y.gold ?? 0) * 2 + (y.science ?? 0) * 2 + (y.culture ?? 0) + (y.faith ?? 0);
   const centerIdx = tileIndex({ q: city.q, r: city.r }, state.mapW, state.mapH);
 
   const tileCands: { kind: 'tile'; idx: number; value: number }[] = [];

@@ -4,7 +4,7 @@
  */
 import type { GameState } from './types';
 
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 
 export function serializeGame(state: GameState): string {
   return JSON.stringify(state);

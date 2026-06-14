@@ -105,19 +105,22 @@ export function beginTurn(ctx: Ctx, state: GameState, pid: PlayerId): void {
   // 1b. trade routes: expire and pillage before cities tally their yields
   processTradeRoutes(ctx, state, pid);
 
-  // 2. cities: economy in id order; science/gold flow to the player
+  // 2. cities: economy in id order; science/gold/faith flow to the player
   let science = 0;
   let gold = 0;
+  let faith = 0;
   for (const c of playerCities(state, pid)) {
     const out = processCity(ctx, state, c);
     science += out.science;
     gold += out.gold;
+    faith += out.faith;
   }
 
   // 3. player: research progress and treasury
   const player = state.players[pid];
   player.gold += gold;
   player.science += science;
+  player.faith += faith;
   if (player.researching) {
     const tech = ctx.rules.techs[player.researching];
     if (player.science >= tech.cost) {

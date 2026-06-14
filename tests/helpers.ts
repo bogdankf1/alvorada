@@ -47,6 +47,7 @@ export function flatWorld(w = 12, h = 10, playerCount = 2): GameState {
     researching: null as string | null,
     science: 0,
     gold: 0,
+    faith: 0,
     nextCityName: 0,
   }));
   return {
