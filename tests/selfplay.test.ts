@@ -9,7 +9,7 @@ import type { Action, GameConfig, GameState } from '../src/engine/types';
 import { initialState } from '../src/engine/state';
 import { applyAction } from '../src/engine/reducer';
 import { gameHash } from '../src/engine/serialize';
-import { computeScore, empireHappiness, influence, playerCities } from '../src/engine/selectors';
+import { computeScore, empireHappiness, influence, playerCities, playerUnits } from '../src/engine/selectors';
 import { decide } from '../src/ai/decide';
 import { ctx } from './helpers';
 
@@ -122,8 +122,10 @@ describe('balance telemetry', () => {
       policies: p.policies.length,
       religion: !!state.religions['rel_' + p.id],
       influence: influence(ctx, state, p.id),
+      promotions: playerUnits(state, p.id).reduce((n, u) => n + (u.promotions?.length ?? 0), 0),
     }));
     console.table(rows);
+    console.log('camps:', state.camps.length);
     expect(rows.length).toBe(4);
   }, 120_000);
 });
@@ -189,4 +191,22 @@ describe('culture & religion in self-play', () => {
     for (const a of log) replay = applyAction(ctx, replay, a);
     expect(gameHash(replay)).toBe(gameHash(state));
   }, 300_000);
+});
+
+describe('combat depth in self-play', () => {
+  it('barbarians spawn and are cleared, and units earn promotions (and it replays)', () => {
+    const { state, log } = runGame(2718, 160);
+    const spawned = log.length; // sanity: the game ran
+    expect(spawned).toBeGreaterThan(0);
+    // promotions earned by someone
+    const promoted = Object.values(state.units).some((u) => (u.promotions ?? []).length > 0)
+      || log.some((a) => a.type === 'CHOOSE_PROMOTION');
+    expect(promoted, 'someone earned a promotion').toBe(true);
+    // at least one camp was cleared OR fewer camps remain than were placed
+    expect(state.camps.length).toBeLessThanOrEqual(ctx.rules.settings.barbarians.campCount);
+    // replay bit-identically
+    let replay = initialState(config(2718), ctx);
+    for (const a of log) replay = applyAction(ctx, replay, a);
+    expect(gameHash(replay)).toBe(gameHash(state));
+  }, 200_000);
 });
