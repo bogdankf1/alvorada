@@ -91,6 +91,18 @@ describe('AI self-play', () => {
     expect(state.winner?.victory).toBe('science');
     expect(state.players[state.winner!.player].techs).toContain('scientific_method');
   }, 300_000);
+
+  it('the culture victory is a reachable victory in self-play', () => {
+    // Seed 999 is a culture-blowout game: one AI (Rome) builds a dominant culture/wonder
+    // core while its rivals stay small, so at the minTurn (220) its influence already
+    // outweighs every living rival's lifetime culture by the tuned 3× dominanceFactor and
+    // the culture win fires immediately — before any tech leader reaches scientific_method.
+    // The companion of the science-capstone test: together they prove BOTH victory paths
+    // are live under the tuned culture.dominanceFactor (science on 314, culture on 999).
+    const { state } = runGame(999, 265);
+    expect(state.phase).toBe('ended');
+    expect(state.winner?.victory).toBe('culture');
+  }, 300_000);
 });
 
 describe('balance telemetry', () => {

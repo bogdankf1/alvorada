@@ -37,8 +37,16 @@ const SETTINGS: RulesetSettings = {
   // leader actually reach the science capstone (~turn 200-250) before the score/timeout
   // ending preempts it — so science is a reachable race, not a dead victory path.
   // culture.minTurn 220: raised from 150 so self-play breadth (200-turn) games reach the
-  // medieval eras before a cultural victor can emerge; Phase 8 re-tunes if needed.
-  victory: { scoreThreshold: 600, turnLimit: 260, scienceCapstone: 'scientific_method', culture: { dominanceFactor: 2, minTurn: 220, perWonder: 40 } },
+  // medieval eras before a cultural victor can emerge.
+  // culture.dominanceFactor 3 (tuned up from 2 via Phase-8 self-play): at 2, a cultural
+  // hegemon out-influences every rival's lifetime culture by turn 220 (minTurn) and the
+  // culture win pre-empts the deep renaissance science chain — seed 314's tech leader (Egypt,
+  // scientific_method ~turn 244) lost the game to its own culture at turn 220. Requiring a
+  // 3× margin pushes the culture win past the science capstone on tech-race seeds (314 now
+  // ends 'science' @ ~221) while a genuine culture blowout still wins (seeds 999, 60221 end
+  // 'culture' @ 220). At 4 the culture path becomes too rare (only the most extreme blowout
+  // fires); 3 keeps both victory paths live and non-trivial across the seed sweep.
+  victory: { scoreThreshold: 600, turnLimit: 260, scienceCapstone: 'scientific_method', culture: { dominanceFactor: 3, minTurn: 220, perWonder: 40 } },
   // Tuned via self-play telemetry. The brake still bites hard (empires routinely go
   // Unhappy/Very-Unhappy and build colosseums/courthouses) — but unhappyGrowthDivisor 3
   // (was 4) lets an Unhappy empire still grow its science core instead of stalling out,
