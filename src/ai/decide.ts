@@ -43,6 +43,8 @@ export function decide(ctx: Ctx, state: GameState, pid: PlayerId): AiDecision {
     reason: 'orders issued',
   };
   if (state.phase === 'ended') return endTurn;
+  // Barbarian AI is not yet implemented; the turn is passed until a later phase routes it.
+  if (state.players[pid].barbarian) return endTurn;
 
   const tryDecision = (d: AiDecision | null): AiDecision | null =>
     d && validateAction(ctx, state, d.action).ok ? d : null;

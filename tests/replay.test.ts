@@ -34,6 +34,10 @@ function scriptedGame(seed: number, rounds: number): { final: GameState; log: Ac
 
   for (let round = 0; round < rounds; round++) {
     for (let p = 0; p < 2; p++) {
+      // Skip barbarian turns: barbarians have no scripted actions; just end their turn.
+      while (s.players[s.currentPlayer]?.barbarian) {
+        act({ type: 'END_TURN', player: s.currentPlayer });
+      }
       expect(s.currentPlayer).toBe(p);
       // found a city with any settler standing around
       for (const u of playerUnits(s, p)) {
@@ -101,9 +105,9 @@ describe('replay determinism', () => {
     const restored = deserializeGame(serializeGame(final));
     expect(restored).toEqual(final);
     expect(gameHash(restored)).toBe(gameHash(final));
-    // and the restored game keeps playing
+    // and the restored game keeps playing (turn advances, or same turn with a later player)
     const next = applyAction(ctx, restored, { type: 'END_TURN', player: restored.currentPlayer });
-    expect(next.turn + next.currentPlayer).toBeGreaterThan(restored.turn + restored.currentPlayer - 1);
+    expect(next.turn * 100 + next.currentPlayer).toBeGreaterThan(restored.turn * 100 + restored.currentPlayer - 1);
   });
 });
 
