@@ -30,6 +30,7 @@ interface DebugApi {
   influence(): Record<number, number>;
   religions(): import('../engine/types').ReligionState[];
   choosePromotion(unitId: number, promotion: string): void;
+  listCamps(): { id: number; q: number; r: number }[];
   debugAutoplay(turns: number): Promise<void>;
 }
 
@@ -124,6 +125,10 @@ export function installDebugBridge(): void {
 
     choosePromotion(unitId: number, promotion: string) {
       humanDispatch({ type: 'CHOOSE_PROMOTION', player: appStore.get().viewingPlayer, unit: unitId, promotion });
+    },
+
+    listCamps() {
+      return appStore.get().game?.camps ?? [];
     },
 
     /** Plays the viewer's turns with the AI brain — fills the world for visual checks. */

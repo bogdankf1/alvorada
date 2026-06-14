@@ -574,6 +574,17 @@ export class MapRenderer {
       g.stroke();
       g.setLineDash([]);
     }
+    // barbarian camp markers (brass-red triangle, fog-gated)
+    const vis = s.visibility[this.viewer];
+    for (const camp of s.camps) {
+      const idx = tileIndex({ q: camp.q, r: camp.r }, s.mapW, s.mapH);
+      if (vis[idx] === VIS_UNSEEN) continue;
+      const p = hexToPixel({ q: camp.q, r: camp.r }, HEX);
+      g.fillStyle = 'rgba(138,74,58,0.92)';
+      g.beginPath();
+      g.moveTo(p.x, p.y - 7); g.lineTo(p.x + 6, p.y + 5); g.lineTo(p.x - 6, p.y + 5); g.closePath();
+      g.fill();
+    }
   }
 
   private paintOverlaysOver(g: CanvasRenderingContext2D, s: GameState, t: number): void {
