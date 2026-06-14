@@ -3,7 +3,7 @@
  * facts — validation, the reducer, the AI, and the UI all ask these same
  * questions, which is what keeps their answers consistent.
  */
-import type { CivicEffect, PartialYields, SpecialistType, Yields } from '../data/types';
+import type { BeliefDef, CivicEffect, PartialYields, SpecialistType, Yields } from '../data/types';
 import { addYields, emptyYields, YIELD_KEYS } from '../data/types';
 import type { Axial, City, Ctx, GameState, PlayerId, ProductionItem, TradeRoute, Unit } from './types';
 import { sortedIds } from './types';
@@ -245,7 +245,8 @@ export function cityYields(ctx: Ctx, state: GameState, city: City): CityYieldBre
   }
 
   for (const eff of empireCivicEffects(ctx, state, city.owner)) applyCivicEffect(total, eff, city);
-  // follower belief is added in Phase 3
+  const fb = followerBelief(ctx, state, city);
+  if (fb) applyCivicEffect(total, fb.effect, city);
 
   if (empireHappiness(ctx, state, city.owner).tier === 'veryUnhappy') {
     total.production = Math.floor((total.production * (100 - s.happiness.veryUnhappyProdPenaltyPct)) / 100);
@@ -283,6 +284,13 @@ export function connectedLuxuries(ctx: Ctx, state: GameState, pid: PlayerId): st
     if (res.improvedBy && t.improvement === res.improvedBy) set.add(res.id);
   }
   return [...set].sort();
+}
+
+export function followerBelief(ctx: Ctx, state: GameState, city: City): BeliefDef | null {
+  if (!city.religion) return null;
+  const rel = state.religions[city.religion];
+  if (!rel) return null;
+  return ctx.rules.beliefs[rel.followerBelief] ?? null;
 }
 
 export function empireCivicEffects(ctx: Ctx, state: GameState, pid: PlayerId): CivicEffect[] {
@@ -330,7 +338,10 @@ export function empireHappiness(ctx: Ctx, state: GameState, pid: PlayerId): Happ
     if (eff?.kind === 'happiness') happy += eff.amount;
   }
   for (const eff of empireCivicEffects(ctx, state, pid)) happy += eff.happiness ?? 0;
-  // follower-belief happiness (per following city) is added in Phase 3
+  for (const c of cities) {
+    const fb = followerBelief(ctx, state, c);
+    if (fb?.effect.happiness) happy += fb.effect.happiness;
+  }
 
   const net = happy - unhappy;
   const tier = net >= 0 ? 'content' : net <= h.veryUnhappyAt ? 'veryUnhappy' : 'unhappy';

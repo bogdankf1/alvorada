@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { ctx, flatWorld, spawn, refreshVis, thaw } from './helpers';
 import { applyAction } from '../src/engine/reducer';
-import { cityYields, empireHappiness } from '../src/engine/selectors';
+import { cityYields, empireHappiness, followerBelief } from '../src/engine/selectors';
 import { validateAction } from '../src/engine/validate';
 
 /** Found one city for player 0, give it a Shrine, return the thawed state + city id. */
@@ -94,5 +94,19 @@ describe('spread', () => {
     for (let i = 0; i < 6; i++) s = applyAction(ctx, s, { type: 'END_TURN', player: 0 });
     expect(s.cities[c1].religion).toBe('rel_0'); // converted (dist 4 <= spreadRange 6)
     expect(s.cities[c0].religion).toBe('rel_0'); // holy city loyal
+  });
+});
+
+describe('follower belief', () => {
+  it('applies its yield in a following city', () => {
+    let s = flatWorld(16, 12, 2);
+    const a = spawn(s, 0, 'settler', 5, 5); spawn(s, 1, 'warrior', 1, 10); refreshVis(s);
+    s = applyAction(ctx, s, { type: 'FOUND_CITY', player: 0, unit: a.id }); s = thaw(s);
+    const id = Object.keys(s.cities).map(Number)[0];
+    s.religions['rel_0'] = { id: 'rel_0', name: 'Sol', founder: 0, holyCity: id, founderBelief: 'tithe', followerBelief: 'feed_the_world' };
+    const before = cityYields(ctx, s, s.cities[id]).total.food;
+    s.cities[id].religion = 'rel_0'; // follower feed_the_world → +1 food
+    expect(cityYields(ctx, s, s.cities[id]).total.food).toBe(before + 1);
+    expect(followerBelief(ctx, s, s.cities[id])?.id).toBe('feed_the_world');
   });
 });
