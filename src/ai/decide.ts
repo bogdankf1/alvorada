@@ -8,12 +8,14 @@ import { VIS_UNSEEN, VIS_VISIBLE } from '../engine/types';
 import { axialOfIndex, hexDistance, hexesWithin, neighbors, tileIndex } from '../engine/hex';
 import {
   atWar,
+  availablePromotions,
   cityAt,
   cityDistanceOk,
   hasMet,
   isCivilian,
   militaryAt,
   militaryPower,
+  pendingPromotions,
   playerCities,
   playerUnits,
 } from '../engine/selectors';
@@ -27,6 +29,12 @@ import { civicAction } from './civics';
 export interface AiDecision {
   action: Action;
   reason: string;
+}
+
+const PROMO_PRIORITY = ['combat_ii', 'combat_i', 'accuracy', 'shock', 'formation', 'siege', 'cover', 'mobility', 'medic', 'march', 'commando'];
+function pickPromotion(avail: { id: string }[]): string {
+  for (const id of PROMO_PRIORITY) if (avail.some((p) => p.id === id)) return id;
+  return avail[0].id;
 }
 
 export function decide(ctx: Ctx, state: GameState, pid: PlayerId): AiDecision {
@@ -71,6 +79,15 @@ export function decide(ctx: Ctx, state: GameState, pid: PlayerId): AiDecision {
   const civic = civicAction(ctx, state, pid);
   if (civic) {
     const d = tryDecision({ action: civic, reason: civic.type === 'ADOPT_POLICY' ? 'adopting a civic policy' : civic.type === 'FOUND_RELIGION' ? 'founding a religion' : 'founding a pantheon' });
+    if (d) return d;
+  }
+
+  // 1e. promote veterans
+  for (const unit of playerUnits(state, pid)) {
+    if (pendingPromotions(ctx, unit) <= 0) continue;
+    const avail = availablePromotions(ctx, unit);
+    if (!avail.length) continue;
+    const d = tryDecision({ action: { type: 'CHOOSE_PROMOTION', player: pid, unit: unit.id, promotion: pickPromotion(avail) }, reason: 'promoting a veteran' });
     if (d) return d;
   }
 

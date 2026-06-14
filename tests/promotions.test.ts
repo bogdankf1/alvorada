@@ -76,3 +76,16 @@ describe('promotion turn effects', () => {
     expect(s.units[u.id].hp).toBeGreaterThan(55); // base heal (neutral) + medic bonus, despite acted
   });
 });
+
+import { decide } from '../src/ai/decide';
+
+describe('AI promotion', () => {
+  it('promotes a unit that has a pending slot', () => {
+    const s = flatWorld(14, 10, 2);
+    const u = spawn(s, 0, 'warrior', 5, 5, { xp: 30 });
+    s.players[0].researching = 'pottery'; // research step satisfied
+    refreshVis(s);
+    const d = decide(ctx, s, 0);
+    expect(d.action).toEqual({ type: 'CHOOSE_PROMOTION', player: 0, unit: u.id, promotion: 'combat_i' });
+  });
+});
