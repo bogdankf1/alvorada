@@ -87,6 +87,15 @@ export function IconCoin(p: IconProps) {
   );
 }
 
+/** faith */
+export function IconFlame(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M8 2.2c1.6 2.2 3.4 3.8 3.4 6.4A3.4 3.4 0 0 1 4.6 8.6c0-1 .4-1.8 1-2.5.3 1 .9 1.5 1.6 1.6-.5-1.8.2-3.8.8-5.5Z" />
+    </Svg>
+  );
+}
+
 /** score */
 export function IconLaurel(p: IconProps) {
   return (
@@ -155,6 +164,7 @@ export const YIELD_ICONS = {
   science: IconScroll,
   culture: IconAmphora,
   gold: IconCoin,
+  faith: IconFlame,
 } as const;
 
 export const YIELD_COLORS: Record<string, string> = {
@@ -163,4 +173,5 @@ export const YIELD_COLORS: Record<string, string> = {
   science: '#7FB6D9',
   culture: '#C490D1',
   gold: '#E3C47D',
+  faith: '#E8E2D0',
 };

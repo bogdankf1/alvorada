@@ -10,10 +10,11 @@ export interface Yields {
   gold: number;
   science: number;
   culture: number;
+  faith: number;
 }
 export type PartialYields = Partial<Yields>;
 
-export const YIELD_KEYS = ['food', 'production', 'gold', 'science', 'culture'] as const;
+export const YIELD_KEYS = ['food', 'production', 'gold', 'science', 'culture', 'faith'] as const;
 export type YieldKey = (typeof YIELD_KEYS)[number];
 
 export type SpecialistType = 'scientist' | 'merchant' | 'artist' | 'engineer';
@@ -241,7 +242,7 @@ export interface DiplomacySettings {
   minFriendBand: AttitudeBand; // band at/above which the AI agrees to friendship
 }
 
-export const ZERO_YIELDS: Yields = { food: 0, production: 0, gold: 0, science: 0, culture: 0 };
+export const ZERO_YIELDS: Yields = { food: 0, production: 0, gold: 0, science: 0, culture: 0, faith: 0 };
 
 export function addYields(into: Yields, delta: PartialYields | undefined): Yields {
   if (!delta) return into;
