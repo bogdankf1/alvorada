@@ -24,6 +24,7 @@ interface DebugApi {
   setSpecialists(cityId: number, specialist: string, count: number): void;
   establishRoute(unitId: number, targetCity: number): void;
   listRoutes(): { id: number; owner: number; fromCity: number; toCity: number; kind: string; expires: number }[];
+  adoptPolicy(policy: string): void;
   debugAutoplay(turns: number): Promise<void>;
 }
 
@@ -89,6 +90,10 @@ export function installDebugBridge(): void {
     listRoutes() {
       const g = appStore.get().game;
       return g ? Object.values(g.tradeRoutes) : [];
+    },
+
+    adoptPolicy(policy: string) {
+      humanDispatch({ type: 'ADOPT_POLICY', player: appStore.get().viewingPlayer, policy });
     },
 
     /** Plays the viewer's turns with the AI brain — fills the world for visual checks. */

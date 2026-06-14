@@ -28,7 +28,7 @@ export interface AppState {
   selectedUnit: number | null;
   selectedCity: number | null;
   hoveredTile: number | null;
-  overlay: 'tech' | 'menu' | 'diplomacy' | null;
+  overlay: 'tech' | 'menu' | 'diplomacy' | 'civics' | null;
   aiThinking: boolean;
   toasts: Toast[];
   aiLog: AiLogEntry[];
