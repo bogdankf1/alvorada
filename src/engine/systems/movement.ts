@@ -4,7 +4,7 @@
  * army stops the column where it stands.
  */
 import type { Axial, Ctx, GameState, Unit } from '../types';
-import { sameHex, tileIndex } from '../hex';
+import { neighbors, sameHex, tileIndex } from '../hex';
 import {
   cityAt,
   civilianAt,
@@ -15,6 +15,7 @@ import {
   atWar,
   bordersOpenTo,
   tileOwner,
+  unitHasPromoFlag,
 } from '../selectors';
 import { recomputeVisibility } from '../map/visibility';
 import { pushEvent } from '../events';
@@ -60,6 +61,7 @@ export interface MoveResult {
 export function executeMovePath(ctx: Ctx, state: GameState, unit: Unit, path: Axial[]): MoveResult {
   let steps = 0;
   let blocked = false;
+  let zocStopped = false;
   let capturedFrom: number | null = null;
   const civilianMover = isCivilian(ctx, unit);
 
@@ -119,6 +121,12 @@ export function executeMovePath(ctx: Ctx, state: GameState, unit: Unit, path: Ax
     unit.acted = true;
     unit.stance = 'none';
     steps++;
+    if (!unitHasPromoFlag(ctx, unit, 'ignoreZoc') && adjacentToEnemyMilitary(ctx, state, a, unit.owner)) {
+      unit.moves = 0;
+      zocStopped = true;
+      i++; // mark this step consumed before breaking
+      break;
+    }
   }
 
   const left = path.slice(steps); // everything past the last completed step
@@ -131,7 +139,7 @@ export function executeMovePath(ctx: Ctx, state: GameState, unit: Unit, path: Ax
       q: unit.q,
       r: unit.r,
     });
-  } else if (left.length > 0 && unit.moves === 0) {
+  } else if (!zocStopped && left.length > 0 && unit.moves === 0) {
     unit.order = { kind: 'goto', path: left };
   } else {
     unit.order = null;
@@ -142,6 +150,14 @@ export function executeMovePath(ctx: Ctx, state: GameState, unit: Unit, path: Ax
     if (capturedFrom !== null) recomputeVisibility(ctx, state, capturedFrom);
   }
   return { steps, blocked };
+}
+
+function adjacentToEnemyMilitary(ctx: Ctx, state: GameState, a: Axial, owner: number): boolean {
+  for (const nb of neighbors(a)) {
+    const m = militaryAt(ctx, state, nb);
+    if (m && m.owner !== owner && atWar(state, owner, m.owner)) return true;
+  }
+  return false;
 }
 
 function sameOrAdjacent(unit: Unit, step: Axial, prev: Axial | null): boolean {
