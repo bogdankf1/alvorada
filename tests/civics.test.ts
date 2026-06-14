@@ -22,6 +22,30 @@ describe('policy progress', () => {
   });
 });
 
+describe('culture victory', () => {
+  function twoEmpires(turn: number) {
+    let s = flatWorld(16, 12, 2);
+    const a = spawn(s, 0, 'settler', 5, 5); spawn(s, 1, 'warrior', 1, 10); refreshVis(s);
+    s = applyAction(ctx, s, { type: 'FOUND_CITY', player: 0, unit: a.id }); s = thaw(s);
+    s.turn = turn; s.currentPlayer = 1;
+    s.players[0].cultureTotal = 1000;
+    s.players[1].cultureTotal = 100; // 1000 >= 100 × dominanceFactor(2)
+    return s;
+  }
+  it('cultural dominance wins past minTurn', () => {
+    const minTurn = ctx.rules.settings.victory.culture.minTurn;
+    const s = twoEmpires(minTurn + 1);
+    const s2 = applyAction(ctx, s, { type: 'END_TURN', player: 1 }); // wraps to player 0's beginTurn
+    expect(s2.winner).toEqual({ player: 0, victory: 'culture' });
+  });
+  it('does not fire before minTurn', () => {
+    const minTurn = ctx.rules.settings.victory.culture.minTurn;
+    const s = twoEmpires(minTurn - 2); // turn advances by 1 on wrap, so checks at minTurn-1
+    const s2 = applyAction(ctx, s, { type: 'END_TURN', player: 1 });
+    expect(s2.winner).toBeNull();
+  });
+});
+
 describe('ADOPT_POLICY', () => {
   it('adopts a policy, spends progress, and the effect applies empire-wide', () => {
     const { s, id } = capital();

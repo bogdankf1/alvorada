@@ -143,6 +143,7 @@ export interface Player {
   pantheon: string | null; // chosen pantheon belief id
   policies: string[];      // adopted policy ids (permanent)
   policyProgress: number;  // empire culture accumulated toward the next policy
+  cultureTotal: number;    // lifetime empire culture (drives influence)
   nextCityName: number;
 }
 
@@ -199,7 +200,7 @@ export interface GameState {
   religions: Record<string, ReligionState>;
   eventSeq: number;
   events: GameEvent[]; // bounded ring, audience-tagged
-  winner: { player: PlayerId; victory: 'conquest' | 'score' | 'science' } | null;
+  winner: { player: PlayerId; victory: 'conquest' | 'score' | 'science' | 'culture' } | null;
 }
 
 /** Engine context: rules travel beside state so content is never imported by logic. */

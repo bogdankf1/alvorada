@@ -32,6 +32,7 @@ export function initialState(config: GameConfig, ctx: Ctx): GameState {
       pantheon: null,
       policies: [],
       policyProgress: 0,
+      cultureTotal: 0,
       nextCityName: 0,
     };
   });

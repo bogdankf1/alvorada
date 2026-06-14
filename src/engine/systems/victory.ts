@@ -5,7 +5,7 @@
  */
 import type { Ctx, GameState, PlayerId } from '../types';
 import { sortedIds } from '../types';
-import { computeScore, playerCities, playerUnits } from '../selectors';
+import { computeScore, influence, playerCities, playerUnits } from '../selectors';
 import { recomputeVisibility } from '../map/visibility';
 import { pushEvent } from '../events';
 
@@ -62,6 +62,20 @@ export function checkScienceVictory(ctx: Ctx, state: GameState, pid: PlayerId): 
     type: 'victory',
     msg: `${state.players[pid].name} ushers in a new age of reason!`,
   });
+}
+
+/** Win when, past minTurn, your influence dominates every living rival's culture. */
+export function checkCultureVictory(ctx: Ctx, state: GameState, pid: PlayerId): void {
+  if (state.phase !== 'playing') return;
+  const cv = ctx.rules.settings.victory.culture;
+  if (state.turn < cv.minTurn) return;
+  const rivals = state.players.filter((r) => r.alive && r.id !== pid);
+  if (rivals.length === 0) return;
+  const inf = influence(ctx, state, pid);
+  for (const r of rivals) if (inf < r.cultureTotal * cv.dominanceFactor) return;
+  state.winner = { player: pid, victory: 'culture' };
+  state.phase = 'ended';
+  pushEvent(state, { player: null, type: 'victory', msg: `${state.players[pid].name}'s culture echoes across the ages!` });
 }
 
 function declareWinner(state: GameState, player: number, victory: 'conquest' | 'score'): void {

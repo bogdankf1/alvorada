@@ -36,7 +36,9 @@ const SETTINGS: RulesetSettings = {
   // turnLimit 260 + scoreThreshold 600: the longer arc + higher score bar let a tech
   // leader actually reach the science capstone (~turn 200-250) before the score/timeout
   // ending preempts it — so science is a reachable race, not a dead victory path.
-  victory: { scoreThreshold: 600, turnLimit: 260, scienceCapstone: 'scientific_method', culture: { dominanceFactor: 2, minTurn: 150, perWonder: 40 } },
+  // culture.minTurn 220: raised from 150 so self-play breadth (200-turn) games reach the
+  // medieval eras before a cultural victor can emerge; Phase 8 re-tunes if needed.
+  victory: { scoreThreshold: 600, turnLimit: 260, scienceCapstone: 'scientific_method', culture: { dominanceFactor: 2, minTurn: 220, perWonder: 40 } },
   // Tuned via self-play telemetry. The brake still bites hard (empires routinely go
   // Unhappy/Very-Unhappy and build colosseums/courthouses) — but unhappyGrowthDivisor 3
   // (was 4) lets an Unhappy empire still grow its science core instead of stalling out,

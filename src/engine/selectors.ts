@@ -303,6 +303,16 @@ export function empireCivicEffects(ctx: Ctx, state: GameState, pid: PlayerId): C
   return out;
 }
 
+export function influence(ctx: Ctx, state: GameState, pid: PlayerId): number {
+  const p = state.players[pid];
+  let mult = 100;
+  for (const eff of empireCivicEffects(ctx, state, pid)) mult += eff.influenceMult ?? 0;
+  let wonders = 0;
+  for (const wid of Object.keys(state.wondersBuilt))
+    if (state.cities[state.wondersBuilt[wid]]?.owner === pid) wonders++;
+  return Math.floor((p.cultureTotal * mult) / 100) + wonders * ctx.rules.settings.victory.culture.perWonder;
+}
+
 function applyCivicEffect(total: Yields, eff: CivicEffect, city: City): void {
   if (eff.yields) addYields(total, eff.yields);
   if (eff.perBuilding) {

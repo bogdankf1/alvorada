@@ -51,6 +51,7 @@ export function flatWorld(w = 12, h = 10, playerCount = 2): GameState {
     pantheon: null as string | null,
     policies: [] as string[],
     policyProgress: 0,
+    cultureTotal: 0,
     nextCityName: 0,
   }));
   return {

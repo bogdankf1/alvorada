@@ -12,7 +12,7 @@ import { pushEvent } from '../events';
 import { findPath } from '../map/pathfind';
 import { executeMovePath } from './movement';
 import { processCity } from './cities';
-import { checkScoreVictory, checkScienceVictory } from './victory';
+import { checkCultureVictory, checkScoreVictory, checkScienceVictory } from './victory';
 import { processObligations } from './diplomacy';
 import { processTradeRoutes } from './trade';
 import { spreadReligions } from './religion';
@@ -128,6 +128,7 @@ export function beginTurn(ctx: Ctx, state: GameState, pid: PlayerId): void {
   player.science += science;
   player.faith += faith;
   player.policyProgress += culture;
+  player.cultureTotal += culture;
   if (player.researching) {
     const tech = ctx.rules.techs[player.researching];
     if (player.science >= tech.cost) {
@@ -151,6 +152,9 @@ export function beginTurn(ctx: Ctx, state: GameState, pid: PlayerId): void {
       }
     }
   }
+
+  checkCultureVictory(ctx, state, pid);
+  if (state.phase === 'ended') return;
 
   // 3b. diplomacy obligations: pay tribute, expire pacts & stale proposals, decay grudges
   processObligations(ctx, state, pid);
