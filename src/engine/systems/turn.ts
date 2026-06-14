@@ -15,6 +15,7 @@ import { processCity } from './cities';
 import { checkScoreVictory, checkScienceVictory } from './victory';
 import { processObligations } from './diplomacy';
 import { processTradeRoutes } from './trade';
+import { spreadReligions } from './religion';
 
 export function handleEndTurn(ctx: Ctx, state: GameState): void {
   const current = state.currentPlayer;
@@ -104,6 +105,9 @@ export function beginTurn(ctx: Ctx, state: GameState, pid: PlayerId): void {
 
   // 1b. trade routes: expire and pillage before cities tally their yields
   processTradeRoutes(ctx, state, pid);
+
+  // 1c. religion spreads by pressure before cities tally their yields
+  spreadReligions(ctx, state, pid);
 
   // 2. cities: economy in id order; science/gold/faith flow to the player
   let science = 0;

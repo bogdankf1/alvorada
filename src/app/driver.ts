@@ -49,6 +49,7 @@ const TOAST_TYPES = new Set([
   'tradeBroken',
   'pantheonFounded',
   'religionFounded',
+  'cityConverted',
 ]);
 
 export interface DispatchResult {

@@ -81,3 +81,18 @@ describe('founding', () => {
     expect(s2.players[0].faith).toBe(70 - 60);
   });
 });
+
+describe('spread', () => {
+  it("a holy city's religion spreads to a nearby city; the holy city stays loyal", () => {
+    let s = flatWorld(20, 12, 1);
+    const a = spawn(s, 0, 'settler', 4, 5); const b = spawn(s, 0, 'settler', 8, 5); refreshVis(s);
+    s = applyAction(ctx, s, { type: 'FOUND_CITY', player: 0, unit: a.id });
+    s = applyAction(ctx, s, { type: 'FOUND_CITY', player: 0, unit: b.id }); s = thaw(s);
+    const [c0, c1] = Object.keys(s.cities).map(Number);
+    s.players[0].faith = 70; s.players[0].techs.push('theology');
+    s = applyAction(ctx, s, { type: 'FOUND_RELIGION', player: 0, name: 'Sol', holyCity: c0, founderBelief: 'tithe', followerBelief: 'feed_the_world' });
+    for (let i = 0; i < 6; i++) s = applyAction(ctx, s, { type: 'END_TURN', player: 0 });
+    expect(s.cities[c1].religion).toBe('rel_0'); // converted (dist 4 <= spreadRange 6)
+    expect(s.cities[c0].religion).toBe('rel_0'); // holy city loyal
+  });
+});
