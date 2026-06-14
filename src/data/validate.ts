@@ -84,6 +84,14 @@ export function validateRuleset(rules: Ruleset): string[] {
     if (b.effect?.kind === 'freeUnit' && !(b.effect.unit in rules.units))
       errors.push(`building ${b.id}: unknown freeUnit ${b.effect.unit}`);
 
+  for (const bel of Object.values(rules.beliefs)) {
+    const pb = bel.effect.perBuilding;
+    if (pb && !(pb.building in rules.buildings))
+      errors.push(`belief ${bel.id}: unknown perBuilding ${pb.building}`);
+  }
+  if (!(rules.settings.religion.religionTech in rules.techs))
+    errors.push(`settings: unknown religionTech ${rules.settings.religion.religionTech}`);
+
   return errors;
 }
 

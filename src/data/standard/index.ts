@@ -5,6 +5,7 @@ import { UNITS } from './units';
 import { BUILDINGS } from './buildings';
 import { TECHS, ERAS } from './techs';
 import { CIVS } from './civs';
+import { BELIEFS } from './beliefs';
 
 const SETTINGS: RulesetSettings = {
   workRadius: 2,
@@ -34,7 +35,7 @@ const SETTINGS: RulesetSettings = {
   // turnLimit 260 + scoreThreshold 600: the longer arc + higher score bar let a tech
   // leader actually reach the science capstone (~turn 200-250) before the score/timeout
   // ending preempts it — so science is a reachable race, not a dead victory path.
-  victory: { scoreThreshold: 600, turnLimit: 260, scienceCapstone: 'scientific_method' },
+  victory: { scoreThreshold: 600, turnLimit: 260, scienceCapstone: 'scientific_method', culture: { dominanceFactor: 2, minTurn: 150, perWonder: 40 } },
   // Tuned via self-play telemetry. The brake still bites hard (empires routinely go
   // Unhappy/Very-Unhappy and build colosseums/courthouses) — but unhappyGrowthDivisor 3
   // (was 4) lets an Unhappy empire still grow its science core instead of stalling out,
@@ -66,6 +67,7 @@ const SETTINGS: RulesetSettings = {
     friendshipBonusPct: 50,
     pillageBounty: 25,
   },
+  religion: { pantheonCost: 20, religionCost: 60, religionTech: 'theology', maxReligions: 4, spreadRange: 6, pressurePerCity: 2, holyCityBonus: 30, holyCityFaithDiv: 2 },
   startingUnits: ['settler', 'warrior'],
   diplomacy: {
     termLength: 30,
@@ -114,6 +116,7 @@ export const STANDARD_RULESET: Ruleset = {
   techs: TECHS,
   civs: CIVS,
   specialists: SPECIALISTS,
+  beliefs: BELIEFS,
   eras: ERAS,
   settings: SETTINGS,
 };

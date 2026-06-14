@@ -53,4 +53,10 @@ describe('standard ruleset', () => {
     r.settings.tradeRoute.internationalScienceTech = 'nonesuch';
     expect(validateRuleset(r)).toContain('settings: unknown trade-science tech nonesuch');
   });
+
+  it('beliefs and religion settings are valid', () => {
+    expect(validateRuleset(STANDARD_RULESET)).toEqual([]);
+    const kinds = new Set(Object.values(STANDARD_RULESET.beliefs).map((b) => b.kind));
+    expect(kinds).toEqual(new Set(['pantheon', 'founder', 'follower']));
+  });
 });

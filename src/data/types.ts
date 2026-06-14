@@ -23,6 +23,19 @@ export interface SpecialistDef {
   yields: PartialYields;
 }
 
+export type BeliefKind = 'pantheon' | 'founder' | 'follower';
+export interface CivicEffect {
+  yields?: PartialYields;                                      // per city it applies to
+  happiness?: number;                                          // empire happiness
+  perBuilding?: { building: string; yields: PartialYields };   // e.g. +1 faith per Shrine
+  influenceMult?: number;                                      // % tourism/influence (policies)
+}
+export interface BeliefDef { id: string; name: string; kind: BeliefKind; effect: CivicEffect; }
+export interface ReligionSettings {
+  pantheonCost: number; religionCost: number; religionTech: string; maxReligions: number;
+  spreadRange: number; pressurePerCity: number; holyCityBonus: number; holyCityFaithDiv: number;
+}
+
 export type UnitClass = 'civilian' | 'melee' | 'ranged' | 'mounted' | 'siege';
 export type UnitAbility = 'foundCity' | 'improve' | 'trade';
 
@@ -190,7 +203,8 @@ export interface RulesetSettings {
   borderGrowth: { base: number; linear: number; quad: number }; // base + linear*n + quad*n^2
   borderMaxRadius: number;
   score: { city: number; pop: number; tech: number; strengthPer: number };
-  victory: { scoreThreshold: number; turnLimit: number; scienceCapstone: string };
+  victory: { scoreThreshold: number; turnLimit: number; scienceCapstone: string; culture: { dominanceFactor: number; minTurn: number; perWonder: number } };
+  religion: ReligionSettings;
   happiness: HappinessSettings;
   tradeRoute: TradeRouteSettings;
   startingUnits: string[];
@@ -209,6 +223,7 @@ export interface Ruleset {
   techs: Record<string, TechDef>;
   civs: Record<string, CivDef>;
   specialists: Record<SpecialistType, SpecialistDef>;
+  beliefs: Record<string, BeliefDef>;
   eras: EraDef[];
   settings: RulesetSettings;
 }
