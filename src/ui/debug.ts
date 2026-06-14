@@ -6,7 +6,7 @@
 import { appStore } from '../app/store';
 import { gameCtx } from '../app/driver';
 import { tileIndex } from '../engine/hex';
-import { empireHappiness, productionOptions } from '../engine/selectors';
+import { empireHappiness, influence, productionOptions } from '../engine/selectors';
 import type { GameState } from '../engine/types';
 import { decide } from '../ai/decide';
 import { humanDispatch } from './actions';
@@ -27,6 +27,8 @@ interface DebugApi {
   adoptPolicy(policy: string): void;
   foundPantheon(belief: string): void;
   foundReligion(name: string, holyCity: number, founderBelief: string, followerBelief: string): void;
+  influence(): Record<number, number>;
+  religions(): import('../engine/types').ReligionState[];
   debugAutoplay(turns: number): Promise<void>;
 }
 
@@ -104,6 +106,19 @@ export function installDebugBridge(): void {
 
     foundReligion(name: string, holyCity: number, founderBelief: string, followerBelief: string) {
       humanDispatch({ type: 'FOUND_RELIGION', player: appStore.get().viewingPlayer, name, holyCity, founderBelief, followerBelief });
+    },
+
+    influence() {
+      const g = appStore.get().game;
+      if (!g) return {};
+      const out: Record<number, number> = {};
+      for (const p of g.players) out[p.id] = influence(gameCtx, g, p.id);
+      return out;
+    },
+
+    religions() {
+      const g = appStore.get().game;
+      return g ? Object.values(g.religions) : [];
     },
 
     /** Plays the viewer's turns with the AI brain — fills the world for visual checks. */

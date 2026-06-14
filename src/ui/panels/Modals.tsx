@@ -115,7 +115,9 @@ export function VictoryOverlay() {
                   ? 'has conquered the known world'
                   : game.winner!.victory === 'science'
                     ? 'ushers in a new age of reason'
-                    : 'leads civilization into a new age'
+                    : game.winner!.victory === 'culture'
+                      ? 'echoes across the ages in a Cultural Triumph'
+                      : 'leads civilization into a new age'
               } — turn ${game.turn}`
             : 'Your last city is lost, your people scattered.'}
         </div>

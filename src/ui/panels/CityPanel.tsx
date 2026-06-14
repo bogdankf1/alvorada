@@ -73,6 +73,8 @@ export function CityPanel() {
         </button>
       </header>
 
+      {city.religion && <div className="city-religion">Follows {game.religions[city.religion]?.name}</div>}
+
       <div className="yields-row">
         {YIELD_KEYS.map((k) => {
           const Icon = YIELD_ICONS[k];
