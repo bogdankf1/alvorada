@@ -22,6 +22,7 @@ import { findPath } from '../engine/map/pathfind';
 import { cityStrength } from '../engine/systems/combat';
 import { bestWorkerJob, knownGoodSpots, knownPower, pickProduction, pickResearch } from './economy';
 import { initiateDiplomacy } from './diplomacy';
+import { civicAction } from './civics';
 
 export interface AiDecision {
   action: Action;
@@ -64,6 +65,13 @@ export function decide(ctx: Ctx, state: GameState, pid: PlayerId): AiDecision {
       const v = tryDecision({ action: diplo, reason: diploReason(diplo, state) });
       if (v) return v;
     }
+  }
+
+  // 1d. religion & civics: at most one founding/adoption per turn
+  const civic = civicAction(ctx, state, pid);
+  if (civic) {
+    const d = tryDecision({ action: civic, reason: civic.type === 'ADOPT_POLICY' ? 'adopting a civic policy' : civic.type === 'FOUND_RELIGION' ? 'founding a religion' : 'founding a pantheon' });
+    if (d) return d;
   }
 
   // 2. idle cities choose production

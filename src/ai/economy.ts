@@ -32,7 +32,7 @@ export function pickResearch(ctx: Ctx, state: GameState, pid: PlayerId): { tech:
 
   const priority = wars
     ? ['archery', 'bronze_working', 'masonry', 'iron_working', 'mathematics', 'pottery', 'mining', 'animal_husbandry', 'writing', 'horseback_riding', 'currency', 'construction', 'philosophy', 'feudalism', 'machinery', 'chivalry', 'engineering', 'gunpowder', 'metallurgy', 'education', 'guilds', 'theology', 'astronomy', 'banking', 'printing_press', 'architecture', 'chemistry', 'scientific_method']
-    : ['pottery', 'animal_husbandry', 'mining', 'writing', 'archery', 'bronze_working', 'masonry', 'currency', 'horseback_riding', 'iron_working', 'philosophy', 'construction', 'mathematics', 'education', 'feudalism', 'engineering', 'machinery', 'guilds', 'chivalry', 'theology', 'astronomy', 'banking', 'printing_press', 'gunpowder', 'architecture', 'metallurgy', 'chemistry', 'scientific_method'];
+    : ['pottery', 'animal_husbandry', 'mining', 'writing', 'archery', 'bronze_working', 'masonry', 'currency', 'horseback_riding', 'iron_working', 'philosophy', 'theology', 'construction', 'mathematics', 'education', 'feudalism', 'engineering', 'machinery', 'guilds', 'chivalry', 'astronomy', 'banking', 'printing_press', 'gunpowder', 'architecture', 'metallurgy', 'chemistry', 'scientific_method'];
 
   for (const t of priority) {
     if (available.includes(t)) {
@@ -137,7 +137,7 @@ function bestMilitary(ctx: Ctx, state: GameState, city: City): ProductionItem | 
   return null;
 }
 
-const BUILDING_PRIORITY = ['monument', 'granary', 'library', 'walls', 'market', 'workshop', 'aqueduct', 'temple', 'colosseum', 'courthouse', 'university', 'observatory', 'bank', 'castle', 'monastery', 'cathedral'];
+const BUILDING_PRIORITY = ['monument', 'shrine', 'granary', 'library', 'walls', 'market', 'workshop', 'aqueduct', 'temple', 'colosseum', 'courthouse', 'university', 'observatory', 'bank', 'castle', 'monastery', 'cathedral'];
 
 export function pickProduction(
   ctx: Ctx,

@@ -46,6 +46,22 @@ describe('culture victory', () => {
   });
 });
 
+import { civicAction } from '../src/ai/civics';
+
+describe('AI civics', () => {
+  it('founds a pantheon when it can afford one', () => {
+    const { s } = capital();
+    s.players[0].faith = 25;
+    expect(civicAction(ctx, s, 0)?.type).toBe('FOUND_PANTHEON');
+  });
+  it('adopts an available policy when no religion step is pending', () => {
+    const { s } = capital();
+    s.players[0].faith = 0;            // no pantheon/religion step
+    s.players[0].policyProgress = 60;  // can afford a 50-cost opener
+    expect(civicAction(ctx, s, 0)?.type).toBe('ADOPT_POLICY');
+  });
+});
+
 describe('ADOPT_POLICY', () => {
   it('adopts a policy, spends progress, and the effect applies empire-wide', () => {
     const { s, id } = capital();
