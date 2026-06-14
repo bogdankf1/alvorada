@@ -141,6 +141,8 @@ export interface Player {
   gold: number;
   faith: number; // accumulates each turn like science/gold
   pantheon: string | null; // chosen pantheon belief id
+  policies: string[];      // adopted policy ids (permanent)
+  policyProgress: number;  // empire culture accumulated toward the next policy
   nextCityName: number;
 }
 

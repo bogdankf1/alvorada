@@ -30,6 +30,8 @@ export function initialState(config: GameConfig, ctx: Ctx): GameState {
       gold: 0,
       faith: 0,
       pantheon: null,
+      policies: [],
+      policyProgress: 0,
       nextCityName: 0,
     };
   });

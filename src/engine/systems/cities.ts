@@ -173,6 +173,7 @@ export interface CityTurnOutput {
   science: number;
   gold: number;
   faith: number;
+  culture: number;
 }
 
 /** One city's turn-start processing. Returns player-level yield contributions. */
@@ -277,7 +278,7 @@ export function processCity(ctx: Ctx, state: GameState, city: City): CityTurnOut
   }
 
   city.hp = Math.min(s.cityMaxHp, city.hp + s.cityRegen);
-  return { science: total.science, gold: total.gold, faith: total.faith };
+  return { science: total.science, gold: total.gold, faith: total.faith, culture: total.culture };
 }
 
 /** Transfer a city to its conqueror. Walls fall, the palace flees, people scatter. */
