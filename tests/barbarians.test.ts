@@ -59,3 +59,46 @@ describe('clearing camps', () => {
     expect(s2.units[u.id].xp ?? 0).toBeGreaterThan(0);
   });
 });
+
+import { checkElimination } from '../src/engine/systems/victory';
+
+describe('conquest victory with barbarians present', () => {
+  it('barbarian always-alive does not block conquest win for the sole real survivor', () => {
+    // 3-player state: player 0 (alive), player 1 (to be eliminated), player 2 (barbarian, always alive)
+    const s = barbFixture(); // flatWorld(20,14,3) + players[2].barbarian=true
+
+    // Give player 0 a city so it stays alive through the elimination check
+    const cityId = s.nextCityId++;
+    s.cities[cityId] = {
+      id: cityId,
+      owner: 0,
+      name: 'Roma',
+      q: 1,
+      r: 1,
+      pop: 1,
+      food: 0,
+      production: { item: null, progress: 0 },
+      buildings: [],
+      culture: 0,
+      tilesClaimed: 0,
+      hp: ctx2.rules.settings.cityMaxHp,
+    };
+
+    // Player 1 has no cities and no settler units → will be eliminated
+    // (units object starts empty in flatWorld, so player 1 is immediately city-less and unit-less)
+    s.players[1].alive = true; // start alive; checkElimination will eliminate them
+
+    // Barbarian is alive (always)
+    s.players[2].alive = true;
+
+    checkElimination(ctx2, s);
+
+    // Player 1 must have been eliminated
+    expect(s.players[1].alive).toBe(false);
+    // The sole surviving real player (player 0) must be the conquest winner
+    expect(s.phase).toBe('ended');
+    expect(s.winner).toEqual({ player: 0, victory: 'conquest' });
+    // Barbarian is still alive but did not prevent conquest
+    expect(s.players[2].alive).toBe(true);
+  });
+});

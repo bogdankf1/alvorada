@@ -33,7 +33,7 @@ export function checkElimination(ctx: Ctx, state: GameState): void {
     });
   }
 
-  const alive = state.players.filter((p) => p.alive);
+  const alive = state.players.filter((p) => p.alive && !p.barbarian);
   if (alive.length === 1 && state.phase === 'playing') {
     declareWinner(state, alive[0].id, 'conquest');
   }
@@ -43,7 +43,7 @@ export function checkElimination(ctx: Ctx, state: GameState): void {
 export function checkScoreVictory(ctx: Ctx, state: GameState): void {
   if (state.phase !== 'playing') return;
   const v = ctx.rules.settings.victory;
-  const alive = state.players.filter((p) => p.alive);
+  const alive = state.players.filter((p) => p.alive && !p.barbarian);
   const scores = alive.map((p) => ({ id: p.id, score: computeScore(ctx, state, p.id) }));
   scores.sort((a, b) => b.score - a.score || a.id - b.id);
   const top = scores[0];
@@ -70,7 +70,7 @@ export function checkCultureVictory(ctx: Ctx, state: GameState, pid: PlayerId): 
   if (state.phase !== 'playing') return;
   const cv = ctx.rules.settings.victory.culture;
   if (state.turn < cv.minTurn) return;
-  const rivals = state.players.filter((r) => r.alive && r.id !== pid);
+  const rivals = state.players.filter((r) => r.alive && r.id !== pid && !r.barbarian);
   if (rivals.length === 0) return;
   const inf = influence(ctx, state, pid);
   for (const r of rivals) if (inf < r.cultureTotal * cv.dominanceFactor) return;
