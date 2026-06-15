@@ -33,7 +33,9 @@ body,
 #root {
   margin: 0;
   height: 100%;
+  height: 100dvh; /* robust against mobile browser chrome; falls back to 100% */
   overflow: hidden;
+  overscroll-behavior: none; /* no rubber-band / pull-to-refresh on iPad */
 }
 
 body {
@@ -43,6 +45,17 @@ body {
   color: var(--ivory);
   background: var(--lacquer-lo);
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent; /* no grey flash on tap */
+  touch-action: manipulation; /* kill the 300ms double-tap-zoom delay on controls */
+  -webkit-user-select: none;
+  user-select: none; /* a game UI: long-press shouldn't select text */
+}
+
+/* but real inputs must still be selectable/editable */
+input,
+textarea {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 /* --- the house shape: chamfered plates --- */
@@ -251,5 +264,21 @@ body {
   }
   to {
     opacity: 1;
+  }
+}
+
+/* --- touch devices (iPad etc.): comfortable tap targets (desktop mouse unaffected) --- */
+@media (pointer: coarse) {
+  .btn {
+    min-height: 40px;
+    padding: 9px 16px;
+  }
+  .choice {
+    padding: 12px 12px;
+  }
+  .prod-item,
+  .power {
+    padding-top: 11px;
+    padding-bottom: 11px;
   }
 }
