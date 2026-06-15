@@ -19,6 +19,7 @@ import {
   makeParchment,
   paintFeature,
   paintGlyph,
+  paintUnitFigure,
   paintImprovement,
   paintResource,
   paintSketch,
@@ -784,7 +785,7 @@ export class MapRenderer {
     }
     g.save();
     g.translate(x, y);
-    paintGlyph(g, this.rules.units[u.def].art.glyph);
+    if (!paintUnitFigure(g, u.def)) paintGlyph(g, this.rules.units[u.def].art.glyph);
     g.restore();
 
     // hp arc

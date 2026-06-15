@@ -8,7 +8,7 @@ import type { Tile } from '../../engine/types';
 import type { Ruleset } from '../../data/types';
 import { hash2 } from '../../engine/rng';
 import { hexCorners } from '../../engine/hex';
-import { RESOURCE_ICON_PATHS, RESOURCE_ICON_VIEWBOX } from './resource-icons';
+import { RESOURCE_ICON_PATHS, UNIT_ICON_PATHS, RESOURCE_ICON_VIEWBOX } from './resource-icons';
 
 export const HEX = 38; // hex radius in world px
 
@@ -680,6 +680,21 @@ export function paintGlyph(g: CanvasRenderingContext2D, glyph: string): void {
       g.arc(0, 0, 4, 0, Math.PI * 2);
       g.stroke();
   }
+}
+
+/** A proper unit figure (game-icons silhouette), white, centered at the origin.
+ *  Returns false if the unit has no figure so the caller can fall back to a glyph. */
+export function paintUnitFigure(g: CanvasRenderingContext2D, unitId: string): boolean {
+  const path = iconPath(UNIT_ICON_PATHS[unitId]);
+  if (!path) return false;
+  const s = 17 / RESOURCE_ICON_VIEWBOX;
+  g.save();
+  g.scale(s, s);
+  g.translate(-RESOURCE_ICON_VIEWBOX / 2, -RESOURCE_ICON_VIEWBOX / 2);
+  g.fillStyle = '#FFFFFF';
+  g.fill(path);
+  g.restore();
+  return true;
 }
 
 // --- parchment (the terra incognita) ---
