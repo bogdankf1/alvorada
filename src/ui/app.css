@@ -35,7 +35,7 @@
 .menu-title {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 54px;
+  font-size: clamp(28px, 10vw, 54px); /* shrink on narrow phones so it never clips */
   letter-spacing: 0.22em;
   text-align: center;
   margin: 2px 0 0;
@@ -810,5 +810,22 @@
   .diplo-body {
     grid-template-columns: 1fr;
     gap: 14px;
+  }
+}
+
+/* ============ phones (portrait): keep panels from overlapping / clipping ============ */
+@media (max-width: 500px) {
+  .menu-card {
+    padding: 24px 18px 22px;
+  }
+  /* the bottom-left unit panel and bottom-right HUD must not collide on a narrow phone */
+  .unit-panel {
+    width: min(300px, 50vw);
+  }
+  .hud-right {
+    width: min(208px, 38vw);
+  }
+  .tile-info {
+    max-width: min(270px, 56vw);
   }
 }
