@@ -8,7 +8,7 @@ import type { Tile } from '../../engine/types';
 import type { Ruleset } from '../../data/types';
 import { hash2 } from '../../engine/rng';
 import { hexCorners } from '../../engine/hex';
-import { RESOURCE_ICON_PATHS, RESOURCE_ICON_VIEWBOX } from './resource-icons';
+import { RESOURCE_ICON_PATHS, IMPROVEMENT_ICON_PATHS, RESOURCE_ICON_VIEWBOX } from './resource-icons';
 
 export const HEX = 38; // hex radius in world px
 
@@ -307,7 +307,7 @@ function paintOasis(g: CanvasRenderingContext2D, cx: number, cy: number): void {
   }
 }
 
-// --- improvements (small, SE corner of the tile) ---
+// --- improvements (built on the land; same engraved family as resources) ---
 
 export function paintImprovement(
   g: CanvasRenderingContext2D,
@@ -315,79 +315,39 @@ export function paintImprovement(
   cx: number,
   cy: number,
 ): void {
+  const path = iconPath(IMPROVEMENT_ICON_PATHS[impId]);
+  if (!path) return;
   const x = cx;
-  const y = cy + 7;
-  switch (impId) {
-    case 'farm': {
-      g.save();
-      g.translate(x, y);
-      g.rotate(-0.1);
-      g.fillStyle = 'rgba(122,94,55,0.5)';
-      g.fillRect(-10, -6, 20, 12);
-      g.strokeStyle = 'rgba(236,214,156,0.75)';
-      g.lineWidth = 1.4;
-      for (let i = -1; i <= 1; i++) {
-        g.beginPath();
-        g.moveTo(-8, i * 3.4);
-        g.lineTo(8, i * 3.4);
-        g.stroke();
-      }
-      g.restore();
-      break;
-    }
-    case 'mine': {
-      g.fillStyle = 'rgba(30,24,18,0.75)';
-      g.beginPath();
-      g.arc(x, y, 5.5, Math.PI, 0);
-      g.closePath();
-      g.fill();
-      g.strokeStyle = '#8a6f43';
-      g.lineWidth = 2;
-      g.beginPath();
-      g.moveTo(x - 6, y);
-      g.lineTo(x - 2, y - 6.5);
-      g.moveTo(x + 6, y);
-      g.lineTo(x + 2, y - 6.5);
-      g.stroke();
-      break;
-    }
-    case 'pasture': {
-      g.strokeStyle = '#8a6f43';
-      g.lineWidth = 1.6;
-      g.beginPath();
-      for (const px of [-8, 0, 8]) {
-        g.moveTo(x + px, y - 4);
-        g.lineTo(x + px, y + 4);
-      }
-      g.moveTo(x - 9, y - 1.5);
-      g.lineTo(x + 9, y - 1.5);
-      g.moveTo(x - 9, y + 2.5);
-      g.lineTo(x + 9, y + 2.5);
-      g.stroke();
-      break;
-    }
-    case 'quarry': {
-      g.fillStyle = 'rgba(160,160,158,0.9)';
-      g.fillRect(x - 7, y - 1, 7, 5);
-      g.fillRect(x - 3, y - 5.4, 7, 5);
-      g.strokeStyle = 'rgba(60,58,54,0.8)';
-      g.lineWidth = 1;
-      g.strokeRect(x - 7, y - 1, 7, 5);
-      g.strokeRect(x - 3, y - 5.4, 7, 5);
-      break;
-    }
-  }
+  const y = cy + 3;
+  // a soft parchment wash (no hard badge) so the silhouette reads on any terrain
+  const glow = g.createRadialGradient(x, y, 0, x, y, 14);
+  glow.addColorStop(0, css(rgb(PALETTE.parchment), 0.5));
+  glow.addColorStop(1, css(rgb(PALETTE.parchment), 0));
+  g.fillStyle = glow;
+  g.beginPath();
+  g.arc(x, y, 14, 0, Math.PI * 2);
+  g.fill();
+  // engraved silhouette, tinted sepia like the resource icons
+  const s = 22 / RESOURCE_ICON_VIEWBOX;
+  g.save();
+  g.translate(x, y);
+  g.scale(s, s);
+  g.translate(-RESOURCE_ICON_VIEWBOX / 2, -RESOURCE_ICON_VIEWBOX / 2);
+  g.fillStyle = PALETTE.sepia;
+  g.fill(path);
+  g.restore();
 }
 
 // --- resource tokens (game-icons.net silhouettes recolored to the palette) ---
 
-const resourceIconCache = new Map<string, Path2D | null>();
-function resourceIconPath(resId: string): Path2D | null {
-  let p = resourceIconCache.get(resId);
+const iconPathCache = new Map<string, Path2D | null>();
+/** Cache a Path2D per icon path string (shared by resources + improvements). */
+function iconPath(d: string | undefined): Path2D | null {
+  if (!d) return null;
+  let p = iconPathCache.get(d);
   if (p === undefined) {
-    const d = RESOURCE_ICON_PATHS[resId];
-    p = d ? new Path2D(d) : null;
-    resourceIconCache.set(resId, p);
+    p = new Path2D(d);
+    iconPathCache.set(d, p);
   }
   return p;
 }
@@ -409,7 +369,7 @@ export function paintResource(
   g.lineWidth = 1.5;
   g.stroke();
 
-  const path = resourceIconPath(resId);
+  const path = iconPath(RESOURCE_ICON_PATHS[resId]);
   if (path) {
     // engraved silhouette: scale the 512-viewBox icon down, centered, tinted sepia
     const s = 20 / RESOURCE_ICON_VIEWBOX;
