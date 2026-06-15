@@ -402,7 +402,7 @@ export function paintResource(
   const y = cy + HEX * 0.34;
   // parchment token
   g.beginPath();
-  g.arc(x, y, 10, 0, Math.PI * 2);
+  g.arc(x, y, 14, 0, Math.PI * 2);
   g.fillStyle = PALETTE.parchment;
   g.fill();
   g.strokeStyle = PALETTE.sepia;
@@ -412,7 +412,7 @@ export function paintResource(
   const path = resourceIconPath(resId);
   if (path) {
     // engraved silhouette: scale the 512-viewBox icon down, centered, tinted sepia
-    const s = 14 / RESOURCE_ICON_VIEWBOX;
+    const s = 20 / RESOURCE_ICON_VIEWBOX;
     g.save();
     g.translate(x, y);
     g.scale(s, s);

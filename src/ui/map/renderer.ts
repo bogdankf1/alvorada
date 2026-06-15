@@ -64,6 +64,10 @@ interface Floater {
   start: number;
 }
 
+/** The offscreen terrain bitmap is supersampled for crispness, bounded to roughly
+ * this many pixels (×4 bytes ≈ memory) so large maps stay safe on tablets. */
+const TERRAIN_PX_BUDGET = 24_000_000;
+
 export class MapRenderer {
   private canvas: HTMLCanvasElement | null = null;
   private g: CanvasRenderingContext2D | null = null;
@@ -92,6 +96,8 @@ export class MapRenderer {
 
   private terrainLayer: HTMLCanvasElement | null = null;
   private terrainKey = '';
+  private terrainW = 0; // world-pixel dims of the (supersampled) terrain layer
+  private terrainH = 0;
   private fogLayer: HTMLCanvasElement | null = null;
   private fogKey: unknown = null;
   private parchment: HTMLCanvasElement | null = null;
@@ -328,12 +334,19 @@ export class MapRenderer {
     const max = hexToPixel({ q: s.mapW + 2, r: s.mapH + 1 }, HEX);
     const w = Math.ceil(max.x + HEX * 2);
     const h = Math.ceil(max.y + HEX * 2);
-    if (!this.terrainLayer) {
-      this.terrainLayer = document.createElement('canvas');
-      this.terrainLayer.width = w;
-      this.terrainLayer.height = h;
+    this.terrainW = w;
+    this.terrainH = h;
+    // supersample for crispness on hi-dpi / when zoomed in, bounded for memory
+    const ss = Math.max(1, Math.min(this.dpr, 2, Math.sqrt(TERRAIN_PX_BUDGET / (w * h))));
+    const tw = Math.ceil(w * ss);
+    const th = Math.ceil(h * ss);
+    if (!this.terrainLayer) this.terrainLayer = document.createElement('canvas');
+    if (this.terrainLayer.width !== tw || this.terrainLayer.height !== th) {
+      this.terrainLayer.width = tw;
+      this.terrainLayer.height = th;
     }
     const g = this.terrainLayer.getContext('2d')!;
+    g.setTransform(ss, 0, 0, ss, 0, 0);
     g.clearRect(0, 0, w, h);
     g.fillStyle = this.rules.terrains.ocean.art.fill;
     g.fillRect(0, 0, w, h);
@@ -516,7 +529,7 @@ export class MapRenderer {
     g.scale(this.camera.zoom, this.camera.zoom);
     g.translate(-this.camera.x, -this.camera.y);
 
-    g.drawImage(this.terrainLayer!, 0, 0);
+    g.drawImage(this.terrainLayer!, 0, 0, this.terrainW, this.terrainH);
     this.paintTerritory(g, s);
     this.paintOverlaysUnder(g, s, t);
     this.paintCities(g, s, t);
