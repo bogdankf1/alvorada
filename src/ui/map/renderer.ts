@@ -394,7 +394,7 @@ export class MapRenderer {
       const t = s.tiles[i];
       const a = axialOfIndex(i, s.mapW);
       const p = hexToPixel(a, HEX);
-      if (t.improvement) paintImprovement(g, t.improvement, p.x, p.y);
+      if (t.improvement) paintImprovement(g, t.improvement, p.x, p.y, a.q, a.r, s.config.seed);
       if (t.feature) paintFeature(g, t, p.x, p.y, a.q, a.r, s.config.seed);
       if (t.resource && resourceRevealed({ rules: this.rules }, s, this.viewer, t.resource)) {
         paintResource(g, t.resource, p.x, p.y);

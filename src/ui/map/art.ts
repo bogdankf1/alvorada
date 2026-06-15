@@ -8,7 +8,7 @@ import type { Tile } from '../../engine/types';
 import type { Ruleset } from '../../data/types';
 import { hash2 } from '../../engine/rng';
 import { hexCorners } from '../../engine/hex';
-import { RESOURCE_ICON_PATHS, IMPROVEMENT_ICON_PATHS, RESOURCE_ICON_VIEWBOX } from './resource-icons';
+import { RESOURCE_ICON_PATHS, RESOURCE_ICON_VIEWBOX } from './resource-icons';
 
 export const HEX = 38; // hex radius in world px
 
@@ -307,45 +307,197 @@ function paintOasis(g: CanvasRenderingContext2D, cx: number, cy: number): void {
   }
 }
 
-// --- improvements (built on the land; same engraved family as resources) ---
+// --- improvements: painted into the land, like terrain features (trees/mountains) ---
+
+/** Plowed field: an oval of tilled-earth furrows, gently rotated per tile. */
+function paintFarm(g: CanvasRenderingContext2D, cx: number, cy: number, q: number, r: number, seed: number): void {
+  g.save();
+  g.translate(cx, cy);
+  g.rotate((hash2(q, r, seed + 61) - 0.5) * 0.5);
+  const wHalf = HEX * 0.6;
+  const hHalf = HEX * 0.4;
+  g.beginPath();
+  g.ellipse(0, 0, wHalf, hHalf, 0, 0, Math.PI * 2);
+  g.fillStyle = 'rgba(122,90,51,0.34)';
+  g.fill();
+  const rows = 6;
+  const gap = (hHalf * 2 - 4) / (rows - 1);
+  g.lineCap = 'round';
+  for (let i = 0; i < rows; i++) {
+    const yy = -hHalf + 2 + i * gap;
+    const half = wHalf * Math.sqrt(Math.max(0, 1 - (yy / hHalf) ** 2));
+    if (half < 3) continue;
+    g.beginPath();
+    g.moveTo(-half, yy);
+    g.quadraticCurveTo(0, yy - 1.4, half, yy);
+    g.strokeStyle = 'rgba(106,76,42,0.85)';
+    g.lineWidth = 2.4;
+    g.stroke();
+    g.beginPath();
+    g.moveTo(-half, yy - 1);
+    g.quadraticCurveTo(0, yy - 2.4, half, yy - 1);
+    g.strokeStyle = 'rgba(212,178,118,0.5)';
+    g.lineWidth = 1;
+    g.stroke();
+  }
+  g.restore();
+}
+
+/** Mine: a dark timber-framed entrance set into the ground with a tailings mound. */
+function paintMine(g: CanvasRenderingContext2D, cx: number, cy: number, q: number, r: number, seed: number): void {
+  const x = cx;
+  const y = cy + 2;
+  g.beginPath();
+  g.ellipse(x, y + 7, 13, 5, 0, 0, Math.PI * 2);
+  g.fillStyle = 'rgba(92,74,52,0.55)';
+  g.fill();
+  g.beginPath();
+  g.moveTo(x - 7, y + 6);
+  g.lineTo(x - 5, y - 4);
+  g.quadraticCurveTo(x, y - 9, x + 5, y - 4);
+  g.lineTo(x + 7, y + 6);
+  g.closePath();
+  g.fillStyle = '#241a13';
+  g.fill();
+  g.strokeStyle = '#6a5436';
+  g.lineWidth = 2.2;
+  g.lineCap = 'round';
+  g.beginPath();
+  g.moveTo(x - 7.5, y + 6);
+  g.lineTo(x - 5.5, y - 4.5);
+  g.moveTo(x + 7.5, y + 6);
+  g.lineTo(x + 5.5, y - 4.5);
+  g.moveTo(x - 6.2, y - 4.6);
+  g.lineTo(x + 6.2, y - 4.6);
+  g.stroke();
+  g.fillStyle = 'rgba(58,50,42,0.75)';
+  for (let i = 0; i < 3; i++) {
+    const h = hash2(q + i, r, seed + 71);
+    g.beginPath();
+    g.arc(x - 4 + i * 4 + (h - 0.5) * 2, y + 7 + (h - 0.5) * 2, 1.8, 0, Math.PI * 2);
+    g.fill();
+  }
+}
+
+/** Pasture: a fenced paddock (posts + rail) on lightly-grazed grass with a couple of animals. */
+function paintPasture(g: CanvasRenderingContext2D, cx: number, cy: number, q: number, r: number, seed: number): void {
+  const x = cx;
+  const y = cy + 1;
+  const w = HEX * 0.5;
+  const h = HEX * 0.34;
+  g.beginPath();
+  g.ellipse(x, y, w, h, 0, 0, Math.PI * 2);
+  g.fillStyle = 'rgba(184,196,124,0.18)';
+  g.fill();
+  g.strokeStyle = 'rgba(122,90,51,0.75)';
+  g.lineWidth = 1.2;
+  g.beginPath();
+  g.ellipse(x, y, w, h, 0, 0, Math.PI * 2);
+  g.stroke();
+  g.lineCap = 'round';
+  g.lineWidth = 1.6;
+  const posts = 11;
+  for (let i = 0; i < posts; i++) {
+    const a = (i / posts) * Math.PI * 2;
+    const px = x + Math.cos(a) * w;
+    const py = y + Math.sin(a) * h;
+    g.beginPath();
+    g.moveTo(px, py - 2.6);
+    g.lineTo(px, py + 2.6);
+    g.stroke();
+  }
+  g.fillStyle = 'rgba(74,58,40,0.8)';
+  for (let i = 0; i < 2; i++) {
+    const hx = hash2(q + i * 3, r, seed + 81);
+    const hy = hash2(q, r + i * 3, seed + 83);
+    g.beginPath();
+    g.ellipse(x + (hx - 0.5) * w, y + (hy - 0.5) * h, 2.6, 1.7, 0, 0, Math.PI * 2);
+    g.fill();
+  }
+}
+
+/** Quarry: a dug pit with stepped cut-stone terraces and a couple of loose blocks. */
+function paintQuarry(g: CanvasRenderingContext2D, cx: number, cy: number, _q: number, _r: number, _seed: number): void {
+  const x = cx;
+  const y = cy + 2;
+  g.beginPath();
+  g.ellipse(x, y + 2, 13, 7, 0, 0, Math.PI * 2);
+  g.fillStyle = 'rgba(60,56,50,0.35)';
+  g.fill();
+  const steps = [
+    { w: 17, h: 4, dy: 4, c: '#9a958c' },
+    { w: 12, h: 4, dy: 0.5, c: '#b4afa4' },
+    { w: 8, h: 3.5, dy: -3, c: '#cfcabf' },
+  ];
+  for (const s of steps) {
+    g.fillStyle = s.c;
+    g.fillRect(x - s.w / 2, y + s.dy - s.h / 2, s.w, s.h);
+    g.strokeStyle = 'rgba(70,66,60,0.6)';
+    g.lineWidth = 0.8;
+    g.strokeRect(x - s.w / 2, y + s.dy - s.h / 2, s.w, s.h);
+  }
+  g.fillStyle = '#c4bfb4';
+  g.strokeStyle = 'rgba(70,66,60,0.6)';
+  g.fillRect(x + 6, y + 5, 4.5, 3.2);
+  g.strokeRect(x + 6, y + 5, 4.5, 3.2);
+}
+
+/** Plantation: regular rows of small orchard trees (cultivated, unlike wild forest). */
+function paintPlantation(g: CanvasRenderingContext2D, cx: number, cy: number, q: number, r: number, seed: number): void {
+  g.save();
+  g.translate(cx, cy + 1);
+  const cols = 3;
+  const rows = 3;
+  const dx = 11;
+  const dy = 8;
+  for (let c = 0; c < cols; c++) {
+    for (let rr = 0; rr < rows; rr++) {
+      const ox = (c - (cols - 1) / 2) * dx + (rr % 2) * dx * 0.4;
+      const oy = (rr - (rows - 1) / 2) * dy;
+      const jx = (hash2(q + c, r + rr, seed + 91) - 0.5) * 2;
+      g.beginPath();
+      g.ellipse(ox + 1 + jx, oy + 3, 3.4, 1.3, 0, 0, Math.PI * 2);
+      g.fillStyle = 'rgba(20,28,18,0.2)';
+      g.fill();
+      g.beginPath();
+      g.arc(ox + jx, oy, 3.2, 0, Math.PI * 2);
+      g.fillStyle = '#4a7a3e';
+      g.fill();
+      g.beginPath();
+      g.arc(ox + jx - 0.9, oy - 0.9, 1.5, 0, Math.PI * 2);
+      g.fillStyle = 'rgba(150,190,110,0.5)';
+      g.fill();
+    }
+  }
+  g.restore();
+}
 
 export function paintImprovement(
   g: CanvasRenderingContext2D,
   impId: string,
   cx: number,
   cy: number,
+  q: number,
+  r: number,
+  seed: number,
 ): void {
-  const path = iconPath(IMPROVEMENT_ICON_PATHS[impId]);
-  if (!path) return;
-  const x = cx + HEX * 0.3; // lower-right — beside the lower-left resource token
-  const y = cy + HEX * 0.26;
-  const r = 13;
-  const c = 4; // chamfer — a plate, distinct from the round resource token
-  // chamfered parchment plate (matches the app's house shape), clearly legible
-  g.beginPath();
-  g.moveTo(x - r + c, y - r);
-  g.lineTo(x + r - c, y - r);
-  g.lineTo(x + r, y - r + c);
-  g.lineTo(x + r, y + r - c);
-  g.lineTo(x + r - c, y + r);
-  g.lineTo(x - r + c, y + r);
-  g.lineTo(x - r, y + r - c);
-  g.lineTo(x - r, y - r + c);
-  g.closePath();
-  g.fillStyle = PALETTE.parchment;
-  g.fill();
-  g.strokeStyle = PALETTE.sepia;
-  g.lineWidth = 1.5;
-  g.stroke();
-  // engraved silhouette, tinted sepia like the resource icons
-  const s = 18 / RESOURCE_ICON_VIEWBOX;
-  g.save();
-  g.translate(x, y);
-  g.scale(s, s);
-  g.translate(-RESOURCE_ICON_VIEWBOX / 2, -RESOURCE_ICON_VIEWBOX / 2);
-  g.fillStyle = PALETTE.sepia;
-  g.fill(path);
-  g.restore();
+  switch (impId) {
+    case 'farm':
+      paintFarm(g, cx, cy, q, r, seed);
+      break;
+    case 'mine':
+      paintMine(g, cx, cy, q, r, seed);
+      break;
+    case 'pasture':
+      paintPasture(g, cx, cy, q, r, seed);
+      break;
+    case 'quarry':
+      paintQuarry(g, cx, cy, q, r, seed);
+      break;
+    case 'plantation':
+      paintPlantation(g, cx, cy, q, r, seed);
+      break;
+  }
 }
 
 // --- resource tokens (game-icons.net silhouettes recolored to the palette) ---
