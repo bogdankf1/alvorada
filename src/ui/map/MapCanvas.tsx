@@ -151,6 +151,11 @@ export function MapCanvas() {
     let moved = false;
     let lastX = 0;
     let lastY = 0;
+    // active pointers, for two-finger pinch-zoom on touch devices
+    const pointers = new Map<number, { x: number; y: number }>();
+    let pinchDist = 0;
+    const dist = (a: { x: number; y: number }, b: { x: number; y: number }) =>
+      Math.hypot(a.x - b.x, a.y - b.y);
 
     const toTile = (e: PointerEvent | MouseEvent): { idx: number; a: Axial } | null => {
       const r = rendererRef.current;
@@ -164,14 +169,39 @@ export function MapCanvas() {
     };
 
     const onPointerDown = (e: PointerEvent) => {
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pointers.size >= 2) {
+        // second finger down: begin a pinch, abandon any pan, suppress the click
+        dragging = false;
+        moved = true;
+        const [p1, p2] = [...pointers.values()];
+        pinchDist = dist(p1, p2);
+        return;
+      }
       if (e.button !== 0 && e.button !== 1) return;
       dragging = true;
       moved = false;
       lastX = e.clientX;
       lastY = e.clientY;
-      canvas.setPointerCapture(e.pointerId);
+      if (e.pointerType === 'mouse') canvas.setPointerCapture(e.pointerId);
     };
     const onPointerMove = (e: PointerEvent) => {
+      if (pointers.has(e.pointerId)) pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pointers.size >= 2) {
+        const [p1, p2] = [...pointers.values()];
+        const d = dist(p1, p2);
+        if (pinchDist > 0 && d > 0) {
+          const rect = canvas.getBoundingClientRect();
+          rendererRef.current?.zoomAt(
+            (p1.x + p2.x) / 2 - rect.left,
+            (p1.y + p2.y) / 2 - rect.top,
+            d / pinchDist,
+          );
+        }
+        pinchDist = d;
+        moved = true;
+        return;
+      }
       if (dragging) {
         const dx = e.clientX - lastX;
         const dy = e.clientY - lastY;
@@ -191,10 +221,12 @@ export function MapCanvas() {
     };
     const onPointerUp = (e: PointerEvent) => {
       const wasDrag = moved;
+      pointers.delete(e.pointerId);
+      if (pointers.size < 2) pinchDist = 0;
       dragging = false;
       moved = false;
       canvas.style.cursor = 'grab';
-      canvas.releasePointerCapture(e.pointerId);
+      if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
       if (wasDrag || e.button !== 0) return;
       // a click on a city nameplate goes straight to the city
       const r = rendererRef.current;
@@ -220,12 +252,20 @@ export function MapCanvas() {
         e.deltaY < 0 ? 1.13 : 1 / 1.13,
       );
     };
+    const onPointerCancel = (e: PointerEvent) => {
+      pointers.delete(e.pointerId);
+      if (pointers.size < 2) pinchDist = 0;
+      dragging = false;
+      moved = false;
+      canvas.style.cursor = 'grab';
+    };
     const onLeave = () => appStore.set({ hoveredTile: null });
     const onContext = (e: MouseEvent) => e.preventDefault();
 
     canvas.addEventListener('pointerdown', onPointerDown);
     canvas.addEventListener('pointermove', onPointerMove);
     canvas.addEventListener('pointerup', onPointerUp);
+    canvas.addEventListener('pointercancel', onPointerCancel);
     canvas.addEventListener('wheel', onWheel, { passive: false });
     canvas.addEventListener('pointerleave', onLeave);
     canvas.addEventListener('contextmenu', onContext);
@@ -234,6 +274,7 @@ export function MapCanvas() {
       canvas.removeEventListener('pointerdown', onPointerDown);
       canvas.removeEventListener('pointermove', onPointerMove);
       canvas.removeEventListener('pointerup', onPointerUp);
+      canvas.removeEventListener('pointercancel', onPointerCancel);
       canvas.removeEventListener('wheel', onWheel);
       canvas.removeEventListener('pointerleave', onLeave);
       canvas.removeEventListener('contextmenu', onContext);
