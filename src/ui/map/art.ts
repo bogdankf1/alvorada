@@ -317,18 +317,28 @@ export function paintImprovement(
 ): void {
   const path = iconPath(IMPROVEMENT_ICON_PATHS[impId]);
   if (!path) return;
-  const x = cx;
-  const y = cy + 3;
-  // a soft parchment wash (no hard badge) so the silhouette reads on any terrain
-  const glow = g.createRadialGradient(x, y, 0, x, y, 14);
-  glow.addColorStop(0, css(rgb(PALETTE.parchment), 0.5));
-  glow.addColorStop(1, css(rgb(PALETTE.parchment), 0));
-  g.fillStyle = glow;
+  const x = cx + HEX * 0.3; // lower-right — beside the lower-left resource token
+  const y = cy + HEX * 0.26;
+  const r = 13;
+  const c = 4; // chamfer — a plate, distinct from the round resource token
+  // chamfered parchment plate (matches the app's house shape), clearly legible
   g.beginPath();
-  g.arc(x, y, 14, 0, Math.PI * 2);
+  g.moveTo(x - r + c, y - r);
+  g.lineTo(x + r - c, y - r);
+  g.lineTo(x + r, y - r + c);
+  g.lineTo(x + r, y + r - c);
+  g.lineTo(x + r - c, y + r);
+  g.lineTo(x - r + c, y + r);
+  g.lineTo(x - r, y + r - c);
+  g.lineTo(x - r, y - r + c);
+  g.closePath();
+  g.fillStyle = PALETTE.parchment;
   g.fill();
+  g.strokeStyle = PALETTE.sepia;
+  g.lineWidth = 1.5;
+  g.stroke();
   // engraved silhouette, tinted sepia like the resource icons
-  const s = 22 / RESOURCE_ICON_VIEWBOX;
+  const s = 18 / RESOURCE_ICON_VIEWBOX;
   g.save();
   g.translate(x, y);
   g.scale(s, s);
