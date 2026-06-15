@@ -398,8 +398,8 @@ export function paintResource(
   cx: number,
   cy: number,
 ): void {
-  const x = cx - HEX * 0.42;
-  const y = cy + HEX * 0.34;
+  const x = cx - HEX * 0.3;
+  const y = cy + HEX * 0.26;
   // parchment token
   g.beginPath();
   g.arc(x, y, 14, 0, Math.PI * 2);
