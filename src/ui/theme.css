@@ -29,13 +29,20 @@
 }
 
 html,
-body,
-#root {
+body {
   margin: 0;
   height: 100%;
-  height: 100dvh; /* robust against mobile browser chrome; falls back to 100% */
   overflow: hidden;
   overscroll-behavior: none; /* no rubber-band / pull-to-refresh on iPad */
+}
+
+/* Pin the app shell to the visual viewport so it ALWAYS fills the screen —
+   bulletproof across desktop, iPad, phones and devtools device-mode, and
+   immune to the height:100% chain or dvh collapsing. */
+#root {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
 }
 
 body {
