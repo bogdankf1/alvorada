@@ -519,12 +519,17 @@ export function paintResource(
   resId: string,
   cx: number,
   cy: number,
+  dim = false, // once the tile is improved, the painted land leads; shrink + fade the badge
 ): void {
   const x = cx - HEX * 0.3;
   const y = cy + HEX * 0.26;
+  const r = dim ? 11 : 14;
+  const iconPx = dim ? 15 : 20;
+  g.save();
+  if (dim) g.globalAlpha = 0.82;
   // parchment token
   g.beginPath();
-  g.arc(x, y, 14, 0, Math.PI * 2);
+  g.arc(x, y, r, 0, Math.PI * 2);
   g.fillStyle = PALETTE.parchment;
   g.fill();
   g.strokeStyle = PALETTE.sepia;
@@ -534,7 +539,7 @@ export function paintResource(
   const path = iconPath(RESOURCE_ICON_PATHS[resId]);
   if (path) {
     // engraved silhouette: scale the 512-viewBox icon down, centered, tinted sepia
-    const s = 20 / RESOURCE_ICON_VIEWBOX;
+    const s = iconPx / RESOURCE_ICON_VIEWBOX;
     g.save();
     g.translate(x, y);
     g.scale(s, s);
@@ -548,6 +553,7 @@ export function paintResource(
     g.fillStyle = PALETTE.sepia;
     g.fill();
   }
+  g.restore();
 }
 
 // --- unit glyphs (white strokes in a ~16px box centered at 0,0) ---

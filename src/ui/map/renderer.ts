@@ -397,7 +397,7 @@ export class MapRenderer {
       if (t.improvement) paintImprovement(g, t.improvement, p.x, p.y, a.q, a.r, s.config.seed);
       if (t.feature) paintFeature(g, t, p.x, p.y, a.q, a.r, s.config.seed);
       if (t.resource && resourceRevealed({ rules: this.rules }, s, this.viewer, t.resource)) {
-        paintResource(g, t.resource, p.x, p.y);
+        paintResource(g, t.resource, p.x, p.y, !!t.improvement);
       }
     }
   }
