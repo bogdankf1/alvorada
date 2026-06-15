@@ -8,6 +8,7 @@ import type { Tile } from '../../engine/types';
 import type { Ruleset } from '../../data/types';
 import { hash2 } from '../../engine/rng';
 import { hexCorners } from '../../engine/hex';
+import { RESOURCE_ICON_PATHS, RESOURCE_ICON_VIEWBOX } from './resource-icons';
 
 export const HEX = 38; // hex radius in world px
 
@@ -378,7 +379,18 @@ export function paintImprovement(
   }
 }
 
-// --- resource tokens ---
+// --- resource tokens (game-icons.net silhouettes recolored to the palette) ---
+
+const resourceIconCache = new Map<string, Path2D | null>();
+function resourceIconPath(resId: string): Path2D | null {
+  let p = resourceIconCache.get(resId);
+  if (p === undefined) {
+    const d = RESOURCE_ICON_PATHS[resId];
+    p = d ? new Path2D(d) : null;
+    resourceIconCache.set(resId, p);
+  }
+  return p;
+}
 
 export function paintResource(
   g: CanvasRenderingContext2D,
@@ -388,81 +400,31 @@ export function paintResource(
 ): void {
   const x = cx - HEX * 0.42;
   const y = cy + HEX * 0.34;
+  // parchment token
   g.beginPath();
-  g.arc(x, y, 8, 0, Math.PI * 2);
+  g.arc(x, y, 10, 0, Math.PI * 2);
   g.fillStyle = PALETTE.parchment;
   g.fill();
   g.strokeStyle = PALETTE.sepia;
   g.lineWidth = 1.5;
   g.stroke();
 
-  g.strokeStyle = PALETTE.sepia;
-  g.fillStyle = PALETTE.sepia;
-  g.lineWidth = 1.5;
-  g.lineCap = 'round';
-  switch (resId) {
-    case 'wheat':
-      for (let i = -1; i <= 1; i++) {
-        g.beginPath();
-        g.moveTo(x + i * 2.6, y + 4);
-        g.lineTo(x + i * 3.4, y - 3.4);
-        g.stroke();
-        g.beginPath();
-        g.arc(x + i * 3.6, y - 4.2, 1.25, 0, Math.PI * 2);
-        g.fill();
-      }
-      break;
-    case 'cattle':
-      g.beginPath();
-      g.moveTo(x - 4, y - 2.5);
-      g.quadraticCurveTo(x, y + 3, x + 4, y - 2.5);
-      g.stroke();
-      g.beginPath();
-      g.arc(x, y + 1.2, 2.1, 0, Math.PI * 2);
-      g.fill();
-      break;
-    case 'horses':
-      g.beginPath();
-      g.moveTo(x - 3.5, y + 4);
-      g.quadraticCurveTo(x - 2.5, y - 2, x + 0.5, y - 3.5);
-      g.quadraticCurveTo(x + 4, y - 5, x + 4, y - 1.5);
-      g.stroke();
-      g.beginPath();
-      g.arc(x + 3.4, y - 2.6, 1.3, 0, Math.PI * 2);
-      g.fill();
-      break;
-    case 'iron':
-      g.fillRect(x - 4, y - 1, 8, 3.4);
-      g.fillRect(x - 2.4, y - 3.8, 4.8, 3);
-      break;
-    case 'stone':
-      g.fillRect(x - 4.4, y - 0.4, 4.4, 3.6);
-      g.fillRect(x + 0.6, y - 0.4, 3.8, 3.6);
-      g.fillRect(x - 1.8, y - 4, 4.2, 3.2);
-      break;
-    case 'fish':
-      g.beginPath();
-      g.ellipse(x - 0.6, y, 3.6, 2.2, 0, 0, Math.PI * 2);
-      g.fill();
-      g.beginPath();
-      g.moveTo(x + 2.6, y);
-      g.lineTo(x + 5, y - 2.2);
-      g.lineTo(x + 5, y + 2.2);
-      g.closePath();
-      g.fill();
-      break;
-    case 'gold_ore':
-      g.beginPath();
-      g.arc(x - 2, y + 0.6, 2.4, 0, Math.PI * 2);
-      g.fill();
-      g.beginPath();
-      g.arc(x + 2.4, y - 1.6, 2.4, 0, Math.PI * 2);
-      g.stroke();
-      break;
-    default:
-      g.beginPath();
-      g.arc(x, y, 2.4, 0, Math.PI * 2);
-      g.fill();
+  const path = resourceIconPath(resId);
+  if (path) {
+    // engraved silhouette: scale the 512-viewBox icon down, centered, tinted sepia
+    const s = 14 / RESOURCE_ICON_VIEWBOX;
+    g.save();
+    g.translate(x, y);
+    g.scale(s, s);
+    g.translate(-RESOURCE_ICON_VIEWBOX / 2, -RESOURCE_ICON_VIEWBOX / 2);
+    g.fillStyle = PALETTE.sepia;
+    g.fill(path);
+    g.restore();
+  } else {
+    g.beginPath();
+    g.arc(x, y, 2.4, 0, Math.PI * 2);
+    g.fillStyle = PALETTE.sepia;
+    g.fill();
   }
 }
 
