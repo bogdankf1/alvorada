@@ -7,7 +7,7 @@
  */
 import type { Action, Axial, GameState, Unit } from '../../engine/types';
 import { VIS_UNSEEN, VIS_VISIBLE, sortedIds } from '../../engine/types';
-import { axialOfIndex, hexToPixel, tileIndex, sameHex } from '../../engine/hex';
+import { axialOfIndex, hexToPixel, tileIndex, sameHex, SQRT3 } from '../../engine/hex';
 import { hash2 } from '../../engine/rng';
 import type { Ruleset } from '../../data/types';
 import { resourceRevealed } from '../../engine/selectors';
@@ -78,6 +78,8 @@ export class MapRenderer {
   camera: Camera = { x: 0, y: 0, zoom: 1 };
   private panKeys = { up: false, down: false, left: false, right: false };
   private lastTick = 0;
+  private viewW = 0; // viewport CSS size, cached on resize (for camera clamping)
+  private viewH = 0;
 
   overlay: OverlayState = {
     selectedUnit: null,
@@ -130,9 +132,12 @@ export class MapRenderer {
   resize(): void {
     if (!this.canvas) return;
     const rect = this.canvas.getBoundingClientRect();
+    this.viewW = rect.width;
+    this.viewH = rect.height;
     this.dpr = Math.min(window.devicePixelRatio || 1, 2);
     this.canvas.width = Math.max(1, Math.round(rect.width * this.dpr));
     this.canvas.height = Math.max(1, Math.round(rect.height * this.dpr));
+    this.clampCamera(); // viewport changed: re-fit zoom/center so no background shows
     this.invalidate();
   }
 
@@ -156,12 +161,14 @@ export class MapRenderer {
     const target = mine[0] ?? { q: Math.floor(s.mapW / 2), r: Math.floor(s.mapH / 2) };
     const p = hexToPixel({ q: target.q, r: target.r }, HEX);
     this.camera = { x: p.x, y: p.y, zoom: 1 };
+    this.clampCamera();
   }
 
   centerOn(a: Axial): void {
     const p = hexToPixel(a, HEX);
     this.camera.x = p.x;
     this.camera.y = p.y;
+    this.clampCamera();
     this.invalidate();
   }
 
@@ -177,10 +184,11 @@ export class MapRenderer {
 
   zoomAt(sx: number, sy: number, factor: number): void {
     const before = this.screenToWorld(sx, sy);
-    this.camera.zoom = Math.min(2.2, Math.max(0.45, this.camera.zoom * factor));
+    this.camera.zoom = Math.min(2.2, Math.max(this.minZoom(), this.camera.zoom * factor));
     const after = this.screenToWorld(sx, sy);
     this.camera.x += before.x - after.x;
     this.camera.y += before.y - after.y;
+    this.clampCamera();
     this.invalidate();
   }
 
@@ -191,11 +199,37 @@ export class MapRenderer {
     this.invalidate();
   }
 
+  /** World-pixel bounding box of the hex field (the union of all tiles). */
+  private mapBounds(): { minX: number; minY: number; maxX: number; maxY: number } {
+    const s = this.state!;
+    return {
+      minX: -HEX * SQRT3 * 0.5,
+      minY: -HEX,
+      maxX: HEX * SQRT3 * s.mapW,
+      maxY: HEX * 1.5 * (s.mapH - 1) + HEX,
+    };
+  }
+
+  /** Smallest zoom at which the map still fully covers the viewport (no background shows). */
+  private minZoom(): number {
+    if (!this.state || this.viewW === 0 || this.viewH === 0) return 0.2;
+    const b = this.mapBounds();
+    return Math.max(this.viewW / (b.maxX - b.minX), this.viewH / (b.maxY - b.minY));
+  }
+
+  /** Keep the visible viewport inside the map: clamp zoom to "cover", then the center. */
   private clampCamera(): void {
-    if (!this.state) return;
-    const max = hexToPixel({ q: this.state.mapW, r: this.state.mapH }, HEX);
-    this.camera.x = Math.max(-HEX * 2, Math.min(max.x - this.state.mapH * HEX * 0.85, this.camera.x));
-    this.camera.y = Math.max(-HEX * 2, Math.min(max.y + HEX * 2, this.camera.y));
+    if (!this.state || this.viewW === 0 || this.viewH === 0) return;
+    this.camera.zoom = Math.max(this.minZoom(), Math.min(2.2, this.camera.zoom));
+    const b = this.mapBounds();
+    const halfW = this.viewW / 2 / this.camera.zoom;
+    const halfH = this.viewH / 2 / this.camera.zoom;
+    const loX = b.minX + halfW;
+    const hiX = b.maxX - halfW;
+    this.camera.x = loX <= hiX ? Math.max(loX, Math.min(hiX, this.camera.x)) : (b.minX + b.maxX) / 2;
+    const loY = b.minY + halfH;
+    const hiY = b.maxY - halfH;
+    this.camera.y = loY <= hiY ? Math.max(loY, Math.min(hiY, this.camera.y)) : (b.minY + b.maxY) / 2;
   }
 
   // --- animation hooks (driver.onAction) ---
