@@ -8,7 +8,7 @@
 import type { AttitudeBand } from '../data/types';
 import type { Ctx, GameState, PlayerId, DealItems, Proposal } from './types';
 import { hexDistance, tileIndex, neighbors, axialOfIndex } from './hex';
-import { militaryPower, playerCities, tileOwner } from './selectors';
+import { computeScore, militaryPower, playerCities, tileOwner, wonderCount, commonReligion } from './selectors';
 
 export interface AttitudeFactor {
   label: string;
@@ -75,6 +75,32 @@ function bandOf(ctx: Ctx, score: number): AttitudeBand {
   return 'hostile';
 }
 
+/** One agenda's verdict on `toward`, from `subject`'s view. Relative comparisons — no magic numbers. */
+function agendaFactor(
+  ctx: Ctx, state: GameState, subject: PlayerId, toward: PlayerId, agendaId: string | undefined,
+): AttitudeFactor | null {
+  if (!agendaId) return null;
+  const ag = ctx.rules.agendas[agendaId];
+  if (!ag) return null;
+  const w = ctx.rules.settings.diplomacy.attitude;
+  const yes = (why: string, delta: number): AttitudeFactor => ({ label: `${ag.name}: ${why}`, delta });
+  switch (ag.rule) {
+    case 'likesWonderBuilders':
+      return wonderCount(state, toward) > wonderCount(state, subject) ? yes('admires their wonders', w.agendaRespected) : null;
+    case 'dislikesWarmongers':
+      return state.players.some((p) => p.alive && p.id !== toward && state.relations[toward][p.id]?.status === 'war')
+        ? yes('abhors their warmongering', w.agendaDefied) : null;
+    case 'likesStrongMilitary':
+      return militaryPower(ctx, state, toward) >= militaryPower(ctx, state, subject) ? yes('respects their strength', w.agendaRespected) : null;
+    case 'likesCultured':
+      return state.players[toward].cultureTotal > state.players[subject].cultureTotal ? yes('admires their culture', w.agendaRespected) : null;
+    case 'likesSharedReligion':
+      return commonReligion(state, subject, toward) ? yes('shares the true faith', w.agendaRespected) : null;
+    case 'dislikesNeighbors':
+      return territoriesTouch(state, subject, toward) ? yes('resents the shared border', w.agendaDefied) : null;
+  }
+}
+
 /** How `subject` feels about `toward`, with a reasoned factor breakdown. */
 export function attitude(ctx: Ctx, state: GameState, subject: PlayerId, toward: PlayerId): Attitude {
   const d = ctx.rules.settings.diplomacy.attitude;
@@ -99,8 +125,31 @@ export function attitude(ctx: Ctx, state: GameState, subject: PlayerId, toward: 
   if (theirPower > myPower * 1.5) add('Stronger than us', d.strongerRival);
   else if (myPower > theirPower * 1.5) add('Weaker than us', d.weakerRival);
 
+  // agendas: the subject's historical + hidden agenda judge `toward`
+  const civAgenda = ctx.rules.civs[state.players[subject].civ]?.agenda;
+  const af1 = agendaFactor(ctx, state, subject, toward, civAgenda);
+  if (af1) add(af1.label, af1.delta);
+  const hidden = state.players[subject].hiddenAgenda;
+  if (hidden && hidden !== civAgenda) {
+    const af2 = agendaFactor(ctx, state, subject, toward, hidden);
+    if (af2) add(af2.label, af2.delta);
+  }
+  // universal reactivity (every leader feels these a little)
+  if (commonReligion(state, subject, toward)) add('Shared faith', d.sharedReligion);
+  if (wonderCount(state, toward) > wonderCount(state, subject)) add('Awed by their wonders', d.admiredWonders);
+  if (computeScore(ctx, state, toward) > computeScore(ctx, state, subject) * 1.3) add('Overshadowing us', d.scoreLeader);
+
   const score = factors.reduce((s, f) => s + f.delta, 0);
   return { score, band: bandOf(ctx, score), factors };
+}
+
+/** What `viewer` knows of `rival`'s agendas: historical once met, hidden after the reveal delay. */
+export function agendaKnown(ctx: Ctx, state: GameState, viewer: PlayerId, rival: PlayerId): { historical: boolean; hidden: boolean } {
+  const rel = state.relations[viewer][rival];
+  const met = rel.met;
+  const since = rel.firstContactTurn ?? state.turn;
+  const hidden = met && state.turn - since >= ctx.rules.settings.diplomacy.hiddenAgendaRevealTurns;
+  return { historical: met, hidden };
 }
 
 function sideValue(

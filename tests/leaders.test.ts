@@ -4,6 +4,9 @@ import { validateRuleset } from '../src/data/validate';
 import { initialState } from '../src/engine/state';
 import { ctx } from './helpers';
 import { SCHEMA_VERSION } from '../src/engine/serialize';
+import { attitude, agendaKnown } from '../src/engine/diplomacy-eval';
+import { flatWorld, spawn, refreshVis, thaw } from './helpers';
+import { applyAction } from '../src/engine/reducer';
 
 describe('trait & agenda content', () => {
   it('defines 8 traits and agendas, and validates clean', () => {
@@ -43,5 +46,37 @@ describe('leader state init', () => {
     expect(a.rngState).not.toBe(0);
     // And it should equal what initialState always produced before Task 3 added hiddenAgenda
     expect(a.rngState).toBe(-1890154793); // seeded from config {seed:7, 24x20, rome+egypt}
+  });
+});
+
+describe('agenda & reactivity attitude', () => {
+  it('a wonder-loving agenda warms toward a rival with more wonders', () => {
+    let s = flatWorld(16, 12, 2);
+    s.players[0].civ = 'egypt';     // agenda: monumental (likesWonderBuilders)
+    s.players[0].hiddenAgenda = 'territorial'; // ensure the hidden one doesn't also fire here
+    const a = spawn(s, 0, 'settler', 4, 5);
+    const b = spawn(s, 1, 'settler', 11, 6);
+    refreshVis(s);
+    s = applyAction(ctx, s, { type: 'FOUND_CITY', player: 0, unit: a.id });
+    s = applyAction(ctx, { ...s, currentPlayer: 1 }, { type: 'FOUND_CITY', player: 1, unit: b.id });
+    s = thaw(s);
+    s.relations[0][1].met = true; s.relations[1][0].met = true;
+    const before = attitude(ctx, s, 0, 1).score;
+    const rivalCity = Object.values(s.cities).find((c) => c.owner === 1)!;
+    rivalCity.buildings.push('pyramids', 'great_library');
+    s.wondersBuilt['pyramids'] = rivalCity.id; s.wondersBuilt['great_library'] = rivalCity.id;
+    const after = attitude(ctx, s, 0, 1).score;
+    expect(after).toBeGreaterThan(before); // agenda respected raises attitude
+    expect(attitude(ctx, s, 0, 1).factors.some((f) => /Monument Builder/.test(f.label))).toBe(true);
+  });
+
+  it('hidden agenda is concealed until the reveal turn', () => {
+    let s = flatWorld(12, 10, 2);
+    s.relations[0][1].met = true; s.relations[1][0].met = true;
+    s.relations[0][1].firstContactTurn = 1; s.turn = 5;
+    expect(agendaKnown(ctx, s, 0, 1).hidden).toBe(false); // 5 - 1 < 15
+    s.turn = 20;
+    expect(agendaKnown(ctx, s, 0, 1).hidden).toBe(true);  // 20 - 1 >= 15
+    expect(agendaKnown(ctx, s, 0, 1).historical).toBe(true); // always once met
   });
 });

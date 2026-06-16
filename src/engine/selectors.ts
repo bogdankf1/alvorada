@@ -61,6 +61,23 @@ export function playerCities(state: GameState, pid: PlayerId): City[] {
     .filter((c) => c.owner === pid);
 }
 
+/** Count of World Wonders a player currently owns. */
+export function wonderCount(state: GameState, pid: PlayerId): number {
+  let n = 0;
+  for (const wid of Object.keys(state.wondersBuilt))
+    if (state.cities[state.wondersBuilt[wid]]?.owner === pid) n++;
+  return n;
+}
+
+/** True when a and b each have a city whose majority religion is the same. */
+export function commonReligion(state: GameState, a: PlayerId, b: PlayerId): boolean {
+  const setA = new Set<string>();
+  for (const c of playerCities(state, a)) if (c.religion) setA.add(c.religion);
+  if (setA.size === 0) return false;
+  for (const c of playerCities(state, b)) if (c.religion && setA.has(c.religion)) return true;
+  return false;
+}
+
 export function atWar(state: GameState, a: PlayerId, b: PlayerId): boolean {
   return a !== b && state.relations[a][b].status === 'war';
 }
