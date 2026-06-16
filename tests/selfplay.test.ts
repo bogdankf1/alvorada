@@ -93,16 +93,16 @@ describe('AI self-play', () => {
   }, 300_000);
 
   it('the culture victory is a reachable victory in self-play', () => {
-    // Seed 900 is a culture-blowout game: one AI (Rome) builds a dominant culture/wonder
+    // Seed 920 is a culture-blowout game: one AI (Rome) builds a dominant culture/wonder
     // core while its rivals stay small, so at the minTurn (220) its influence already
     // outweighs every living rival's lifetime culture by the tuned 3× dominanceFactor and
     // the culture win fires immediately — before any tech leader reaches scientific_method.
     // The companion of the science-capstone test: together they prove BOTH victory paths
-    // are live under the tuned culture.dominanceFactor (science on 314, culture on 900).
-    // (Previously seed 999; re-seeded 999→900 because the diplomacy fix — barbarians
-    // excluded from hasMet/metPlayers — shifted the action sequence, causing a science win
-    // on seed 999. Seed 900 fires culture at turn 220 with comfortable margin.)
-    const { state } = runGame(900, 265);
+    // are live under the tuned culture.dominanceFactor (science on 314, culture on 920).
+    // (Previously seed 999→900 due to the diplomacy fix; re-seeded 900→920 because the
+    // civ-uniques feature (Babylon +science, Hellas +culture, Rome +happiness) shifted
+    // game dynamics so seed 900 now produces a science win. Seed 920 fires culture at turn 220.)
+    const { state } = runGame(920, 265);
     expect(state.phase).toBe('ended');
     expect(state.winner?.victory).toBe('culture');
   }, 300_000);

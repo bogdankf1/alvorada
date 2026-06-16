@@ -19,11 +19,11 @@ describe('empireHappiness', () => {
   it('base minus per-city minus per-pop', () => {
     const { s, id } = oneCity();
     s.cities[id].pop = 3;
-    // base 9 - perCity 2 - perPop*3 = 9 - 2 - 3 = 4
+    // base 9 + Pax Romana 3 - perCity 2 - perPop*3 = 12 - 5 = 7
     const h = empireHappiness(ctx, s, 0);
-    expect(h.happy).toBe(9);
+    expect(h.happy).toBe(12); // 9 base + 3 Pax Romana
     expect(h.unhappy).toBe(2 + 3);
-    expect(h.net).toBe(4);
+    expect(h.net).toBe(7);
     expect(h.tier).toBe('content');
   });
 
@@ -32,7 +32,7 @@ describe('empireHappiness', () => {
     s.cities[id].buildings.push('colosseum'); // +3
     s.cities[id].buildings.push('circus_maximus');
     s.wondersBuilt['circus_maximus'] = id; // +5
-    expect(empireHappiness(ctx, s, 0).happy).toBe(9 + 3 + 5);
+    expect(empireHappiness(ctx, s, 0).happy).toBe(9 + 3 + 3 + 5); // base + Pax Romana + colosseum + circus
   });
 
   it('a connected luxury adds once; duplicates do not stack', () => {
@@ -46,8 +46,8 @@ describe('empireHappiness', () => {
       s.tiles[i].improvement = 'plantation';
     }
     expect(connectedLuxuries(ctx, s, 0)).toEqual(['wine']);
-    // base 9 + luxuryHappiness 4 = 13 happy
-    expect(empireHappiness(ctx, s, 0).happy).toBe(9 + 4);
+    // base 9 + Pax Romana 3 + luxuryHappiness 4 = 16 happy
+    expect(empireHappiness(ctx, s, 0).happy).toBe(9 + 3 + 4);
   });
 
   it('an occupied city adds unrest until a pacifying building is present', () => {
@@ -61,11 +61,11 @@ describe('empireHappiness', () => {
 
   it('tiers: content at 0, unhappy below 0, veryUnhappy at the threshold', () => {
     const { s, id } = oneCity();
-    s.cities[id].pop = 7; // 9 - 2 - 7 = 0 → content
+    s.cities[id].pop = 10; // 9+3 - 2 - 10 = 0 → content
     expect(empireHappiness(ctx, s, 0).tier).toBe('content');
-    s.cities[id].pop = 8; // -1 → unhappy
+    s.cities[id].pop = 11; // -1 → unhappy
     expect(empireHappiness(ctx, s, 0).tier).toBe('unhappy');
-    s.cities[id].pop = 17; // 9 - 2 - 17 = -10 → veryUnhappy
+    s.cities[id].pop = 20; // 9+3 - 2 - 20 = -10 → veryUnhappy
     expect(empireHappiness(ctx, s, 0).tier).toBe('veryUnhappy');
   });
 });

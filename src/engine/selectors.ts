@@ -397,6 +397,10 @@ export function happinessBreakdown(
     const eff = ctx.rules.buildings[wid]?.effect;
     if (eff?.kind === 'happiness') out.push({ label: ctx.rules.buildings[wid].name, amount: eff.amount });
   }
+  const civDef = ctx.rules.civs[state.players[pid].civ];
+  for (const ab of civDef.uniqueAbility ?? [])
+    if (ab.kind === 'empireCivic' && ab.effect.happiness)
+      out.push({ label: civDef.name, amount: ab.effect.happiness });
 
   // hurting
   if (cities.length) out.push({ label: `Cities ×${cities.length}`, amount: -cities.length * h.perCity });
