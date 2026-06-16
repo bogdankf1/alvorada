@@ -8,7 +8,7 @@
 import type { AttitudeBand } from '../data/types';
 import type { Ctx, GameState, PlayerId, DealItems, Proposal } from './types';
 import { hexDistance, tileIndex, neighbors, axialOfIndex } from './hex';
-import { computeScore, militaryPower, playerCities, tileOwner, wonderCount, commonReligion } from './selectors';
+import { computeScore, militaryPower, playerCities, tileOwner, wonderCount, commonReligion, traitWeights } from './selectors';
 
 export interface AttitudeFactor {
   label: string;
@@ -75,20 +75,27 @@ function bandOf(ctx: Ctx, score: number): AttitudeBand {
   return 'hostile';
 }
 
-/** One agenda's verdict on `toward`, from `subject`'s view. Relative comparisons — no magic numbers. */
+/** One agenda's verdict on `toward`, from `subject`'s view. Relative comparisons — no magic numbers.
+ *  `named` controls whether the label includes the agenda name (true for historical/public agendas;
+ *  false for the hidden agenda so the why-list doesn't reveal which hidden agenda it is). */
 function agendaFactor(
-  ctx: Ctx, state: GameState, subject: PlayerId, toward: PlayerId, agendaId: string | undefined,
+  ctx: Ctx, state: GameState, subject: PlayerId, toward: PlayerId, agendaId: string | undefined, named: boolean,
 ): AttitudeFactor | null {
   if (!agendaId) return null;
   const ag = ctx.rules.agendas[agendaId];
   if (!ag) return null;
   const w = ctx.rules.settings.diplomacy.attitude;
-  const yes = (why: string, delta: number): AttitudeFactor => ({ label: `${ag.name}: ${why}`, delta });
+  const yes = (why: string, delta: number): AttitudeFactor => ({
+    label: named ? `${ag.name}: ${why}` : why.charAt(0).toUpperCase() + why.slice(1),
+    delta,
+  });
   switch (ag.rule) {
     case 'likesWonderBuilders':
       return wonderCount(state, toward) > wonderCount(state, subject) ? yes('admires their wonders', w.agendaRespected) : null;
     case 'dislikesWarmongers':
-      return state.players.some((p) => p.alive && p.id !== toward && state.relations[toward][p.id]?.status === 'war')
+      // Exclude the barbarian player — every civ is at war with them from turn 1,
+      // so without this guard the agenda fires unconditionally.
+      return state.players.some((p) => p.alive && !p.barbarian && p.id !== toward && state.relations[toward][p.id]?.status === 'war')
         ? yes('abhors their warmongering', w.agendaDefied) : null;
     case 'likesStrongMilitary':
       return militaryPower(ctx, state, toward) >= militaryPower(ctx, state, subject) ? yes('respects their strength', w.agendaRespected) : null;
@@ -98,6 +105,7 @@ function agendaFactor(
       return commonReligion(state, subject, toward) ? yes('shares the true faith', w.agendaRespected) : null;
     case 'dislikesNeighbors':
       return territoriesTouch(state, subject, toward) ? yes('resents the shared border', w.agendaDefied) : null;
+    default: return null;
   }
 }
 
@@ -126,12 +134,15 @@ export function attitude(ctx: Ctx, state: GameState, subject: PlayerId, toward: 
   else if (myPower > theirPower * 1.5) add('Weaker than us', d.weakerRival);
 
   // agendas: the subject's historical + hidden agenda judge `toward`
+  // A leader acts on its own hidden agenda from turn 1; the label stays generic so the
+  // why-list doesn't reveal which hidden agenda it is (the agenda NAME is shown elsewhere
+  // only once agendaKnown().hidden).
   const civAgenda = ctx.rules.civs[state.players[subject].civ]?.agenda;
-  const af1 = agendaFactor(ctx, state, subject, toward, civAgenda);
+  const af1 = agendaFactor(ctx, state, subject, toward, civAgenda, /* named */ true);
   if (af1) add(af1.label, af1.delta);
   const hidden = state.players[subject].hiddenAgenda;
   if (hidden && hidden !== civAgenda) {
-    const af2 = agendaFactor(ctx, state, subject, toward, hidden);
+    const af2 = agendaFactor(ctx, state, subject, toward, hidden, /* named */ false);
     if (af2) add(af2.label, af2.delta);
   }
   // universal reactivity (every leader feels these a little)
@@ -176,7 +187,10 @@ function sideValue(
   }
   if (items.friendship) {
     const band = attitude(ctx, state, owner, counterparty).band;
-    v += bandRank(band) >= bandRank(d.minFriendBand) ? FRIENDSHIP_VALUE : FRIENDSHIP_GATE_PENALTY;
+    // A diplomatic civ (positive dealWillingness) accepts friendship at a lower band;
+    // proposers use the standard gate, so no rejected-proposal spam.
+    v += bandRank(band) >= bandRank(d.minFriendBand) - traitWeights(ctx, state, owner).dealWillingness
+      ? FRIENDSHIP_VALUE : FRIENDSHIP_GATE_PENALTY;
   }
   return v;
 }

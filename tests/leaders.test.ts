@@ -5,7 +5,7 @@ import { initialState } from '../src/engine/state';
 import { ctx } from './helpers';
 import { SCHEMA_VERSION } from '../src/engine/serialize';
 import { attitude, agendaKnown } from '../src/engine/diplomacy-eval';
-import { flatWorld, spawn, refreshVis, thaw } from './helpers';
+import { flatWorld, spawn, refreshVis, thaw, declareWarBetween } from './helpers';
 import { applyAction } from '../src/engine/reducer';
 import { considerWarForTest } from '../src/ai/decide';
 import { traitWeights } from '../src/engine/selectors';
@@ -74,10 +74,21 @@ describe('agenda & reactivity attitude', () => {
     expect(attitude(ctx, s, 0, 1).factors.some((f) => /Monument Builder/.test(f.label))).toBe(true);
   });
 
+  it('pacifist agenda ignores the ever-present barbarian war but fires on a human war', () => {
+    let s = flatWorld(16, 12, 3);
+    s.players[0].civ = 'babylon';              // agenda 'pacifist' = dislikesWarmongers
+    s.players[0].hiddenAgenda = 'territorial'; // keep the hidden one from interfering
+    s.relations[0][1].met = true; s.relations[1][0].met = true;
+    const fires = () => attitude(ctx, s, 0, 1).factors.some((f) => /warmongering/.test(f.label));
+    expect(fires()).toBe(false);   // player 1 is at war only with barbarians
+    declareWarBetween(s, 1, 2);     // now at war with a human
+    expect(fires()).toBe(true);
+  });
+
   it('hidden agenda is concealed until the reveal turn', () => {
     let s = flatWorld(12, 10, 2);
     s.relations[0][1].met = true; s.relations[1][0].met = true;
-    s.relations[0][1].firstContactTurn = 1; s.turn = 5;
+    s.relations[0][1].firstContactTurn = 1; s.relations[1][0].firstContactTurn = 1; s.turn = 5;
     expect(agendaKnown(ctx, s, 0, 1).hidden).toBe(false); // 5 - 1 < 15
     s.turn = 20;
     expect(agendaKnown(ctx, s, 0, 1).hidden).toBe(true);  // 20 - 1 >= 15

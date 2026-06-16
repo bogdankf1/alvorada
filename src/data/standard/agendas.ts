@@ -7,7 +7,8 @@ export const AGENDAS: Record<string, AgendaDef> = {
   aesthete:    { id: 'aesthete',    name: 'Aesthete',      blurb: 'Admires cultured peoples.',            rule: 'likesCultured' },
   devout:      { id: 'devout',      name: 'Devout',        blurb: 'Favors those who share the faith.',    rule: 'likesSharedReligion' },
   territorial: { id: 'territorial', name: 'Territorial',   blurb: 'Resents close neighbors.',             rule: 'dislikesNeighbors' },
-  // extra hidden-pool variants
+  // extra hidden-pool variants: zealot and warlord intentionally reuse existing rules
+  // (likesSharedReligion / likesStrongMilitary); differentiation is by name/tooltip only.
   zealot:      { id: 'zealot',      name: 'Zealot',        blurb: 'Demands shared faith.',                rule: 'likesSharedReligion' },
   warlord:     { id: 'warlord',     name: 'Warlord',       blurb: 'Honors only strength.',                rule: 'likesStrongMilitary' },
 };

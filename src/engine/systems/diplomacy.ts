@@ -136,7 +136,7 @@ export function processObligations(ctx: Ctx, state: GameState, p: PlayerId): voi
       const band = attitude(ctx, state, p, o.id).band;
       const prev = out.lastBand;
       if (prev && prev !== band) {
-        const worsened = bandRank(band) < bandRank(prev as never);
+        const worsened = bandRank(band) < bandRank(prev);
         const dramatic = band === 'wary' || band === 'hostile' || band === 'friendly';
         if (dramatic && (worsened || band === 'friendly')) {
           pushEvent(state, {

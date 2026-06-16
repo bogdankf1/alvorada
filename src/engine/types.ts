@@ -3,7 +3,7 @@
  * no class instances, no Maps/Sets, no functions, no Dates.
  * GameState + the action log fully determine a game (see PLAN.md §3.3).
  */
-import type { Ruleset, SpecialistType } from '../data/types';
+import type { AttitudeBand, Ruleset, SpecialistType } from '../data/types';
 
 export type PlayerId = number;
 export type UnitId = number;
@@ -98,7 +98,7 @@ export interface RelationState {
   goldUntil: number; // gold-per-turn runs until this turn (0 = none)
   grudge: number; // a's grudge toward b; decays each turn (directional)
   firstContactTurn?: number; // turn `met` first became true (symmetric); undefined until met
-  lastBand?: string;         // subject's last-seen attitude band toward target (reactivity)
+  lastBand?: AttitudeBand;   // subject's last-seen attitude band toward target (reactivity)
 }
 
 export function blankRelation(): RelationState {
