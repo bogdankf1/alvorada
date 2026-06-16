@@ -77,3 +77,21 @@ describe('empireCivic ability', () => {
     expect(hap).toBe(empireHappiness(c, s, 0).happy + 2);
   });
 });
+
+describe('wonderProduction ability', () => {
+  it('adds flat hammers toward a World Wonder each turn (not to normal builds)', () => {
+    const c = customCtx((r) => { r.civs.rome.uniqueAbility = [{ kind: 'wonderProduction', amount: 5 }]; });
+    let s = flatWorld(14, 12, 2); // player 0 = rome
+    const settler = spawn(s, 0, 'settler', 5, 5);
+    spawn(s, 1, 'warrior', 1, 10);
+    refreshVis(s);
+    s = applyAction(c, s, { type: 'FOUND_CITY', player: 0, unit: settler.id });
+    s = thaw(s);
+    s.players[0].techs.push('masonry'); // pyramids (a wonder) available
+    const city = s.cities[Object.keys(s.cities).map(Number)[0]];
+    city.production = { item: { kind: 'building', id: 'pyramids' }, progress: 0 };
+    const base = cityYields(c, s, city).total.production;
+    processCity(c, s, city);
+    expect(city.production.progress).toBe(base + 5); // base hammers + the +5 wonder bonus
+  });
+});

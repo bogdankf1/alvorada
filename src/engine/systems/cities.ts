@@ -183,8 +183,13 @@ export function processCity(ctx: Ctx, state: GameState, city: City): CityTurnOut
 
   // production
   if (city.production.item) {
-    city.production.progress += total.production;
     const item = city.production.item;
+    city.production.progress += total.production;
+    // Egypt's Iteru and similar abilities add flat hammers toward a World Wonder.
+    if (item.kind === 'building' && ctx.rules.buildings[item.id]?.wonder) {
+      for (const ab of ctx.rules.civs[state.players[city.owner].civ].uniqueAbility ?? [])
+        if (ab.kind === 'wonderProduction') city.production.progress += ab.amount;
+    }
     const cost = itemCost(ctx, item);
     if (city.production.progress >= cost) {
       if (item.kind === 'building') {
