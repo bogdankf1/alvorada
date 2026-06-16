@@ -153,4 +153,25 @@ export const UNITS: Record<string, UnitDef> = {
     class: 'civilian', domain: 'land', abilities: ['trade'],
     requiresTech: 'currency', art: { glyph: 'gear' },
   },
+  // --- civ uniques ---
+  legion: {
+    id: 'legion', name: 'Legion', cost: 88, moves: 2, sight: 2, strength: 18,
+    class: 'melee', domain: 'land', requiresTech: 'iron_working', requiresResource: 'iron',
+    bonuses: [{ vsCity: true, pct: 50 }], civ: 'rome', replaces: 'swordsman', art: { glyph: 'sword' },
+  },
+  war_chariot: {
+    id: 'war_chariot', name: 'War Chariot', cost: 80, moves: 5, sight: 2, strength: 14,
+    class: 'mounted', domain: 'land', requiresTech: 'horseback_riding',
+    civ: 'egypt', replaces: 'horseman', art: { glyph: 'horse' },
+  },
+  bowman: {
+    id: 'bowman', name: 'Bowman', cost: 48, moves: 2, sight: 2, strength: 6,
+    ranged: { strength: 9, range: 2 }, class: 'ranged', domain: 'land',
+    requiresTech: 'archery', civ: 'babylon', replaces: 'archer', art: { glyph: 'bow' },
+  },
+  hoplite: {
+    id: 'hoplite', name: 'Hoplite', cost: 56, moves: 2, sight: 2, strength: 13,
+    class: 'melee', domain: 'land', bonuses: [{ vsClass: 'mounted', pct: 50 }],
+    requiresTech: 'bronze_working', civ: 'hellas', replaces: 'spearman', art: { glyph: 'spear' },
+  },
 };

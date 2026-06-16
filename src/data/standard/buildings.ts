@@ -156,4 +156,22 @@ export const BUILDINGS: Record<string, BuildingDef> = {
     wonder: true, effect: { kind: 'happiness', amount: 5 },
     requiresTech: 'construction', art: { glyph: 'temple' },
   },
+  // --- civ uniques ---
+  bath: {
+    id: 'bath', name: 'Roman Bath', cost: 104, yields: { food: 3 }, happiness: 1,
+    requiresTech: 'construction', civ: 'rome', replaces: 'aqueduct', art: { glyph: 'arch' },
+  },
+  nilometer: {
+    id: 'nilometer', name: 'Nilometer', cost: 60, yields: { food: 2, faith: 1 },
+    requiresTech: 'pottery', civ: 'egypt', replaces: 'granary', art: { glyph: 'amphora' },
+  },
+  etemenanki: {
+    id: 'etemenanki', name: 'Etemenanki', cost: 72, yields: { science: 2, culture: 1 },
+    perPop: { yield: 'science', per: 2 }, specialistSlots: { type: 'scientist', count: 1 },
+    requiresTech: 'writing', civ: 'babylon', replaces: 'library', art: { glyph: 'scroll' },
+  },
+  acropolis: {
+    id: 'acropolis', name: 'Acropolis', cost: 40, yields: { culture: 3 },
+    civ: 'hellas', replaces: 'monument', art: { glyph: 'obelisk' },
+  },
 };

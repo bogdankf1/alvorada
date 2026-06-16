@@ -95,3 +95,35 @@ describe('wonderProduction ability', () => {
     expect(city.production.progress).toBe(base + 5); // base hammers + the +5 wonder bonus
   });
 });
+
+describe('the four civ kits (real content)', () => {
+  it('tags each unique with its civ and base', () => {
+    const u = STANDARD_RULESET.units, b = STANDARD_RULESET.buildings, c = STANDARD_RULESET.civs;
+    expect(u.legion).toMatchObject({ civ: 'rome', replaces: 'swordsman' });
+    expect(u.war_chariot).toMatchObject({ civ: 'egypt', replaces: 'horseman' });
+    expect(u.bowman).toMatchObject({ civ: 'babylon', replaces: 'archer' });
+    expect(u.hoplite).toMatchObject({ civ: 'hellas', replaces: 'spearman' });
+    expect(b.bath).toMatchObject({ civ: 'rome', replaces: 'aqueduct' });
+    expect(b.nilometer).toMatchObject({ civ: 'egypt', replaces: 'granary' });
+    expect(b.etemenanki).toMatchObject({ civ: 'babylon', replaces: 'library' });
+    expect(b.acropolis).toMatchObject({ civ: 'hellas', replaces: 'monument' });
+    expect(c.rome.uniqueAbility).toEqual([{ kind: 'empireCivic', effect: { happiness: 3 } }]);
+    expect(c.egypt.uniqueAbility).toEqual([{ kind: 'wonderProduction', amount: 3 }]);
+    expect(c.babylon.uniqueAbility).toEqual([{ kind: 'empireCivic', effect: { yields: { science: 1 } } }]);
+    expect(c.hellas.uniqueAbility).toEqual([{ kind: 'empireCivic', effect: { yields: { culture: 1 } } }]);
+  });
+
+  it('a civ can build its unique unit end-to-end and not the base', () => {
+    let s = flatWorld(14, 12, 2);
+    s.players[0].civ = 'hellas';
+    const settler = spawn(s, 0, 'settler', 5, 5);
+    spawn(s, 1, 'warrior', 1, 10);
+    refreshVis(s);
+    s = applyAction(ctx, s, { type: 'FOUND_CITY', player: 0, unit: settler.id });
+    s = thaw(s);
+    s.players[0].techs.push('bronze_working');
+    const city = s.cities[Object.keys(s.cities).map(Number)[0]];
+    expect(canProduce(ctx, s, city, { kind: 'unit', id: 'hoplite' }).ok).toBe(true);
+    expect(canProduce(ctx, s, city, { kind: 'unit', id: 'spearman' }).ok).toBe(false);
+  });
+});
