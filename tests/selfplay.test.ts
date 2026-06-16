@@ -76,6 +76,7 @@ describe('AI self-play', () => {
     const { state } = runGame(60221, 265); // turnLimit is 260; run just past it
     expect(state.phase).toBe('ended');
     expect(state.winner).not.toBeNull();
+    expect(state.chronicle.length).toBeGreaterThan(0);
   }, 300_000);
 
   it('the science capstone is a reachable victory in self-play', () => {
@@ -93,16 +94,18 @@ describe('AI self-play', () => {
   }, 300_000);
 
   it('the culture victory is a reachable victory in self-play', () => {
-    // Seed 920 is a culture-blowout game: one AI (Rome) builds a dominant culture/wonder
+    // Seed 921 is a culture-blowout game: one AI (Rome) builds a dominant culture/wonder
     // core while its rivals stay small, so at the minTurn (220) its influence already
     // outweighs every living rival's lifetime culture by the tuned 3× dominanceFactor and
     // the culture win fires immediately — before any tech leader reaches scientific_method.
     // The companion of the science-capstone test: together they prove BOTH victory paths
-    // are live under the tuned culture.dominanceFactor (science on 314, culture on 920).
+    // are live under the tuned culture.dominanceFactor (science on 314, culture on 921).
     // (Previously seed 999→900 due to the diplomacy fix; re-seeded 900→920 because the
     // civ-uniques feature (Babylon +science, Hellas +culture, Rome +happiness) shifted
-    // game dynamics so seed 900 now produces a science win. Seed 920 fires culture at turn 220.)
-    const { state } = runGame(920, 265);
+    // game dynamics so seed 900 now produces a science win. Seed 920 fires culture at turn 220.
+    // Re-seeded 920→921 because the living-world event deck shifted the RNG stream so seed 920
+    // now produces a score win. Seed 921 fires culture at turn 220.)
+    const { state } = runGame(921, 265);
     expect(state.phase).toBe('ended');
     expect(state.winner?.victory).toBe('culture');
   }, 300_000);

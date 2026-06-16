@@ -32,7 +32,7 @@ describe('trait & agenda content', () => {
 describe('leader state init', () => {
   const cfg = { seed: 7, mapW: 24, mapH: 20,
     players: [{ civ: 'rome', controller: 'ai' as const }, { civ: 'egypt', controller: 'ai' as const }] };
-  it('schema is 7', () => { expect(SCHEMA_VERSION).toBe(7); });
+  it('schema is 8', () => { expect(SCHEMA_VERSION).toBe(8); });
   it('seeds runtime traits from the civ and a deterministic hidden agenda', () => {
     const a = initialState(cfg, ctx);
     const b = initialState(cfg, ctx);
