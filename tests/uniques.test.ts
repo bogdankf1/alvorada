@@ -21,3 +21,39 @@ describe('civ-unique validation', () => {
     expect(errs.some((e) => e.includes('replaces unknown'))).toBe(true);
   });
 });
+
+describe('canProduce: unique <-> base swap', () => {
+  function romeCity(c = ctx) {
+    let s = flatWorld(14, 12, 2); // player 0 = rome (helpers civOrder)
+    const settler = spawn(s, 0, 'settler', 5, 5);
+    spawn(s, 1, 'warrior', 1, 10);
+    refreshVis(s);
+    s = applyAction(c, s, { type: 'FOUND_CITY', player: 0, unit: settler.id });
+    s = thaw(s);
+    return { s, city: s.cities[Object.keys(s.cities).map(Number)[0]] };
+  }
+
+  it('a civ builds its unique and not the base it replaces; other civs are unaffected', () => {
+    const c = customCtx((r) => {
+      r.units.test_axe = { id: 'test_axe', name: 'Test Axe', cost: 40, moves: 2, sight: 2, strength: 9,
+        class: 'melee', domain: 'land', civ: 'rome', replaces: 'warrior', art: { glyph: 'club' } };
+    });
+    const { s, city } = romeCity(c);
+    expect(canProduce(c, s, city, { kind: 'unit', id: 'test_axe' }).ok).toBe(true);
+    expect(canProduce(c, s, city, { kind: 'unit', id: 'warrior' }).ok).toBe(false); // replaced
+    s.players[0].civ = 'egypt';
+    expect(canProduce(c, s, city, { kind: 'unit', id: 'test_axe' }).ok).toBe(false); // not egypt's
+    expect(canProduce(c, s, city, { kind: 'unit', id: 'warrior' }).ok).toBe(true); // egypt keeps the base
+  });
+
+  it('productionOptions offers the unique and hides the replaced base', () => {
+    const c = customCtx((r) => {
+      r.units.test_axe = { id: 'test_axe', name: 'Test Axe', cost: 40, moves: 2, sight: 2, strength: 9,
+        class: 'melee', domain: 'land', civ: 'rome', replaces: 'warrior', art: { glyph: 'club' } };
+    });
+    const { s, city } = romeCity(c);
+    const ids = productionOptions(c, s, city).filter((i) => i.kind === 'unit').map((i) => i.id);
+    expect(ids).toContain('test_axe');
+    expect(ids).not.toContain('warrior');
+  });
+});

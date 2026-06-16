@@ -442,6 +442,19 @@ export function strategicAvailability(
   return sources - used;
 }
 
+/** True if `civId` has a unique unit/building that replaces `baseId` (so the base is hidden for that civ). */
+function replacedByUnique(
+  defs: Record<string, { civ?: string; replaces?: string }>,
+  civId: string,
+  baseId: string,
+): boolean {
+  for (const id of Object.keys(defs)) {
+    const d = defs[id];
+    if (d.civ === civId && d.replaces === baseId) return true;
+  }
+  return false;
+}
+
 export function canProduce(
   ctx: Ctx,
   state: GameState,
@@ -452,6 +465,8 @@ export function canProduce(
   if (item.kind === 'unit') {
     const def = ctx.rules.units[item.id];
     if (!def) return { ok: false, reason: 'unknown unit' };
+    if (def.civ && def.civ !== player.civ) return { ok: false, reason: 'unique to another civ' };
+    if (replacedByUnique(ctx.rules.units, player.civ, item.id)) return { ok: false, reason: 'replaced by a unique unit' };
     if (def.requiresTech && !player.techs.includes(def.requiresTech))
       return { ok: false, reason: `requires ${ctx.rules.techs[def.requiresTech].name}` };
     if (def.requiresResource && strategicAvailability(ctx, state, city.owner, def.requiresResource) <= 0)
@@ -465,6 +480,8 @@ export function canProduce(
   }
   const def = ctx.rules.buildings[item.id];
   if (!def) return { ok: false, reason: 'unknown building' };
+  if (def.civ && def.civ !== player.civ) return { ok: false, reason: 'unique to another civ' };
+  if (replacedByUnique(ctx.rules.buildings, player.civ, item.id)) return { ok: false, reason: 'replaced by a unique building' };
   if (def.unbuildable) return { ok: false, reason: 'cannot be built' };
   if (city.buildings.includes(item.id)) return { ok: false, reason: 'already built' };
   if (def.requiresTech && !player.techs.includes(def.requiresTech))
