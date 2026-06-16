@@ -55,6 +55,7 @@ const TOAST_TYPES = new Set([
   'barbarianSpawn',
   'campCleared',
   'attitudeShift',
+  'eventChronicle',
 ]);
 
 export interface DispatchResult {

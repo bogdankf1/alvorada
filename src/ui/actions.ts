@@ -34,6 +34,7 @@ export function isMyTurn(): boolean {
  * The End Turn button reads its label/action straight from this.
  */
 export type TurnGate =
+  | { kind: 'event' }
   | { kind: 'research' }
   | { kind: 'production'; city: number }
   | { kind: 'idle'; count: number }
@@ -42,6 +43,7 @@ export type TurnGate =
 export function turnGate(): TurnGate {
   const { game, viewingPlayer } = appStore.get();
   if (!game) return { kind: 'ready' };
+  if (game.pendingEvent && game.pendingEvent.player === viewingPlayer) return { kind: 'event' };
   const player = game.players[viewingPlayer];
   if (!player.researching && availableTechs(gameCtx, game, viewingPlayer).length > 0) {
     return { kind: 'research' };
@@ -67,6 +69,8 @@ export function endTurnRequest(): void {
   if (!game) return;
   const gate = turnGate();
   switch (gate.kind) {
+    case 'event':
+      return; // the event modal is up; the player must choose
     case 'research':
       appStore.set({ overlay: 'tech' });
       return;

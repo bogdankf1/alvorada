@@ -10,7 +10,8 @@ import { Notifications } from './panels/Notifications';
 import { HudRight } from './panels/HudRight';
 import { TileInfo } from './panels/TileInfo';
 import { AiLog } from './panels/AiLog';
-import { AiThinkingBanner, GameMenu, ProposalModal, ReligionModal, TradeRouteModal, VictoryOverlay, WarConfirm } from './panels/Modals';
+import { AiThinkingBanner, EventModal, GameMenu, ProposalModal, ReligionModal, TradeRouteModal, VictoryOverlay, WarConfirm } from './panels/Modals';
+import { Chronicle } from './panels/Chronicle';
 import { appStore, useApp } from '../app/store';
 import { endTurnRequest, humanDispatch, isMyTurn, selectNextIdleUnit } from './actions';
 
@@ -41,6 +42,9 @@ export function GameScreen() {
           break;
         case 'KeyC':
           appStore.set({ overlay: ov === 'civics' ? null : 'civics' });
+          break;
+        case 'KeyH':
+          appStore.set({ overlay: ov === 'chronicle' ? null : 'chronicle' });
           break;
         case 'KeyN':
           selectNextIdleUnit();
@@ -77,11 +81,13 @@ export function GameScreen() {
       {overlay === 'tech' && <TechTree />}
       {overlay === 'civics' && <Civics />}
       {overlay === 'diplomacy' && <ForeignAffairs />}
+      {overlay === 'chronicle' && <Chronicle />}
       <GameMenu />
       <WarConfirm />
       <ProposalModal />
       <TradeRouteModal />
       <ReligionModal />
+      <EventModal />
       <VictoryOverlay />
     </div>
   );

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { gameCtx } from '../../app/driver';
-import { focusCamera, useApp } from '../../app/store';
+import { appStore, focusCamera, useApp } from '../../app/store';
 import { endTurnRequest, turnGate } from '../actions';
 import { axialOfIndex, hexToPixel } from '../../engine/hex';
 import { sortedIds, VIS_UNSEEN } from '../../engine/types';
@@ -20,6 +20,9 @@ export function HudRight() {
   let sub: string | null = null;
   if (!myTurn) {
     label = game.phase === 'ended' ? 'Game Over' : 'Rivals Move…';
+  } else if (gate?.kind === 'event') {
+    label = 'An Event Awaits';
+    sub = 'a decision is needed';
   } else if (gate?.kind === 'research') {
     label = 'Research';
     sub = 'choose what to study';
@@ -42,6 +45,7 @@ export function HudRight() {
         {label}
         {sub && <span className="sub">{sub}</span>}
       </div>
+      <div className="end-turn" style={{ fontSize: 13 }} onClick={() => appStore.set({ overlay: 'chronicle' })} title="Chronicle (H)">Chronicle</div>
       <Minimap />
     </div>
   );
