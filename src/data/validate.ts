@@ -122,9 +122,11 @@ export function validateRuleset(rules: Ruleset): string[] {
       if (d.replaces !== undefined) {
         if (!(d.replaces in defs)) errors.push(`${kind} ${d.id}: replaces unknown ${kind} ${d.replaces}`);
         if (d.civ === undefined) errors.push(`${kind} ${d.id}: replaces set without civ`);
-        const key = `${d.civ}/${d.replaces}`;
-        if (seen.has(key)) errors.push(`${kind}: ${d.civ} has two replacements for ${d.replaces}`);
-        seen.add(key);
+        else {
+          const key = `${d.civ}/${d.replaces}`;
+          if (seen.has(key)) errors.push(`${kind}: ${d.civ} has two replacements for ${d.replaces}`);
+          seen.add(key);
+        }
       }
     }
   };

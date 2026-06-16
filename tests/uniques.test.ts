@@ -56,6 +56,25 @@ describe('canProduce: unique <-> base swap', () => {
     expect(ids).toContain('test_axe');
     expect(ids).not.toContain('warrior');
   });
+
+  it('a civ builds its unique building and not the base it replaces; other civs unaffected', () => {
+    const c = customCtx((r) => {
+      r.buildings.test_hall = { id: 'test_hall', name: 'Test Hall', cost: 40, yields: { culture: 1 },
+        civ: 'rome', replaces: 'monument', art: { glyph: 'obelisk' } };
+    });
+    let s = flatWorld(14, 12, 2); // player 0 = rome
+    const settler = spawn(s, 0, 'settler', 5, 5);
+    spawn(s, 1, 'warrior', 1, 10);
+    refreshVis(s);
+    s = applyAction(c, s, { type: 'FOUND_CITY', player: 0, unit: settler.id });
+    s = thaw(s);
+    const city = s.cities[Object.keys(s.cities).map(Number)[0]];
+    expect(canProduce(c, s, city, { kind: 'building', id: 'test_hall' }).ok).toBe(true);
+    expect(canProduce(c, s, city, { kind: 'building', id: 'monument' }).ok).toBe(false); // replaced
+    s.players[0].civ = 'egypt';
+    expect(canProduce(c, s, city, { kind: 'building', id: 'test_hall' }).ok).toBe(false); // not egypt's
+    expect(canProduce(c, s, city, { kind: 'building', id: 'monument' }).ok).toBe(true); // egypt keeps base
+  });
 });
 
 describe('empireCivic ability', () => {
@@ -93,6 +112,22 @@ describe('wonderProduction ability', () => {
     const base = cityYields(c, s, city).total.production;
     processCity(c, s, city);
     expect(city.production.progress).toBe(base + 5); // base hammers + the +5 wonder bonus
+  });
+
+  it('does not add wonder hammers to a normal (non-wonder) build', () => {
+    const c = customCtx((r) => { r.civs.rome.uniqueAbility = [{ kind: 'wonderProduction', amount: 5 }]; });
+    let s = flatWorld(14, 12, 2); // player 0 = rome
+    const settler = spawn(s, 0, 'settler', 5, 5);
+    spawn(s, 1, 'warrior', 1, 10);
+    refreshVis(s);
+    s = applyAction(c, s, { type: 'FOUND_CITY', player: 0, unit: settler.id });
+    s = thaw(s);
+    s.players[0].techs.push('pottery'); // granary (not a wonder) available
+    const city = s.cities[Object.keys(s.cities).map(Number)[0]];
+    city.production = { item: { kind: 'building', id: 'granary' }, progress: 0 };
+    const base = cityYields(c, s, city).total.production;
+    processCity(c, s, city);
+    expect(city.production.progress).toBe(base); // no wonder bonus on a normal building
   });
 });
 

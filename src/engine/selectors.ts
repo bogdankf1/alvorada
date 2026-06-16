@@ -454,8 +454,8 @@ function replacedByUnique(
   civId: string,
   baseId: string,
 ): boolean {
-  for (const id of Object.keys(defs)) {
-    const d = defs[id];
+  // Order-independent (returns a boolean), so no sort is needed.
+  for (const d of Object.values(defs)) {
     if (d.civ === civId && d.replaces === baseId) return true;
   }
   return false;
