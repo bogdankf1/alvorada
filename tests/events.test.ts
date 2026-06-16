@@ -159,7 +159,7 @@ describe('chronicle', () => {
       r.events.test_amb = { id: 'test_amb', title: 'Good Tidings', body: '...', choices: [{ text: 'ok', effects: [{ k: 'gold', n: 5 }] }] };
     });
     const s = oneCity(c);
-    for (let i = 0; i < 200; i++) maybeFireEvent(c, s, 0);
+    for (let i = 0; i < 200; i++) { maybeFireEvent(c, s, 0); if (s.chronicle.some((e) => e.type === 'eventChronicle')) break; }
     expect(s.chronicle.some((e) => e.type === 'eventChronicle')).toBe(true);
   });
 });

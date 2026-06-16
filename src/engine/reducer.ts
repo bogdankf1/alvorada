@@ -231,7 +231,7 @@ function handle(ctx: Ctx, state: GameState, action: Action): void {
         const ev = ctx.rules.events[pe.eventId];
         const choice = ev?.choices[action.choice];
         if (choice) applyEventEffects(ctx, state, action.player, choice.effects);
-        if (ev) pushEvent(state, { player: action.player, type: 'eventChronicle', msg: `${state.players[action.player].name}: ${ev.title} — ${choice?.text ?? ''}` });
+        if (ev && choice) pushEvent(state, { player: action.player, type: 'eventChronicle', msg: `${state.players[action.player].name}: ${ev.title} — ${choice.text}` });
         state.pendingEvent = null;
       }
       break;

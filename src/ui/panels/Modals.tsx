@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import type { EventEffect } from '../../data/types';
 import { appStore, useApp } from '../../app/store';
 import { humanDispatch } from '../actions';
 import { LocalGame, currentGame, gameCtx, quitToMenu, startGame } from '../../app/driver';
@@ -360,7 +361,7 @@ export function ReligionModal() {
   );
 }
 
-function eventEffectSummary(effects: { k: string; n?: number; unit?: string; radius?: number }[]): string {
+function eventEffectSummary(effects: EventEffect[]): string {
   const parts: string[] = [];
   for (const e of effects) {
     if (e.k === 'gold') parts.push(`${e.n! >= 0 ? '+' : ''}${e.n} gold`);
@@ -372,7 +373,7 @@ function eventEffectSummary(effects: { k: string; n?: number; unit?: string; rad
     else if (e.k === 'unit') parts.push(`a ${gameCtx.rules.units[e.unit!]?.name ?? e.unit}`);
     else if (e.k === 'reveal') parts.push('reveal nearby lands');
   }
-  return parts.join(', ') || 'nothing';
+  return parts.join(', ');
 }
 
 export function EventModal() {
@@ -380,7 +381,18 @@ export function EventModal() {
   const viewer = useApp((s) => s.viewingPlayer);
   if (!game || !game.pendingEvent || game.pendingEvent.player !== viewer) return null;
   const ev = gameCtx.rules.events[game.pendingEvent.eventId];
-  if (!ev) return null;
+  if (!ev) {
+    return (
+      <div className="modal-center">
+        <div className="modal-card plate" onClick={(e) => e.stopPropagation()}>
+          <h2>An Event Has Passed</h2>
+          <div className="modal-actions">
+            <button className="btn btn--primary" onClick={() => humanDispatch({ type: 'EVENT_CHOICE', player: viewer, choice: 0 })}>Continue</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="modal-center">
       <div className="modal-card plate" onClick={(e) => e.stopPropagation()}>

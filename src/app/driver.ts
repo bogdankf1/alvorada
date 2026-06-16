@@ -162,8 +162,13 @@ export class LocalGame {
         } catch (err) {
           // an AI bug must never wedge the session: log, end its turn, move on
           console.error('AI action rejected', action, err);
-          this.state = applyAction(gameCtx, this.state, { type: 'END_TURN', player: pid });
-          this.publish();
+          try {
+            this.state = applyAction(gameCtx, this.state, { type: 'END_TURN', player: pid });
+            this.publish();
+          } catch (err2) {
+            console.error('AI recovery END_TURN failed; halting AI loop', err2);
+            break;
+          }
           continue;
         }
         this.log.push(action);

@@ -43,7 +43,7 @@ export function validateAction(ctx: Ctx, state: GameState, action: Action): Vali
       const pe = state.pendingEvent;
       if (!pe || pe.player !== action.player) return fail('no pending event');
       const ev = ctx.rules.events[pe.eventId];
-      if (!ev) return fail('unknown event');
+      if (!ev) return ok; // stale pending (event removed) — allow the reducer to clear it
       if (!Number.isInteger(action.choice) || action.choice < 0 || action.choice >= ev.choices.length)
         return fail('invalid choice');
       return ok;

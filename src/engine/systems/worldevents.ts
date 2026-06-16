@@ -31,7 +31,7 @@ export function applyEventEffects(ctx: Ctx, state: GameState, pid: PlayerId, eff
       case 'science': p.science = Math.max(0, p.science + e.n); break;
       case 'faith': p.faith = Math.max(0, p.faith + e.n); break;
       case 'culture': p.policyProgress = Math.max(0, p.policyProgress + e.n); p.cultureTotal = Math.max(0, p.cultureTotal + e.n); break;
-      case 'production': if (cap) cap.production.progress = Math.max(0, cap.production.progress + e.n); break;
+      case 'production': if (cap && cap.production.item) cap.production.progress = Math.max(0, cap.production.progress + e.n); break;
       case 'popChange': if (cap) cap.pop = Math.max(1, cap.pop + e.n); break;
       case 'unit': if (cap) placeProducedUnit(ctx, state, cap, e.unit); break;
       case 'reveal':
@@ -64,7 +64,11 @@ export function eventChoiceValue(choice: EventChoice): number {
 
 /** At a player's turn-start: maybe fire one event. Ambient auto-resolves; interactive sets pendingEvent. */
 export function maybeFireEvent(ctx: Ctx, state: GameState, pid: PlayerId): void {
-  if (state.pendingEvent) return;
+  if (state.pendingEvent) {
+    // If the owner was eliminated mid-event, clear it so the deck doesn't freeze for everyone.
+    if (state.players[state.pendingEvent.player].alive) return;
+    state.pendingEvent = null;
+  }
   if (state.players[pid].barbarian) return;
   const cands = Object.keys(ctx.rules.events).sort()
     .map((id) => ctx.rules.events[id])

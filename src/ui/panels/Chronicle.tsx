@@ -1,10 +1,11 @@
+import { useMemo } from 'react';
 import { appStore, focusCamera, useApp } from '../../app/store';
 
 export function Chronicle() {
   const game = useApp((s) => s.game);
+  const entries = useMemo(() => [...(game?.chronicle ?? [])].reverse(), [game?.chronicle]);
   if (!game) return null;
   const close = () => appStore.set({ overlay: null });
-  const entries = [...game.chronicle].reverse();
   return (
     <div className="overlay-scrim" onClick={close}>
       <div className="diplo" onClick={(e) => e.stopPropagation()}>
