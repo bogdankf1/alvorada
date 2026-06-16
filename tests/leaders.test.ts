@@ -10,6 +10,7 @@ import { applyAction } from '../src/engine/reducer';
 import { considerWarForTest } from '../src/ai/decide';
 import { traitWeights } from '../src/engine/selectors';
 import { tileIndex } from '../src/engine/hex';
+import { processObligations } from '../src/engine/systems/diplomacy';
 
 describe('trait & agenda content', () => {
   it('defines 8 traits and agendas, and validates clean', () => {
@@ -124,5 +125,29 @@ describe('traits bias the AI', () => {
     const defensive = considerWarForTest(ctx, setup(['defensive']), 0);
     expect(warmonger?.action.type).toBe('DECLARE_WAR'); // lowered ratio → attacks
     expect(defensive).toBeNull();                         // raised ratio → holds
+  });
+});
+
+describe('attitude-shift notifications', () => {
+  it('emits an event (to the felt-about player) when a leader\'s band worsens to wary', () => {
+    let s = flatWorld(16, 12, 2);
+    s.players[0].civ = 'babylon'; // pacifist agenda (dislikesWarmongers)
+    const a = spawn(s, 0, 'settler', 4, 5);
+    const b = spawn(s, 1, 'settler', 11, 6);
+    refreshVis(s);
+    s = applyAction(ctx, s, { type: 'FOUND_CITY', player: 0, unit: a.id });
+    s = applyAction(ctx, { ...s, currentPlayer: 1 }, { type: 'FOUND_CITY', player: 1, unit: b.id });
+    s = thaw(s);
+    s.relations[0][1].met = true; s.relations[1][0].met = true;
+    s.relations[0][1].lastBand = 'neutral';
+    // make player 1 a warmonger in babylon's eyes: at war with the barbarians is already true,
+    // so the pacifist agenda fires; also stamp a grudge to push the band down.
+    s.relations[0][1].grudge = 40;
+    const seqBefore = s.eventSeq;
+    processObligations(ctx, s, 0);
+    const shift = s.events.find((e) => e.seq >= seqBefore && e.type === 'attitudeShift');
+    expect(shift).toBeDefined();
+    expect(shift!.player).toBe(1); // the player being felt about hears "X has grown wary of you"
+    expect(s.relations[0][1].lastBand).not.toBe('neutral'); // updated
   });
 });

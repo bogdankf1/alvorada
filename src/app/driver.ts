@@ -54,6 +54,7 @@ const TOAST_TYPES = new Set([
   'promotionReady',
   'barbarianSpawn',
   'campCleared',
+  'attitudeShift',
 ]);
 
 export interface DispatchResult {

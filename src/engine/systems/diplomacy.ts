@@ -6,6 +6,7 @@
 import type { Ctx, GameState, PlayerId, DealItems, Proposal } from '../types';
 import { pushEvent } from '../events';
 import { cancelInternationalRoutesBetween } from './trade';
+import { attitude, bandRank } from '../diplomacy-eval';
 
 export function cancelPacts(state: GameState, a: PlayerId, b: PlayerId): void {
   for (const [x, y] of [[a, b], [b, a]] as const) {
@@ -130,6 +131,23 @@ export function processObligations(ctx: Ctx, state: GameState, p: PlayerId): voi
     }
     if (out.openBordersUntil > 0 && state.turn > out.openBordersUntil) out.openBordersUntil = 0;
     if (out.grudge > 0) out.grudge = Math.max(0, out.grudge - decay);
+    // reactivity: surface when p's feelings toward a met rival cross a dramatic threshold
+    if (out.met && !state.players[o.id].barbarian) {
+      const band = attitude(ctx, state, p, o.id).band;
+      const prev = out.lastBand;
+      if (prev && prev !== band) {
+        const worsened = bandRank(band) < bandRank(prev as never);
+        const dramatic = band === 'wary' || band === 'hostile' || band === 'friendly';
+        if (dramatic && (worsened || band === 'friendly')) {
+          pushEvent(state, {
+            player: o.id, // the rival being felt about hears about it
+            type: 'attitudeShift',
+            msg: `${state.players[p].name} has grown ${band} toward you`,
+          });
+        }
+      }
+      out.lastBand = band;
+    }
   }
   state.proposals = state.proposals.filter((pr) => !(pr.to === p && state.turn > pr.expiresTurn));
 }
