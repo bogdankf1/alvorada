@@ -84,6 +84,9 @@ export function initialState(config: GameConfig, ctx: Ctx): GameState {
     eventSeq: 0,
     events: [],
     winner: null,
+    pendingEvent: null,
+    chronicle: [],
+    firedEvents: [],
   };
 
   const barb = playerCount;

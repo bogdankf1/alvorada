@@ -193,6 +193,23 @@ export interface TechDef {
   pos: { col: number; row: number }; // tech-tree layout is data too
 }
 
+/** A one-shot, integer, player/capital-local event effect. */
+export type EventEffect =
+  | { k: 'gold'; n: number }
+  | { k: 'science'; n: number }
+  | { k: 'faith'; n: number }
+  | { k: 'culture'; n: number }
+  | { k: 'production'; n: number }   // toward the capital's current build
+  | { k: 'popChange'; n: number }    // capital population (floored at 1)
+  | { k: 'unit'; unit: string }      // spawn a unit at/near the capital
+  | { k: 'reveal'; radius: number }; // explore tiles around the capital
+export interface EventChoice { text: string; effects: EventEffect[]; aiBias?: number; }
+export interface EventDef {
+  id: string; title: string; body: string;
+  minTurn?: number; requiresPop?: number; oncePerGame?: boolean;
+  choices: EventChoice[]; // length<=1 = ambient (auto-resolves); >=2 = interactive (modal)
+}
+
 export interface CivDef {
   id: string;
   name: string;
@@ -279,6 +296,7 @@ export interface Ruleset {
   civs: Record<string, CivDef>;
   traits: Record<string, TraitDef>;
   agendas: Record<string, AgendaDef>;
+  events: Record<string, EventDef>;
   specialists: Record<SpecialistType, SpecialistDef>;
   beliefs: Record<string, BeliefDef>;
   policies: Record<string, PolicyDef>;

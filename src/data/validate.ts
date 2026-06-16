@@ -145,6 +145,14 @@ export function validateRuleset(rules: Ruleset): string[] {
       errors.push(`civ ${civ.id}: unknown agenda ${civ.agenda}`);
   }
 
+  for (const ev of Object.values(rules.events)) {
+    if (ev.choices.length === 0) errors.push(`event ${ev.id}: needs at least one choice`);
+    for (const ch of ev.choices)
+      for (const eff of ch.effects)
+        if (eff.k === 'unit' && !(eff.unit in rules.units))
+          errors.push(`event ${ev.id}: unknown unit ${eff.unit}`);
+  }
+
   return errors;
 }
 

@@ -10,6 +10,7 @@ import { POLICIES } from './policies';
 import { PROMOTIONS } from './promotions';
 import { TRAITS } from './traits';
 import { AGENDAS } from './agendas';
+import { EVENTS } from './events';
 
 const SETTINGS: RulesetSettings = {
   workRadius: 2,
@@ -139,6 +140,7 @@ export const STANDARD_RULESET: Ruleset = {
   civs: CIVS,
   traits: TRAITS,
   agendas: AGENDAS,
+  events: EVENTS,
   specialists: SPECIALISTS,
   beliefs: BELIEFS,
   policies: POLICIES,

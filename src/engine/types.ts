@@ -164,6 +164,8 @@ export interface GameEvent {
   r?: number; // optional map focus for the notification
 }
 
+export interface ChronicleEntry { turn: number; type: string; msg: string; q?: number; r?: number; }
+
 export interface PlayerSpec {
   civ: string;
   controller: 'human' | 'ai';
@@ -210,6 +212,9 @@ export interface GameState {
   eventSeq: number;
   events: GameEvent[]; // bounded ring, audience-tagged
   winner: { player: PlayerId; victory: 'conquest' | 'score' | 'science' | 'culture' } | null;
+  pendingEvent: { player: PlayerId; eventId: string } | null;
+  chronicle: ChronicleEntry[];
+  firedEvents: string[]; // ids of oncePerGame events already used
 }
 
 /** Engine context: rules travel beside state so content is never imported by logic. */
@@ -239,6 +244,7 @@ export type Action =
   | { type: 'FOUND_RELIGION'; player: PlayerId; name: string; holyCity: CityId; founderBelief: string; followerBelief: string }
   | { type: 'ADOPT_POLICY'; player: PlayerId; policy: string }
   | { type: 'CHOOSE_PROMOTION'; player: PlayerId; unit: UnitId; promotion: string }
+  | { type: 'EVENT_CHOICE'; player: PlayerId; choice: number }
   | { type: 'END_TURN'; player: PlayerId };
 
 export type ActionType = Action['type'];

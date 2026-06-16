@@ -90,6 +90,9 @@ export function flatWorld(w = 12, h = 10, playerCount = 2): GameState {
     eventSeq: 0,
     events: [],
     winner: null,
+    pendingEvent: null,
+    chronicle: [],
+    firedEvents: [],
   };
 }
 
