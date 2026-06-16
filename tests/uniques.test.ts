@@ -57,3 +57,23 @@ describe('canProduce: unique <-> base swap', () => {
     expect(ids).not.toContain('warrior');
   });
 });
+
+describe('empireCivic ability', () => {
+  it('adds per-city yields and empire happiness like a free policy', () => {
+    const c = customCtx((r) => {
+      r.civs.rome.uniqueAbility = [{ kind: 'empireCivic', effect: { yields: { science: 1 }, happiness: 2 } }];
+    });
+    let s = flatWorld(14, 12, 2); // player 0 = rome
+    const settler = spawn(s, 0, 'settler', 5, 5);
+    spawn(s, 1, 'warrior', 1, 10);
+    refreshVis(s);
+    s = applyAction(c, s, { type: 'FOUND_CITY', player: 0, unit: settler.id });
+    s = thaw(s);
+    const city = s.cities[Object.keys(s.cities).map(Number)[0]];
+    const sci = cityYields(c, s, city).total.science;
+    const hap = empireHappiness(c, s, 0).happy;
+    s.players[0].civ = 'egypt'; // egypt has no ability in this custom ctx
+    expect(sci).toBe(cityYields(c, s, city).total.science + 1);
+    expect(hap).toBe(empireHappiness(c, s, 0).happy + 2);
+  });
+});

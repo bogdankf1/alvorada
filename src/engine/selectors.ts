@@ -302,6 +302,8 @@ export function empireCivicEffects(ctx: Ctx, state: GameState, pid: PlayerId): C
   const mine = state.religions['rel_' + pid];
   if (mine) out.push(ctx.rules.beliefs[mine.founderBelief].effect);
   for (const id of p.policies) out.push(ctx.rules.policies[id].effect);
+  for (const ab of ctx.rules.civs[p.civ].uniqueAbility ?? [])
+    if (ab.kind === 'empireCivic') out.push(ab.effect);
   return out;
 }
 
