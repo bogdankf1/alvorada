@@ -124,6 +124,8 @@ export interface UnitDef {
   bonuses?: { vsClass?: UnitClass; vsCity?: boolean; pct: number }[];
   requiresTech?: string;
   requiresResource?: string; // strategic resource consumed while alive
+  civ?: string; // if set, only this civ may build it
+  replaces?: string; // base unit id this unique stands in for (that civ no longer builds the base)
   art: { glyph: string };
 }
 
@@ -135,6 +137,15 @@ export type WonderEffect =
   | { kind: 'cultureBurst'; amount: number } // add culture to the city, once
   | { kind: 'happiness'; amount: number }; // empire-wide happiness while the owner holds the wonder
 
+/**
+ * A civ's signature ability. `empireCivic` reuses the policy/belief CivicEffect path
+ * (per-city yields + empire happiness); `wonderProduction` adds flat hammers toward a
+ * World Wonder. All values additive/integer (no multipliers) — see spec §2.
+ */
+export type CivAbility =
+  | { kind: 'empireCivic'; effect: CivicEffect }
+  | { kind: 'wonderProduction'; amount: number };
+
 export interface BuildingDef {
   id: string;
   name: string;
@@ -143,6 +154,8 @@ export interface BuildingDef {
   perPop?: { yield: YieldKey; per: number }; // +1 yield per `per` population
   defense?: { strength: number };
   requiresTech?: string;
+  civ?: string; // if set, only this civ may build it
+  replaces?: string; // base building id this unique stands in for
   unbuildable?: boolean; // e.g. palace: granted, never produced
   wonder?: boolean; // a one-per-game World Wonder
   effect?: WonderEffect; // optional signature effect (beyond `yields`)
@@ -167,6 +180,7 @@ export interface CivDef {
   leader: string;
   color: string;
   cityNames: string[];
+  uniqueAbility?: CivAbility[];
 }
 
 export interface EraDef {
