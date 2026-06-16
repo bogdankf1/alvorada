@@ -16,6 +16,7 @@ import { recomputeVisibility } from './map/visibility';
 import { applyDeal, applyDenounce, enterWar, pushProposal } from './systems/diplomacy';
 import { establishTradeRoute } from './systems/trade';
 import { foundPantheon, foundReligion } from './systems/religion';
+import { applyEventEffects } from './systems/worldevents';
 import { resolveProposal } from './diplomacy-eval';
 
 export class ActionError extends Error {
@@ -221,6 +222,18 @@ function handle(ctx: Ctx, state: GameState, action: Action): void {
       const unit = state.units[action.unit];
       if (!unit.promotions) unit.promotions = [];
       unit.promotions.push(action.promotion);
+      break;
+    }
+
+    case 'EVENT_CHOICE': {
+      const pe = state.pendingEvent;
+      if (pe) {
+        const ev = ctx.rules.events[pe.eventId];
+        const choice = ev?.choices[action.choice];
+        if (choice) applyEventEffects(ctx, state, action.player, choice.effects);
+        if (ev) pushEvent(state, { player: action.player, type: 'eventChronicle', msg: `${state.players[action.player].name}: ${ev.title} — ${choice?.text ?? ''}` });
+        state.pendingEvent = null;
+      }
       break;
     }
 

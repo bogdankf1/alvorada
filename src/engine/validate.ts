@@ -35,7 +35,20 @@ export function validateAction(ctx: Ctx, state: GameState, action: Action): Vali
   if (!player.alive) return fail('player was eliminated');
   if (action.player !== state.currentPlayer) return fail('not your turn');
 
+  if (state.pendingEvent && state.pendingEvent.player === action.player && action.type !== 'EVENT_CHOICE')
+    return fail('resolve the event first');
+
   switch (action.type) {
+    case 'EVENT_CHOICE': {
+      const pe = state.pendingEvent;
+      if (!pe || pe.player !== action.player) return fail('no pending event');
+      const ev = ctx.rules.events[pe.eventId];
+      if (!ev) return fail('unknown event');
+      if (!Number.isInteger(action.choice) || action.choice < 0 || action.choice >= ev.choices.length)
+        return fail('invalid choice');
+      return ok;
+    }
+
     case 'END_TURN':
       return ok;
 

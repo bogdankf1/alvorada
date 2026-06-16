@@ -48,6 +48,8 @@ describe('events: effects', () => {
   });
 });
 
+import { validateAction } from '../src/engine/validate';
+
 describe('events: firing', () => {
   it('fires an ambient event deterministically and auto-applies it', () => {
     const c = customCtx((r) => {
@@ -77,5 +79,37 @@ describe('events: firing', () => {
     for (let i = 0; i < 200 && !pend; i++) { maybeFireEvent(c, s, 0); if (s.pendingEvent) pend = true; }
     expect(pend).toBe(true);
     expect(s.pendingEvent).toEqual({ player: 0, eventId: 'test_choice' });
+  });
+});
+
+describe('events: EVENT_CHOICE', () => {
+  function pendingChoice() {
+    const c = customCtx((r) => {
+      r.events.test_choice = { id: 'test_choice', title: 'Choose', body: '...', choices: [
+        { text: 'Gold', effects: [{ k: 'gold', n: 40 }] }, { text: 'Science', effects: [{ k: 'science', n: 40 }] },
+      ] };
+    });
+    const s = oneCity(c);
+    for (let i = 0; i < 200 && !s.pendingEvent; i++) maybeFireEvent(c, s, 0);
+    return { c, s };
+  }
+  it('resolving applies the chosen effects and clears pendingEvent', () => {
+    const { c, s } = pendingChoice();
+    expect(s.pendingEvent).not.toBeNull();
+    const gold0 = s.players[0].gold;
+    const ns = applyAction(c, s, { type: 'EVENT_CHOICE', player: 0, choice: 0 });
+    expect(ns.players[0].gold).toBe(gold0 + 40);
+    expect(ns.pendingEvent).toBeNull();
+  });
+  it('blocks other actions while an event is pending', () => {
+    const { c, s } = pendingChoice();
+    const v = validateAction(c, s, { type: 'END_TURN', player: 0 });
+    expect(v.ok).toBe(false);
+    const v2 = validateAction(c, s, { type: 'EVENT_CHOICE', player: 0, choice: 1 });
+    expect(v2.ok).toBe(true);
+  });
+  it('rejects an out-of-range choice', () => {
+    const { c, s } = pendingChoice();
+    expect(validateAction(c, s, { type: 'EVENT_CHOICE', player: 0, choice: 9 }).ok).toBe(false);
   });
 });
