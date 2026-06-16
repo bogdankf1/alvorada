@@ -146,6 +146,25 @@ export type CivAbility =
   | { kind: 'empireCivic'; effect: CivicEffect }
   | { kind: 'wonderProduction'; amount: number };
 
+/** Numeric nudges a trait contributes to AI judgment. Summed across a leader's traits. */
+export interface AiWeights {
+  warThreshold?: number;   // added to considerWar's required power ratio (negative = more warlike)
+  warTurnGate?: number;    // added to the earliest turn war is considered (negative = earlier)
+  expansion?: number;      // added to the desired-cities target
+  military?: number;       // production bias toward soldiers
+  faith?: number;          // belief/policy/building preference toward faith
+  science?: number;        // ...toward science
+  culture?: number;        // ...toward culture/wonders
+  gold?: number;           // ...toward gold
+  dealWillingness?: number;// band-rank slack for offering friendship (higher = friendlier)
+}
+export interface TraitDef { id: string; name: string; blurb: string; weights: AiWeights; }
+
+export type AgendaRule =
+  | 'likesWonderBuilders' | 'dislikesWarmongers' | 'likesStrongMilitary'
+  | 'likesCultured' | 'likesSharedReligion' | 'dislikesNeighbors';
+export interface AgendaDef { id: string; name: string; blurb: string; rule: AgendaRule; }
+
 export interface BuildingDef {
   id: string;
   name: string;
@@ -181,6 +200,8 @@ export interface CivDef {
   color: string;
   cityNames: string[];
   uniqueAbility?: CivAbility[];
+  traits?: string[]; // behavioral trait ids (playable civs; barbarians omit)
+  agenda?: string;   // historical agenda id (revealed on meeting)
 }
 
 export interface EraDef {
@@ -256,6 +277,8 @@ export interface Ruleset {
   buildings: Record<string, BuildingDef>;
   techs: Record<string, TechDef>;
   civs: Record<string, CivDef>;
+  traits: Record<string, TraitDef>;
+  agendas: Record<string, AgendaDef>;
   specialists: Record<SpecialistType, SpecialistDef>;
   beliefs: Record<string, BeliefDef>;
   policies: Record<string, PolicyDef>;
@@ -285,12 +308,18 @@ export interface DiplomacySettings {
     landCompetition: number;
     strongerRival: number;
     weakerRival: number;
+    agendaRespected: number;
+    agendaDefied: number;
+    sharedReligion: number;
+    scoreLeader: number;
+    admiredWonders: number;
     competitionRange: number; // tiles
   };
   bands: { friendly: number; cordial: number; neutral: number; wary: number }; // score >= → band; below wary = hostile
   acceptMargin: Record<AttitudeBand, number>; // AI accepts if netValueToRecipient >= margin[band]
   counterWindow: number; // AI counters when net is within [margin - counterWindow, margin)
   minFriendBand: AttitudeBand; // band at/above which the AI agrees to friendship
+  hiddenAgendaRevealTurns: number; // turns of contact before a rival's hidden agenda shows
 }
 
 export const ZERO_YIELDS: Yields = { food: 0, production: 0, gold: 0, science: 0, culture: 0, faith: 0 };

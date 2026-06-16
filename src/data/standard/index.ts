@@ -8,6 +8,8 @@ import { CIVS } from './civs';
 import { BELIEFS } from './beliefs';
 import { POLICIES } from './policies';
 import { PROMOTIONS } from './promotions';
+import { TRAITS } from './traits';
+import { AGENDAS } from './agendas';
 
 const SETTINGS: RulesetSettings = {
   workRadius: 2,
@@ -102,12 +104,18 @@ const SETTINGS: RulesetSettings = {
       landCompetition: -10,
       strongerRival: -10,
       weakerRival: 5,
+      agendaRespected: 12,
+      agendaDefied: -15,
+      sharedReligion: 8,
+      scoreLeader: -8,
+      admiredWonders: 6,
       competitionRange: 4,
     },
     bands: { friendly: 40, cordial: 15, neutral: -15, wary: -40 },
     acceptMargin: { hostile: 40, wary: 20, neutral: 8, cordial: 0, friendly: -10 },
     counterWindow: 30,
     minFriendBand: 'cordial',
+    hiddenAgendaRevealTurns: 15,
   },
 };
 
@@ -129,6 +137,8 @@ export const STANDARD_RULESET: Ruleset = {
   buildings: BUILDINGS,
   techs: TECHS,
   civs: CIVS,
+  traits: TRAITS,
+  agendas: AGENDAS,
   specialists: SPECIALISTS,
   beliefs: BELIEFS,
   policies: POLICIES,

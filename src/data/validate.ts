@@ -138,6 +138,13 @@ export function validateRuleset(rules: Ruleset): string[] {
       if (ab.kind === 'empireCivic' && ab.effect.perBuilding && !(ab.effect.perBuilding.building in rules.buildings))
         errors.push(`civ ${civ.id}: unknown perBuilding ${ab.effect.perBuilding.building}`);
 
+  for (const civ of Object.values(rules.civs)) {
+    for (const t of civ.traits ?? [])
+      if (!(t in rules.traits)) errors.push(`civ ${civ.id}: unknown trait ${t}`);
+    if (civ.agenda !== undefined && !(civ.agenda in rules.agendas))
+      errors.push(`civ ${civ.id}: unknown agenda ${civ.agenda}`);
+  }
+
   return errors;
 }
 
