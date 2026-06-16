@@ -109,6 +109,33 @@ export function validateRuleset(rules: Ruleset): string[] {
       errors.push(`promotion ${pr.id}: unknown vsClass ${pr.effect.vsClassPct.class}`);
   }
 
+  // civ uniques: civ must exist; replaces must point at a real base of the same record
+  // (and requires a civ); a base may be replaced by at most one unique per civ.
+  const checkUniques = (
+    kind: string,
+    defs: Record<string, { id: string; civ?: string; replaces?: string }>,
+  ) => {
+    const seen = new Set<string>();
+    for (const d of Object.values(defs)) {
+      if (d.civ !== undefined && !(d.civ in rules.civs))
+        errors.push(`${kind} ${d.id}: unknown civ ${d.civ}`);
+      if (d.replaces !== undefined) {
+        if (!(d.replaces in defs)) errors.push(`${kind} ${d.id}: replaces unknown ${kind} ${d.replaces}`);
+        if (d.civ === undefined) errors.push(`${kind} ${d.id}: replaces set without civ`);
+        const key = `${d.civ}/${d.replaces}`;
+        if (seen.has(key)) errors.push(`${kind}: ${d.civ} has two replacements for ${d.replaces}`);
+        seen.add(key);
+      }
+    }
+  };
+  checkUniques('unit', rules.units);
+  checkUniques('building', rules.buildings);
+
+  for (const civ of Object.values(rules.civs))
+    for (const ab of civ.uniqueAbility ?? [])
+      if (ab.kind === 'empireCivic' && ab.effect.perBuilding && !(ab.effect.perBuilding.building in rules.buildings))
+        errors.push(`civ ${civ.id}: unknown perBuilding ${ab.effect.perBuilding.building}`);
+
   return errors;
 }
 
