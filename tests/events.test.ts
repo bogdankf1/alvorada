@@ -49,6 +49,7 @@ describe('events: effects', () => {
 });
 
 import { validateAction } from '../src/engine/validate';
+import { decide } from '../src/ai/decide';
 
 describe('events: firing', () => {
   it('fires an ambient event deterministically and auto-applies it', () => {
@@ -111,5 +112,22 @@ describe('events: EVENT_CHOICE', () => {
   it('rejects an out-of-range choice', () => {
     const { c, s } = pendingChoice();
     expect(validateAction(c, s, { type: 'EVENT_CHOICE', player: 0, choice: 9 }).ok).toBe(false);
+  });
+});
+
+describe('events: AI resolution', () => {
+  it('the AI returns EVENT_CHOICE for the higher-value choice', () => {
+    const c = customCtx((r) => {
+      r.events.test_choice = { id: 'test_choice', title: 'Choose', body: '...', choices: [
+        { text: 'A little gold', effects: [{ k: 'gold', n: 5 }] },
+        { text: 'Much science', effects: [{ k: 'science', n: 40 }] }, // value 80 >> 5
+      ] };
+    });
+    const s = oneCity(c);
+    for (let i = 0; i < 200 && !s.pendingEvent; i++) maybeFireEvent(c, s, 0);
+    expect(s.pendingEvent).not.toBeNull();
+    const d = decide(c, s, 0);
+    expect(d.action.type).toBe('EVENT_CHOICE');
+    expect((d.action as { choice: number }).choice).toBe(1);
   });
 });

@@ -27,6 +27,7 @@ import { bestWorkerJob, knownGoodSpots, knownPower, pickProduction, pickResearch
 import { initiateDiplomacy } from './diplomacy';
 import { civicAction } from './civics';
 import { barbarianDecide } from './barbarian';
+import { eventChoiceValue } from '../engine/systems/worldevents';
 
 export interface AiDecision {
   action: Action;
@@ -46,6 +47,19 @@ export function decide(ctx: Ctx, state: GameState, pid: PlayerId): AiDecision {
   };
   if (state.phase === 'ended') return endTurn;
   if (state.players[pid].barbarian) return barbarianDecide(ctx, state, pid);
+
+  // resolve a pending world event before anything else (a logged, pure choice)
+  if (state.pendingEvent && state.pendingEvent.player === pid) {
+    const ev = ctx.rules.events[state.pendingEvent.eventId];
+    if (ev) {
+      let best = 0, bestVal = -Infinity;
+      for (let i = 0; i < ev.choices.length; i++) {
+        const val = eventChoiceValue(ev.choices[i]);
+        if (val > bestVal) { bestVal = val; best = i; }
+      }
+      return { action: { type: 'EVENT_CHOICE', player: pid, choice: best }, reason: `${ev.title}: ${ev.choices[best].text}` };
+    }
+  }
 
   const tryDecision = (d: AiDecision | null): AiDecision | null =>
     d && validateAction(ctx, state, d.action).ok ? d : null;
