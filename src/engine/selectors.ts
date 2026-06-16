@@ -431,7 +431,7 @@ export function happinessBreakdown(
   const civDef = ctx.rules.civs[state.players[pid].civ];
   for (const ab of civDef.uniqueAbility ?? [])
     if (ab.kind === 'empireCivic' && ab.effect.happiness)
-      out.push({ label: civDef.name, amount: ab.effect.happiness });
+      out.push({ label: 'Leader ability', amount: ab.effect.happiness });
 
   // hurting
   if (cities.length) out.push({ label: `Cities ×${cities.length}`, amount: -cities.length * h.perCity });

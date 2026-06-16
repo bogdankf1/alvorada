@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { gameCtx } from '../../app/driver';
 import { appStore, useApp } from '../../app/store';
 import { humanDispatch, isMyTurn } from '../actions';
-import { attitude } from '../../engine/diplomacy-eval';
+import { attitude, agendaKnown } from '../../engine/diplomacy-eval';
 import { atWar, metPlayers } from '../../engine/selectors';
 import type { DealItems, GameState, PlayerId } from '../../engine/types';
 import { ATTITUDE_COLOR, ATTITUDE_LABEL, dealVerdict, emptyDraft, type DraftDeal } from '../diplomacy';
@@ -39,6 +39,11 @@ export function ForeignAffairs() {
               const war = atWar(game, viewer, id);
               const friends = game.relations[viewer][id].friends;
               const denounced = game.relations[viewer][id].denounced;
+              const civ = gameCtx.rules.civs[p.civ];
+              const know = agendaKnown(gameCtx, game, viewer, id);
+              const knownAgenda = know.hidden && p.hiddenAgenda && p.hiddenAgenda !== civ.agenda
+                ? gameCtx.rules.agendas[p.hiddenAgenda] : null;
+              const histAgenda = civ.agenda ? gameCtx.rules.agendas[civ.agenda] : null;
               return (
                 <div
                   key={id}
@@ -53,6 +58,11 @@ export function ForeignAffairs() {
                       {war && <span className="badge war"> ⚔ War</span>}
                       {friends && <span className="badge friend"> ♥ Friends</span>}
                       {denounced && <span className="badge war"> ⚑ Denounced</span>}
+                    </div>
+                    <div className="leader-traits muted" style={{ fontSize: 11 }}>
+                      {(civ.traits ?? []).map((t) => gameCtx.rules.traits[t]?.name).filter(Boolean).join(' · ')}
+                      {histAgenda && <> · <span title={histAgenda.blurb}>{histAgenda.name}</span></>}
+                      {knownAgenda && <> · <span title={knownAgenda.blurb}>{knownAgenda.name}</span></>}
                     </div>
                   </div>
                 </div>
