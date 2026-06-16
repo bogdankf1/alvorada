@@ -132,6 +132,16 @@ describe('events: AI resolution', () => {
   });
 });
 
+describe('event catalog', () => {
+  it('ships a varied catalog (ambient + interactive) that validates', () => {
+    const evs = Object.values(STANDARD_RULESET.events);
+    expect(evs.length).toBeGreaterThanOrEqual(10);
+    expect(evs.some((e) => e.choices.length === 1)).toBe(true);  // ambient
+    expect(evs.some((e) => e.choices.length >= 2)).toBe(true);   // interactive
+    expect(validateRuleset(STANDARD_RULESET)).toEqual([]);
+  });
+});
+
 describe('chronicle', () => {
   it('records chronicle-worthy events (city founded, wonder) but not chatter', () => {
     let s = flatWorld(16, 12, 2);
