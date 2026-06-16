@@ -13,6 +13,7 @@ import { findPath } from '../map/pathfind';
 import { executeMovePath } from './movement';
 import { processCity } from './cities';
 import { checkCultureVictory, checkScoreVictory, checkScienceVictory } from './victory';
+import { maybeFireEvent } from './worldevents';
 import { processObligations } from './diplomacy';
 import { processTradeRoutes } from './trade';
 import { spreadReligions } from './religion';
@@ -169,6 +170,9 @@ export function beginTurn(ctx: Ctx, state: GameState, pid: PlayerId): void {
     pushEvent(state, { player: pid, type: 'veryUnhappy', msg: `${player.name}'s empire is in turmoil (happiness ${mood.net})` });
   else if (mood.tier === 'unhappy')
     pushEvent(state, { player: pid, type: 'unhappy', msg: `${player.name}'s people are unhappy (happiness ${mood.net})` });
+
+  // 3d. the world acts: maybe a world event befalls this player
+  maybeFireEvent(ctx, state, pid);
 
   // 4. fresh eyes
   recomputeVisibility(ctx, state, pid);
