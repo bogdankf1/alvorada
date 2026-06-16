@@ -40,6 +40,10 @@ export function recomputeVisibility(ctx: Ctx, state: GameState, player: PlayerId
   // first contact: meeting a rival's unit or city on a visible tile sets `met` both ways
   const mark = (other: PlayerId) => {
     if (other === player) return;
+    if (!state.relations[player][other].met) {
+      state.relations[player][other].firstContactTurn = state.turn;
+      state.relations[other][player].firstContactTurn = state.turn;
+    }
     state.relations[player][other].met = true;
     state.relations[other][player].met = true;
   };

@@ -3,6 +3,13 @@
  * A game is fully determined by (config, action log) — see PLAN.md §3.3.
  */
 import type { Ctx, GameConfig, GameState, Player, RelationState, Unit } from './types';
+
+/** Deterministic pick from (seed, id) WITHOUT touching rngState — keeps the rng stream stable. */
+function pickHidden(seed: number, id: number, pool: string[]): string {
+  let h = (seed ^ (id * 0x9e3779b1)) >>> 0;
+  h = Math.imul(h ^ (h >>> 15), 0x85ebca6b) >>> 0;
+  return pool[h % pool.length];
+}
 import { blankRelation } from './types';
 import { tileIndex } from './hex';
 import { generateMap } from './map/generate';
@@ -35,6 +42,8 @@ export function initialState(config: GameConfig, ctx: Ctx): GameState {
       policyProgress: 0,
       cultureTotal: 0,
       nextCityName: 0,
+      traits: [...(civ.traits ?? [])],
+      hiddenAgenda: pickHidden(config.seed, id, Object.keys(rules.agendas).sort()),
     };
   });
 

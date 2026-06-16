@@ -97,6 +97,8 @@ export interface RelationState {
   goldPerTurn: number; // a pays b each turn (directional)
   goldUntil: number; // gold-per-turn runs until this turn (0 = none)
   grudge: number; // a's grudge toward b; decays each turn (directional)
+  firstContactTurn?: number; // turn `met` first became true (symmetric); undefined until met
+  lastBand?: string;         // subject's last-seen attitude band toward target (reactivity)
 }
 
 export function blankRelation(): RelationState {
@@ -148,6 +150,8 @@ export interface Player {
   cultureTotal: number;    // lifetime empire culture (drives influence)
   nextCityName: number;
   barbarian?: boolean;
+  traits?: string[];      // runtime traits (init from CivDef; events may alter later)
+  hiddenAgenda?: string;  // seeded once per game from (seed, id)
 }
 
 export interface GameEvent {

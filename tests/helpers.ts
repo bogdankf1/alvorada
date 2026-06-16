@@ -53,6 +53,8 @@ export function flatWorld(w = 12, h = 10, playerCount = 2): GameState {
     policyProgress: 0,
     cultureTotal: 0,
     nextCityName: 0,
+    traits: [] as string[],
+    hiddenAgenda: undefined as string | undefined,
   }));
   return {
     schema: SCHEMA_VERSION,
