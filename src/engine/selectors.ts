@@ -3,7 +3,7 @@
  * facts — validation, the reducer, the AI, and the UI all ask these same
  * questions, which is what keeps their answers consistent.
  */
-import type { BeliefDef, CivicEffect, PartialYields, PromotionDef, SpecialistType, Yields } from '../data/types';
+import type { AiWeights, BeliefDef, CivicEffect, PartialYields, PromotionDef, SpecialistType, Yields } from '../data/types';
 import { addYields, emptyYields, YIELD_KEYS } from '../data/types';
 import type { Axial, City, Ctx, GameState, PlayerId, ProductionItem, TradeRoute, Unit } from './types';
 import { sortedIds } from './types';
@@ -76,6 +76,20 @@ export function commonReligion(state: GameState, a: PlayerId, b: PlayerId): bool
   if (setA.size === 0) return false;
   for (const c of playerCities(state, b)) if (c.religion && setA.has(c.religion)) return true;
   return false;
+}
+
+/** Sum of all of a player's runtime traits' weight nudges. */
+export function traitWeights(ctx: Ctx, state: GameState, pid: PlayerId): Required<AiWeights> {
+  const out: Required<AiWeights> = {
+    warThreshold: 0, warTurnGate: 0, expansion: 0, military: 0,
+    faith: 0, science: 0, culture: 0, gold: 0, dealWillingness: 0,
+  };
+  for (const t of state.players[pid].traits ?? []) {
+    const w = ctx.rules.traits[t]?.weights;
+    if (!w) continue;
+    (Object.keys(out) as (keyof AiWeights)[]).forEach((k) => { out[k] += w[k] ?? 0; });
+  }
+  return out;
 }
 
 export function atWar(state: GameState, a: PlayerId, b: PlayerId): boolean {

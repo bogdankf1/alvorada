@@ -3,6 +3,7 @@
  * worker job selection. All pure functions of (ctx, state, player) — fair
  * (explored knowledge only) and deterministic (sorted iteration, id ties).
  */
+import type { AiWeights } from '../data/types';
 import type { City, Ctx, GameState, PlayerId, ProductionItem, Unit } from '../engine/types';
 import { VIS_UNSEEN } from '../engine/types';
 import { axialOfIndex, hexDistance, hexesWithin, tileIndex } from '../engine/hex';
@@ -21,6 +22,7 @@ import {
   playerUnits,
   tileOwner,
   tileYields,
+  traitWeights,
 } from '../engine/selectors';
 import { validateAction } from '../engine/validate';
 
@@ -139,6 +141,20 @@ function bestMilitary(ctx: Ctx, state: GameState, city: City): ProductionItem | 
 
 const BUILDING_PRIORITY = ['monument', 'shrine', 'granary', 'library', 'walls', 'market', 'workshop', 'aqueduct', 'temple', 'colosseum', 'courthouse', 'university', 'observatory', 'bank', 'castle', 'monastery', 'cathedral'];
 
+const FOCUS_BUILDINGS: Record<string, string[]> = {
+  faith: ['shrine', 'temple', 'monastery', 'cathedral'],
+  science: ['library', 'university', 'observatory'],
+  culture: ['monument', 'temple', 'cathedral'],
+  gold: ['market', 'bank'],
+};
+/** BUILDING_PRIORITY with a leader's trait-favored buildings moved to the front (stable otherwise). */
+function buildingPriorityFor(tw: Required<AiWeights>): string[] {
+  const front: string[] = [];
+  for (const k of ['faith', 'science', 'culture', 'gold'] as const)
+    if (tw[k] > 0) for (const b of FOCUS_BUILDINGS[k]) if (!front.includes(b)) front.push(b);
+  return [...front, ...BUILDING_PRIORITY.filter((b) => !front.includes(b))];
+}
+
 export function pickProduction(
   ctx: Ctx,
   state: GameState,
@@ -148,6 +164,7 @@ export function pickProduction(
   const myUnits = playerUnits(state, pid);
   const myCities = playerCities(state, pid);
   const threat = threatNear(ctx, state, city);
+  const tw = traitWeights(ctx, state, pid);
 
   // 1. an undefended city arms itself first
   if (!hasGarrison(ctx, state, city) && !myUnits.some((u) => !isCivilian(ctx, u) && hexDistance({ q: u.q, r: u.r }, { q: city.q, r: city.r }) <= 2)) {
@@ -183,13 +200,13 @@ export function pickProduction(
   const settlersAlive = myUnits.filter((u) => ctx.rules.units[u.def].abilities?.includes('foundCity')).length;
   const spots = knownGoodSpots(ctx, state, pid);
   if (
-    myCities.length + settlersAlive < desiredCities(state) &&
+    myCities.length + settlersAlive < desiredCities(state) + tw.expansion &&
     spots.length > 0 &&
     canProduce(ctx, state, city, { kind: 'unit', id: 'settler' }).ok
   ) {
     return {
       item: { kind: 'unit', id: 'settler' },
-      reason: `room to grow: ${spots.length} known sites, want ${desiredCities(state)} cities`,
+      reason: `room to grow: ${spots.length} known sites, want ${desiredCities(state) + tw.expansion} cities`,
     };
   }
 
@@ -215,7 +232,7 @@ export function pickProduction(
     0,
     ...state.players.filter((p) => p.alive && p.id !== pid).map((p) => knownPower(ctx, state, pid, p.id)),
   );
-  if (myPower < rivalPower * 0.8) {
+  if (myPower < rivalPower * (0.8 + tw.military * 0.1)) {
     const mil = bestMilitary(ctx, state, city);
     if (mil) return { item: mil, reason: `army lags rivals (${myPower} vs ~${rivalPower})` };
   }
@@ -244,7 +261,7 @@ export function pickProduction(
   }
 
   // 7. civic buildings in priority order
-  for (const b of BUILDING_PRIORITY) {
+  for (const b of buildingPriorityFor(tw)) {
     const item: ProductionItem = { kind: 'building', id: b };
     if (canProduce(ctx, state, city, item).ok) {
       return { item, reason: `civic works: ${b}` };

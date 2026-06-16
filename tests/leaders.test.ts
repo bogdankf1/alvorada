@@ -7,6 +7,9 @@ import { SCHEMA_VERSION } from '../src/engine/serialize';
 import { attitude, agendaKnown } from '../src/engine/diplomacy-eval';
 import { flatWorld, spawn, refreshVis, thaw } from './helpers';
 import { applyAction } from '../src/engine/reducer';
+import { considerWarForTest } from '../src/ai/decide';
+import { traitWeights } from '../src/engine/selectors';
+import { tileIndex } from '../src/engine/hex';
 
 describe('trait & agenda content', () => {
   it('defines 8 traits and agendas, and validates clean', () => {
@@ -78,5 +81,48 @@ describe('agenda & reactivity attitude', () => {
     s.turn = 20;
     expect(agendaKnown(ctx, s, 0, 1).hidden).toBe(true);  // 20 - 1 >= 15
     expect(agendaKnown(ctx, s, 0, 1).historical).toBe(true); // always once met
+  });
+});
+
+describe('traits bias the AI', () => {
+  it('aggregates trait weights', () => {
+    let s = flatWorld(12, 10, 2);
+    s.players[0].traits = ['warmonger'];
+    expect(traitWeights(ctx, s, 0).military).toBe(2);
+    expect(traitWeights(ctx, s, 0).warThreshold).toBeCloseTo(-0.2);
+    s.players[0].traits = ['defensive'];
+    expect(traitWeights(ctx, s, 0).warTurnGate).toBe(15);
+  });
+
+  it('a warmonger declares war at a lower power ratio than a defensive leader', () => {
+    // Build two identical states; only the attacker's traits differ.
+    function setup(traits: string[]) {
+      let s = flatWorld(20, 14, 2);
+      s.turn = 60;
+      s.players[0].traits = traits;
+      const ours = spawn(s, 0, 'settler', 4, 7);
+      const theirs = spawn(s, 1, 'settler', 12, 7);
+      refreshVis(s);
+      s = applyAction(ctx, s, { type: 'FOUND_CITY', player: 0, unit: ours.id });
+      s = applyAction(ctx, { ...s, currentPlayer: 1 }, { type: 'FOUND_CITY', player: 1, unit: theirs.id });
+      s = thaw(s);
+      s.relations[0][1].met = true; s.relations[1][0].met = true;
+      // give player 0 a modest edge: 3 warriors vs 2
+      for (let i = 0; i < 3; i++) spawn(s, 0, 'warrior', 4 + i, 8);
+      for (let i = 0; i < 2; i++) spawn(s, 1, 'warrior', 12 + i, 8);
+      refreshVis(s);
+      // mark the rival's city as explored so considerWar can see it
+      for (const c of Object.values(s.cities)) {
+        if (c.owner === 1) {
+          const idx = tileIndex({ q: c.q, r: c.r }, s.mapW, s.mapH);
+          s.visibility[0][idx] = 1; // VIS_EXPLORED
+        }
+      }
+      return thaw(s);
+    }
+    const warmonger = considerWarForTest(ctx, setup(['warmonger']), 0);
+    const defensive = considerWarForTest(ctx, setup(['defensive']), 0);
+    expect(warmonger?.action.type).toBe('DECLARE_WAR'); // lowered ratio → attacks
+    expect(defensive).toBeNull();                         // raised ratio → holds
   });
 });

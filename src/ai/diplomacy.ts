@@ -6,7 +6,7 @@
  */
 import type { Action, Ctx, GameState, PlayerId } from '../engine/types';
 import { attitude, bandRank } from '../engine/diplomacy-eval';
-import { atWar, hasMet, militaryPower } from '../engine/selectors';
+import { atWar, hasMet, militaryPower, traitWeights } from '../engine/selectors';
 
 // AI policy thresholds for suing for peace. (Attitude/friendship thresholds live in
 // ruleset settings; these few war-pressure ratios are AI judgment, kept named here.)
@@ -44,7 +44,7 @@ export function initiateDiplomacy(ctx: Ctx, state: GameState, pid: PlayerId): Ac
   for (const o of others) {
     if (atWar(state, pid, o) || state.relations[pid][o].friends) continue;
     const band = attitude(ctx, state, pid, o).band;
-    if (bandRank(band) >= bandRank(d.minFriendBand)) {
+    if (bandRank(band) >= bandRank(d.minFriendBand) - traitWeights(ctx, state, pid).dealWillingness) {
       if (!state.proposals.some((pr) => pr.from === pid && pr.to === o)) {
         return {
           type: 'PROPOSE_DEAL', player: pid, to: o,

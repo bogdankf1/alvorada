@@ -18,6 +18,7 @@ import {
   pendingPromotions,
   playerCities,
   playerUnits,
+  traitWeights,
 } from '../engine/selectors';
 import { validateAction } from '../engine/validate';
 import { findPath } from '../engine/map/pathfind';
@@ -137,13 +138,14 @@ export function decide(ctx: Ctx, state: GameState, pid: PlayerId): AiDecision {
 // --- war counsel ---
 
 function considerWar(ctx: Ctx, state: GameState, pid: PlayerId): AiDecision | null {
-  if (state.turn < 30) return null;
+  const tw = traitWeights(ctx, state, pid);
+  if (state.turn < 30 + tw.warTurnGate) return null;
   const myPower = militaryPower(ctx, state, pid);
   const myCapital = playerCities(state, pid)[0];
-  if (!myCapital || myPower < 25) return null;
+  if (!myCapital || myPower < 25 - tw.military) return null;
   // land hunger makes empires bolder
   const cramped = knownGoodSpots(ctx, state, pid).length === 0 && state.turn > 50;
-  const ratioNeeded = cramped ? 1.3 : 1.45;
+  const ratioNeeded = (cramped ? 1.3 : 1.45) + tw.warThreshold;
 
   for (const rival of state.players) {
     if (!rival.alive || rival.id === pid || atWar(state, pid, rival.id)) continue;
@@ -479,4 +481,9 @@ function diploReason(action: Action, state: GameState): string {
   if (action.give.peace) return `suing ${to} for peace`;
   if (action.give.friendship) return `offering friendship to ${to}`;
   return `proposing a deal to ${to}`;
+}
+
+/** Test seam: expose the otherwise-internal war counsel. */
+export function considerWarForTest(ctx: Ctx, state: GameState, pid: PlayerId): AiDecision | null {
+  return considerWar(ctx, state, pid);
 }
