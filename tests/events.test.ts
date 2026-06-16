@@ -131,3 +131,25 @@ describe('events: AI resolution', () => {
     expect((d.action as { choice: number }).choice).toBe(1);
   });
 });
+
+describe('chronicle', () => {
+  it('records chronicle-worthy events (city founded, wonder) but not chatter', () => {
+    let s = flatWorld(16, 12, 2);
+    const settler = spawn(s, 0, 'settler', 5, 5);
+    spawn(s, 1, 'warrior', 1, 10);
+    refreshVis(s);
+    s = applyAction(ctx, s, { type: 'FOUND_CITY', player: 0, unit: settler.id });
+    s = thaw(s);
+    expect(s.chronicle.some((e) => e.type === 'cityFounded')).toBe(true);
+    // a mundane improvement-completed event is not chronicled
+    expect(s.chronicle.some((e) => e.type === 'improvement')).toBe(false);
+  });
+  it('records resolved events', () => {
+    const c = customCtx((r) => {
+      r.events.test_amb = { id: 'test_amb', title: 'Good Tidings', body: '...', choices: [{ text: 'ok', effects: [{ k: 'gold', n: 5 }] }] };
+    });
+    const s = oneCity(c);
+    for (let i = 0; i < 200; i++) maybeFireEvent(c, s, 0);
+    expect(s.chronicle.some((e) => e.type === 'eventChronicle')).toBe(true);
+  });
+});
