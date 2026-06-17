@@ -32,6 +32,24 @@ tree, merge-adjacent-improvements.
 
 ---
 
+## ✅ Wave 2 — SHIPPED (2026-06-17, merged to `main` locally)
+
+228 tests green, determinism intact, **no schema bump**:
+- **Audio** — `src/ui/audio/` synth SFX (Web Audio) + one ambient-music hook (`public/audio/ambient.mp3`,
+  silently no-ops if absent) + two `localStorage` toggles (Sound effects / Music) in GameMenu. Wired via
+  pure `actionSfx`/`eventSfx` maps (UI layer only). **You still need to drop an approved `ambient.mp3`** for
+  music to play; SFX work now.
+- **Buy-tiles** — `BUY_TILE` action: distance-based cost (`tilePurchase {baseCost:50, costPerRing:30,
+  radius:3}`), gated to unowned tiles in range that touch your territory and that you can afford. City-view
+  highlight (gold ring + cost, dim if unaffordable) + click-to-buy + gold hint. [batch-2 #4]
+  - **Revisitable balance note:** buying a tile does NOT raise the city's culture-expansion threshold
+    (`tilesClaimed` untouched) — a deliberate spec choice; mild asymmetry (gold-bought land doesn't slow
+    culture growth). Watch in testing; one-line change if it should.
+
+Still open below: roads, naval, modern-era tech tree, merge-adjacent-improvements.
+
+---
+
 ## Batch 1 (2026-06-17)
 
 ### 1. Audio — sound effects + background music + settings mute toggle 🟢 NEW
