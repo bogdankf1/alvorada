@@ -1,0 +1,115 @@
+# Alvorada — Testing Feedback & Fix/Add List
+
+*Started 2026-06-17. Running list captured during hands-on testing rounds. Each item is
+triaged against `docs/2026-06-15-audit-and-roadmap.md`:*
+
+- 🟢 **NEW** — not in the roadmap
+- 🔵 **OVERLAPS #N** — matches an open roadmap item
+- ✅ **ALREADY WORKS / DONE** — no change needed (or already shipped)
+- 🟠 **CAUTION** — in the roadmap but deliberately de-prioritized; cost/leverage flag
+
+Status: `open` until scoped → planned → done.
+
+---
+
+## Batch 1 (2026-06-17)
+
+### 1. Audio — sound effects + background music + settings mute toggle 🟢 NEW
+- SFX for actions (move, attack, city found, tech/wonder complete, etc.) + light
+  ambient background music. Settings option to mute (likely separate SFX / music toggles).
+- **Layer:** UI/app only. **Hard constraint:** no audio calls in `src/engine` or `src/ai`
+  — audio is driven from the UI reacting to state, so determinism/replay stays bit-identical.
+- Open: does a settings panel already exist to host the toggle? (verify when scoping)
+- Status: open
+
+### 2. Keyboard shortcuts ✅ MOSTLY SHIPPED (→ Wave 1 adds Sleep key)
+- Already wired in `GameScreen.tsx:23`: Enter=end turn, Space=skip, N=next idle, F=fortify,
+  Esc=deselect, T/G/C/H=overlays. "skip on Space, submit on Enter" already works.
+- Wave 1 only adds a `Z` = Sleep keybind (see #8 / spec item F).
+- Status: Wave 1 (tiny add)
+
+### 3. Ranged units "shoot across the tile" ✅ ALREADY WORKS
+- Engine supports it: every ranged unit has `range: 2` (archer, composite/crossbow,
+  catapult, trebuchet, bombard, Babylon `bowman`). `validate.ts:124` allows
+  `1 ≤ dist ≤ range`; AI already fires at range 2 (`ai/decide.ts:330`).
+- No engine change needed. If it *felt* broken in play, verify the **player-side targeting
+  UI** lets you click a 2-tile-away enemy to fire. (verify in-app)
+- Status: verify-in-app only
+
+### 4. Naval units + embarkation for land units after a tech 🔵 OVERLAPS #13
+- Roadmap #13 "Naval & rivers" (XL) — the biggest deferred bet.
+- Note: map-gen currently guarantees same-continent starts, so naval needs map-gen work
+  to matter.
+- Status: open (large)
+
+### 5. Extend tech tree through the modern era (~2020s) 🟠 CAUTION — OVERLAPS #17 + hole #1
+- Roadmap §5 explicitly de-prioritizes more late-game eras: "a content treadmill that
+  adds hours, not life. Lowest priority."
+- Largest item on the list: 4 eras → ~Information era = new unit lines (firearms → tanks
+  → aircraft → nukes), buildings, wonders, resources; pulls in naval + air domains.
+- Doable, but opposite end of the effort/leverage curve from the rest of this batch.
+  Decide deliberately.
+- Status: open (XL) — needs an explicit go/no-go
+
+### 6. Auto-cycle to next unit needing orders 🟡 PRIMITIVE EXISTS → Wave 1 makes it automatic
+- `selectNextIdleUnit()` + `idleUnits()` already exist (`actions.ts:94`); today cycling only
+  happens on `N` / End-Turn. Wave 1 makes it fire automatically after a unit finishes.
+- Status: Wave 1 (spec item E)
+
+---
+
+## Batch 2 (2026-06-17)
+
+### 1. Scouts faster than warriors ✅ ALREADY TRUE
+- `scout` moves 3 vs `warrior` moves 2 (`src/data/standard/units.ts`). Ask is met.
+- Optional: bump scout higher if we want it more pronounced.
+- Status: no-op (optional tweak)
+
+### 2. Worker "building" indicator on the tile 🟢 NEW (UI, small)
+- Data already present: building worker has `order: { kind:'build', improvement, turnsLeft }`;
+  tile `improvement` stays null until complete. Just needs a UI badge / progress pips.
+- Status: open (small, UI-only)
+
+### 3. Promotion hover explanations (Combat I, Cover…) 🔵 OVERLAPS #5 (Tooltips everywhere)
+- #5 explicitly lists promotion nodes.
+- Note: promotions have only structured `effect` (e.g. `{ defensePct: 33 }`), no `desc`
+  text — render prose from effect, or add a description string per promotion.
+- Status: open (folds into #5)
+
+### 4. Buy tiles with gold in city view (radius-limited) 🟢 NEW (engine + UI)
+- Today tiles claimed only via culture (`tilesClaimed` border expansion). New: gold action +
+  validation (radius cap, ownership, cost) + city-view UI. Determinism-safe (no RNG).
+- Status: open
+
+### 5. "Barbarians don't move every turn — correct?" ✅ BY DESIGN
+- `ai/barbarian.ts`: a barb only advances toward prey it can currently SEE (unit in sight, or
+  known city). No visible target → `"barbarians rest"` → ends turn in place. Intentional, fair-fog.
+- Optional: add idle wander/patrol to make them livelier (tuning, not a fix).
+- Status: no-op (optional liveliness tweak)
+
+### 6. "Do units heal by idling / fortifying?" ✅ YES, already works
+- `engine/systems/turn.ts:62`: hp<100 heals each turn if `!acted` (or `healAlways` promo).
+  Rates: city 20 / own 10 / neutral 5 / enemy 0; medic/march add more.
+- Caveat: fortify gives NO extra heal over plain idle (healing = the "didn't act" gate). A
+  "fortify heals faster" bonus would be a small tweak if wanted.
+- Status: no-op (optional tweak)
+
+### 7. Workers build roads → faster movement 🔵 OVERLAPS roads gap (#13 / map depth)
+- Roads are a named roadmap gap (§1.2/§1.3). No `road` improvement in data today.
+- New system: road improvement + movement-cost reduction in pathfinder + UI. Medium.
+- Status: open (folds into roads/map-depth)
+
+### 8. "Sleep" for non-combat units 🟢 NEW — half-exists
+- `SKIP_UNIT` already exists (one-turn skip, `stance:'skipped'`, UnitPanel "Skip" button).
+- New part: persistent Sleep (stays skipped across turns until healed / enemy appears / woken)
+  — a new `UnitOrder` kind or persistent stance. Pairs with batch-1 #2 (keyboard) + #6 (auto-cycle).
+- Status: open (small)
+
+### 9. Merge 2–3 adjacent identical improvements into one "big" improvement 🟢 NEW — needs design
+- Not in roadmap, not a standard 4X mechanic. Underspecified: what does the merged improvement
+  DO (more yield? adjacency bonus?). Really an "improvement adjacency bonus" idea in disguise.
+- Status: PARKED — needs a brainstorm/design pass before it's actionable.
+
+---
+
+*Next batches appended below as testing continues.*
