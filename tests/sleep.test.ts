@@ -32,6 +32,15 @@ describe('SLEEP_UNIT', () => {
     expect(s.units[w.id].stance).toBe('none');
   });
 
+  it('issuing an order (skip) wakes a sleeping unit', () => {
+    // BUILD_IMPROVEMENT and SKIP_UNIT share the same wake line; SKIP needs no owned tile.
+    let s = flatWorld(12, 10, 1);
+    const w = spawn(s, 0, 'worker', 5, 5, { stance: 'sleep' });
+    refreshVis(s);
+    s = applyAction(ctx, s, { type: 'SKIP_UNIT', player: 0, unit: w.id });
+    expect(s.units[w.id].stance).toBe('none');
+  });
+
   it('sleep persists across a turn start when no enemy is in sight', () => {
     const s = thaw(flatWorld(12, 10, 1));
     const w = spawn(s, 0, 'worker', 5, 5, { stance: 'sleep', moves: 0 });

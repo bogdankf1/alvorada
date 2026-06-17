@@ -61,6 +61,7 @@ function handle(ctx: Ctx, state: GameState, action: Action): void {
 
     case 'BUILD_IMPROVEMENT': {
       const unit = state.units[action.unit];
+      if (unit.stance === 'sleep') unit.stance = 'none'; // a new order wakes a sleeper
       const imp = ctx.rules.improvements[action.improvement];
       unit.order = { kind: 'build', improvement: imp.id, turnsLeft: imp.turns };
       unit.moves = 0;
@@ -78,6 +79,7 @@ function handle(ctx: Ctx, state: GameState, action: Action): void {
 
     case 'SKIP_UNIT': {
       const unit = state.units[action.unit];
+      if (unit.stance === 'sleep') unit.stance = 'none'; // a new order wakes a sleeper
       unit.moves = 0;
       unit.order = null;
       break;
