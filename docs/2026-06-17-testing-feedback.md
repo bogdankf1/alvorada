@@ -50,6 +50,34 @@ Still open below: roads, naval, modern-era tech tree, merge-adjacent-improvement
 
 ---
 
+## ✅ Roads — SHIPPED (2026-06-17, merged to `main` locally)
+
+236 tests green, determinism intact, **schema 9→10**. Data-driven typed roads (built
+extensible for future "modernized" tiers):
+- **Road types as data** — `roads` table + `RoadDef {id,name,moveCost,turns,requiresTech?}`;
+  `tile.road: string | null` (coexists with improvements/resources). Ships one basic `road`
+  (free, 2 turns). A future `railroad` is just a new data entry.
+- **Movement** — a `MOVE_SCALE = 2` rescale in code (`moveCostOf`/`beginTurn`/pathfinder
+  fallback; data values untouched). Flat = 2, road = 1 → **2× on flat**; rough terrain
+  (cost 4) + road 1 → **crosses fast**. Off-road reach bit-identical; only the marginal
+  culture self-play seed re-tuned (924→938). [batch-2 #7]
+- **Build** — `BUILD_ROAD` worker action + `road` order + turn-tick; "Build Road" button.
+- **Render** — connected road segments drawn *under* resource/improvement icons; UnitPanel
+  shows de-scaled moves ("2/2").
+
+**Follow-ups (from the final review — revisitable):**
+- **New units are half-mobile their first turn** — spawn/production set `moves = def.moves`
+  (unscaled), so a freshly-created unit shows "1/2" and moves 1 tile its creation turn, then
+  resets to full next turn. A rescale side-effect; fix = scale moves at the spawn sites
+  (`state.ts`/`cities.ts`/`barbarians.ts`) — but that forces another self-play seed re-tune.
+  Watch in testing; decide if worth a quick follow-up.
+- Roads are buildable across **neutral land** (no own-border requirement) — intentional, but
+  note it if future road pillaging/maintenance assumes ownership.
+
+Still open below: naval, modern-era tech tree, merge-adjacent-improvements.
+
+---
+
 ## Batch 1 (2026-06-17)
 
 ### 1. Audio — sound effects + background music + settings mute toggle 🟢 NEW
