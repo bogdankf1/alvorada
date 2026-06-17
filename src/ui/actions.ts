@@ -3,7 +3,7 @@
  * dispatch with error toasts, the blocker-aware end turn, idle-unit cycling.
  */
 import type { Action } from '../engine/types';
-import { availableTechs, playerCities, playerUnits, productionOptions } from '../engine/selectors';
+import { availableTechs, playerCities, playerUnits, productionOptions, unitNeedsOrders } from '../engine/selectors';
 import { currentGame, gameCtx } from '../app/driver';
 import { appStore, focusCamera, pushToast } from '../app/store';
 
@@ -13,6 +13,12 @@ export function humanDispatch(action: Action): boolean {
   const res = game.dispatch(action);
   if (!res.ok && res.reason) {
     pushToast({ type: 'invalid', msg: res.reason });
+  }
+  // QoL: once a unit finishes (out of moves / skipped / fortified / asleep / gone),
+  // jump to the next unit that still needs orders. Disband manages its own selection.
+  if (res.ok && 'unit' in action && action.type !== 'DISBAND') {
+    const u = game.state.units[action.unit];
+    if (!u || !unitNeedsOrders(u)) selectNextIdleUnit();
   }
   return res.ok;
 }
@@ -94,9 +100,7 @@ export function endTurnRequest(): void {
 export function idleUnits(): number[] {
   const { game, viewingPlayer } = appStore.get();
   if (!game) return [];
-  return playerUnits(game, viewingPlayer)
-    .filter((u) => u.moves > 0 && !u.acted && !u.order && u.stance !== 'fortified')
-    .map((u) => u.id);
+  return playerUnits(game, viewingPlayer).filter(unitNeedsOrders).map((u) => u.id);
 }
 
 export function selectNextIdleUnit(): void {
