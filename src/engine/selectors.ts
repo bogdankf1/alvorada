@@ -130,10 +130,12 @@ export function isImpassable(ctx: Ctx, state: GameState, idx: number): boolean {
 
 export function moveCostOf(ctx: Ctx, state: GameState, idx: number): number {
   const t = state.tiles[idx];
+  if (t.road) return ctx.rules.roads[t.road].moveCost; // road cost is unscaled (e.g. 1)
   const terr = ctx.rules.terrains[t.terrain];
   const elev = ctx.rules.elevations[t.elevation];
   const feat = t.feature ? ctx.rules.features[t.feature] : null;
-  return Math.max(1, terr.moveCost + elev.moveCostDelta + (feat?.moveCostDelta ?? 0));
+  return Math.max(1, terr.moveCost + elev.moveCostDelta + (feat?.moveCostDelta ?? 0))
+    * ctx.rules.settings.moveScale;
 }
 
 export function defenseBonusAt(ctx: Ctx, state: GameState, idx: number): number {

@@ -2,7 +2,7 @@
  * Deterministic A* and movement-range Dijkstra.
  *
  * Fog honesty: a unit plans with its owner's knowledge — unexplored tiles are
- * assumed passable at cost 1; only *visible* enemy units block; only explored
+ * assumed passable at the open-terrain cost (settings.moveScale); only *visible* enemy units block; only explored
  * impassables block. Execution (movement.ts) then applies ground truth, so a
  * path into the unknown can fail honestly at the surprising tile.
  *
@@ -116,7 +116,7 @@ export function moveRulesFor(ctx: Ctx, state: GameState, unit: Unit): MoveRules 
       return true;
     },
     cost(idx: number): number {
-      return vis[idx] >= VIS_EXPLORED ? moveCostOf(ctx, state, idx) : 1;
+      return vis[idx] >= VIS_EXPLORED ? moveCostOf(ctx, state, idx) : ctx.rules.settings.moveScale;
     },
   };
 }

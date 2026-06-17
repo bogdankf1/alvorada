@@ -47,12 +47,12 @@ describe('founding cities', () => {
 describe('movement', () => {
   it('spends move points by terrain and stores multi-turn goto orders', () => {
     let s = flatWorld();
-    s.tiles[idxOf(s, 6, 4)].feature = 'forest'; // forest costs 2 to enter
-    const u = spawn(s, 0, 'warrior', 4, 4);
+    s.tiles[idxOf(s, 6, 4)].feature = 'forest'; // forest costs 4 to enter (2 base * scale 2)
+    const u = spawn(s, 0, 'warrior', 4, 4, { moves: ctx.rules.units.warrior.moves * ctx.rules.settings.moveScale });
     spawn(s, 0, 'settler', 2, 8); // keep player 0 alive
     spawn(s, 1, 'settler', 1, 8); // keep player 1 alive
     refreshVis(s);
-    // warrior: 2 MP; path of 3 grassland tiles -> walks 2, banks 1 as goto
+    // warrior: 4 MP (2 base * scale 2); grassland costs 2; walks 2 tiles, banks 1 as goto
     s = applyAction(ctx, s, {
       type: 'MOVE_UNIT',
       player: 0,

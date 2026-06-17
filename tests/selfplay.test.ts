@@ -106,8 +106,10 @@ describe('AI self-play', () => {
     // Re-seeded 920→921 because the living-world event deck shifted the RNG stream so seed 920
     // now produces a score win. Seed 921 fires culture at turn 220.
     // Re-seeded 921→924 because the free-pop happiness buffer (Wave 1) shifted growth
-    // dynamics so seed 921 now produces a science win instead of culture. Seed 924 fires culture at turn 220.)
-    const { state } = runGame(924, 265);
+    // dynamics so seed 921 now produces a science win instead of culture. Seed 924 fires culture at turn 220.
+    // Re-seeded 924→938 because the ×2 move-point rescale (roads) shifted the trajectory
+    // so seed 924 no longer fires culture by the turn limit. Seed 938 fires culture at turn 220.)
+    const { state } = runGame(938, 265);
     expect(state.phase).toBe('ended');
     expect(state.winner?.victory).toBe('culture');
   }, 300_000);

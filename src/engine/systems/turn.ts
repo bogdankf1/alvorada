@@ -63,7 +63,7 @@ export function beginTurn(ctx: Ctx, state: GameState, pid: PlayerId): void {
       u.hp = Math.min(100, u.hp + healAmount(ctx, state, pid, idx, u.q, u.r) + promotionHealBonus(ctx, u));
     }
     u.acted = false;
-    u.moves = def.moves + promotionMovementBonus(ctx, u);
+    u.moves = (def.moves + promotionMovementBonus(ctx, u)) * ctx.rules.settings.moveScale;
     if (u.stance === 'sleep' && enemyMilitaryInSight(ctx, state, u)) u.stance = 'none';
 
     if (u.order?.kind === 'build') {

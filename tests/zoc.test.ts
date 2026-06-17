@@ -5,7 +5,7 @@ import { applyAction } from '../src/engine/reducer';
 describe('zone of control', () => {
   it('moving adjacent to an at-war enemy military unit ends movement', () => {
     let s = flatWorld(14, 10, 2);
-    const mover = spawn(s, 0, 'horseman', 3, 5); // 4 moves
+    const mover = spawn(s, 0, 'horseman', 3, 5, { moves: ctx.rules.units.horseman.moves * ctx.rules.settings.moveScale }); // 8 MP
     spawn(s, 1, 'warrior', 7, 5);
     spawn(s, 0, 'settler', 1, 1); // keep player 0 alive through checkElimination
     spawn(s, 1, 'settler', 1, 9); // keep player 1 alive through checkElimination
@@ -19,7 +19,7 @@ describe('zone of control', () => {
   });
   it('commando ignores zone of control', () => {
     let s = flatWorld(14, 10, 2);
-    const mover = spawn(s, 0, 'horseman', 3, 5, { promotions: ['commando'] });
+    const mover = spawn(s, 0, 'horseman', 3, 5, { promotions: ['commando'], moves: ctx.rules.units.horseman.moves * ctx.rules.settings.moveScale }); // 8 MP
     spawn(s, 1, 'warrior', 7, 5);
     spawn(s, 0, 'settler', 1, 1); // keep player 0 alive through checkElimination
     spawn(s, 1, 'settler', 1, 9); // keep player 1 alive through checkElimination

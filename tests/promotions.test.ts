@@ -67,7 +67,7 @@ describe('promotion turn effects', () => {
     let s = flatWorld(12, 10, 1);
     const u = spawn(s, 0, 'warrior', 5, 5, { promotions: ['mobility'] });
     s = applyAction(ctx, s, { type: 'END_TURN', player: 0 });
-    expect(s.units[u.id].moves).toBe(ctx.rules.units.warrior.moves + 1);
+    expect(s.units[u.id].moves).toBe((ctx.rules.units.warrior.moves + 1) * ctx.rules.settings.moveScale);
   });
   it('march heals even after acting; medic adds extra healing', () => {
     let s = flatWorld(12, 10, 1);
