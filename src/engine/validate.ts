@@ -184,6 +184,7 @@ export function validateAction(ctx: Ctx, state: GameState, action: Action): Vali
     }
 
     case 'SKIP_UNIT':
+    case 'SLEEP_UNIT':
     case 'DISBAND': {
       const v = ownUnit(state, action.player, action.unit);
       if (!v.unit) return v.error!;

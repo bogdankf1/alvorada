@@ -27,7 +27,7 @@ export type UnitOrder =
   | { kind: 'goto'; path: Axial[] } // remaining steps, executed across turns
   | { kind: 'build'; improvement: string; turnsLeft: number };
 
-export type Stance = 'none' | 'fortified' | 'skipped';
+export type Stance = 'none' | 'fortified' | 'skipped' | 'sleep';
 
 export interface Unit {
   id: UnitId;
@@ -230,6 +230,7 @@ export type Action =
   | { type: 'BUILD_IMPROVEMENT'; player: PlayerId; unit: UnitId; improvement: string }
   | { type: 'FORTIFY'; player: PlayerId; unit: UnitId }
   | { type: 'SKIP_UNIT'; player: PlayerId; unit: UnitId }
+  | { type: 'SLEEP_UNIT'; player: PlayerId; unit: UnitId }
   | { type: 'DISBAND'; player: PlayerId; unit: UnitId }
   | { type: 'SET_PRODUCTION'; player: PlayerId; city: CityId; item: ProductionItem }
   | { type: 'SET_SPECIALISTS'; player: PlayerId; city: CityId; specialist: SpecialistType; count: number }

@@ -652,6 +652,23 @@ export function unitHasPromoFlag(ctx: Ctx, unit: Unit, flag: 'ignoreZoc' | 'heal
   return (unit.promotions ?? []).some((id) => !!ctx.rules.promotions[id]?.effect[flag]);
 }
 
+/** A unit that still needs its first order this turn (untouched, can still act). */
+export function unitNeedsOrders(unit: Unit): boolean {
+  return unit.moves > 0 && !unit.acted && !unit.order && unit.stance !== 'fortified' && unit.stance !== 'sleep';
+}
+
+/** True if any at-war enemy military unit sits within this unit's sight radius. */
+export function enemyMilitaryInSight(ctx: Ctx, state: GameState, unit: Unit): boolean {
+  // deliberately base sight, ignoring elevation sightBonus (v1 scope cut)
+  const sight = ctx.rules.units[unit.def].sight;
+  for (const id of sortedIds(state.units)) {
+    const o = state.units[id];
+    if (o.owner === unit.owner || !atWar(state, unit.owner, o.owner) || isCivilian(ctx, o)) continue;
+    if (hexDistance({ q: unit.q, r: unit.r }, { q: o.q, r: o.r }) <= sight) return true;
+  }
+  return false;
+}
+
 export function promotionMovementBonus(ctx: Ctx, unit: Unit): number {
   let m = 0; for (const id of unit.promotions ?? []) m += ctx.rules.promotions[id]?.effect.movement ?? 0; return m;
 }

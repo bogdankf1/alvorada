@@ -6,7 +6,7 @@
 import type { Ctx, GameState, PlayerId } from '../types';
 import { sortedIds } from '../types';
 import { tileIndex } from '../hex';
-import { cityAt, tileOwner, playerCities, empireHappiness, unitHasPromoFlag, promotionHealBonus, promotionMovementBonus } from '../selectors';
+import { cityAt, tileOwner, playerCities, empireHappiness, unitHasPromoFlag, promotionHealBonus, promotionMovementBonus, enemyMilitaryInSight } from '../selectors';
 import { recomputeVisibility } from '../map/visibility';
 import { pushEvent } from '../events';
 import { findPath } from '../map/pathfind';
@@ -64,6 +64,7 @@ export function beginTurn(ctx: Ctx, state: GameState, pid: PlayerId): void {
     }
     u.acted = false;
     u.moves = def.moves + promotionMovementBonus(ctx, u);
+    if (u.stance === 'sleep' && enemyMilitaryInSight(ctx, state, u)) u.stance = 'none';
 
     if (u.order?.kind === 'build') {
       u.moves = 0;

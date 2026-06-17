@@ -42,7 +42,9 @@ function handle(ctx: Ctx, state: GameState, action: Action): void {
     }
 
     case 'MOVE_UNIT': {
-      executeMovePath(ctx, state, state.units[action.unit], action.path);
+      const unit = state.units[action.unit];
+      if (unit.stance === 'sleep') unit.stance = 'none'; // moving wakes a sleeper
+      executeMovePath(ctx, state, unit, action.path);
       checkElimination(ctx, state); // capturing a last settler can end an empire
       break;
     }
@@ -78,6 +80,18 @@ function handle(ctx: Ctx, state: GameState, action: Action): void {
       const unit = state.units[action.unit];
       unit.moves = 0;
       unit.order = null;
+      break;
+    }
+
+    case 'SLEEP_UNIT': {
+      const unit = state.units[action.unit];
+      if (unit.stance === 'sleep') {
+        unit.stance = 'none'; // toggle awake
+      } else {
+        unit.stance = 'sleep';
+        unit.moves = 0;
+        unit.order = null;
+      }
       break;
     }
 
