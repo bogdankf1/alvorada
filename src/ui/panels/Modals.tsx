@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import type { EventEffect } from '../../data/types';
+import { getAudioSettings, setSfxEnabled, setMusicEnabled, applyMusic } from '../audio';
 import { appStore, useApp } from '../../app/store';
 import { humanDispatch } from '../actions';
 import { LocalGame, currentGame, gameCtx, quitToMenu, startGame } from '../../app/driver';
@@ -47,8 +48,11 @@ export function GameMenu() {
   const overlay = useApp((s) => s.overlay);
   const game = useApp((s) => s.game);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [audio, setAudio] = useState(getAudioSettings());
   if (overlay !== 'menu' || !game) return null;
   const close = () => appStore.set({ overlay: null });
+  const toggleSfx = () => { const v = !audio.sfx; setSfxEnabled(v); setAudio({ ...audio, sfx: v }); };
+  const toggleMusic = () => { const v = !audio.music; setMusicEnabled(v); applyMusic(); setAudio({ ...audio, music: v }); };
   return (
     <div className="modal-center" onClick={close}>
       <div className="modal-card plate" onClick={(e) => e.stopPropagation()}>
@@ -57,6 +61,12 @@ export function GameMenu() {
         <div className="modal-actions" style={{ flexDirection: 'column' }}>
           <button className="btn btn--primary" onClick={close}>
             Return to the Map
+          </button>
+          <button className="btn" onClick={toggleSfx}>
+            Sound effects: {audio.sfx ? 'On' : 'Off'}
+          </button>
+          <button className="btn" onClick={toggleMusic}>
+            Music: {audio.music ? 'On' : 'Off'}
           </button>
           <button className="btn" onClick={() => exportSave(game)}>
             Export Save

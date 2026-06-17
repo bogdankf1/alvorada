@@ -6,6 +6,7 @@ import type { Action } from '../engine/types';
 import { availableTechs, playerCities, playerUnits, productionOptions, unitNeedsOrders } from '../engine/selectors';
 import { currentGame, gameCtx } from '../app/driver';
 import { appStore, focusCamera, pushToast } from '../app/store';
+import { actionSfx, playSfx } from './audio';
 
 export function humanDispatch(action: Action): boolean {
   const game = currentGame;
@@ -19,6 +20,10 @@ export function humanDispatch(action: Action): boolean {
   if (res.ok && 'unit' in action && action.type !== 'DISBAND') {
     const u = game.state.units[action.unit];
     if (!u || !unitNeedsOrders(u)) selectNextIdleUnit();
+  }
+  if (res.ok) {
+    const sfx = actionSfx(action.type);
+    if (sfx) playSfx(sfx);
   }
   return res.ok;
 }

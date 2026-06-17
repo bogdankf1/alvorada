@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { eventSfx, playSfx } from './audio';
 import { MapCanvas } from './map/MapCanvas';
 import { TopBar } from './panels/TopBar';
 import { UnitPanel } from './panels/UnitPanel';
@@ -15,8 +16,21 @@ import { Chronicle } from './panels/Chronicle';
 import { appStore, useApp } from '../app/store';
 import { endTurnRequest, humanDispatch, isMyTurn, selectNextIdleUnit } from './actions';
 
+let lastToastId = -1;
+
 export function GameScreen() {
   const overlay = useApp((s) => s.overlay);
+
+  // play a sound for each newly-arrived toast (world events)
+  const toasts = useApp((s) => s.toasts);
+  useEffect(() => {
+    const newest = toasts[toasts.length - 1];
+    if (newest && newest.id > lastToastId) {
+      lastToastId = newest.id;
+      const sfx = eventSfx(newest.type);
+      if (sfx) playSfx(sfx);
+    }
+  }, [toasts]);
 
   // global shortcuts
   useEffect(() => {

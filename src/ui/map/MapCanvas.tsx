@@ -8,6 +8,7 @@ import { MapRenderer } from './renderer';
 import { gameCtx, currentGame } from '../../app/driver';
 import { appStore, useApp } from '../../app/store';
 import { humanDispatch, isMyTurn } from '../actions';
+import { playSfx } from '../audio';
 import { axialOfIndex, hexDistance, hexesWithin, pixelToHex, tileIndex } from '../../engine/hex';
 import { HEX } from './art';
 import { VIS_VISIBLE, type Axial } from '../../engine/types';
@@ -345,15 +346,18 @@ export function handleTileClick(idx: number, a: Axial, renderer: MapRenderer): v
           ownUnits.find((u) => u.id !== selected.id) ?? null
         : (mil ?? civ ?? null);
     if (pick) {
+      playSfx('select');
       appStore.set({ selectedUnit: pick.id, selectedCity: null });
       return;
     }
     if (cityHere && cityHere.owner === viewingPlayer) {
+      playSfx('select');
       appStore.set({ selectedCity: cityHere.id, selectedUnit: null });
       return;
     }
   }
   if (cityHere && cityHere.owner === viewingPlayer) {
+    playSfx('select');
     appStore.set({ selectedCity: cityHere.id, selectedUnit: null });
     return;
   }
