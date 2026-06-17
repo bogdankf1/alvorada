@@ -12,6 +12,26 @@ Status: `open` until scoped → planned → done.
 
 ---
 
+## ✅ Wave 1 — SHIPPED (2026-06-17, branch `wave-1-qol`)
+
+Implemented via spec→plan→subagent-driven execution (208→220 tests green, self-play
+determinism intact, schema 8→9):
+- **A — Happiness:** removed the settler-while-unhappy block; added `freePopPerCity: 3`
+  buffer (a city's first 3 pop cost no unhappiness). [batch-2 happiness questions]
+- **B — Worker build indicator:** brass ⛏-turn badge on units mid-improvement. [batch-2 #2]
+- **C — Promotion tooltips:** `effectText()` → hover titles on promotion chips + choose
+  buttons. [batch-2 #3]
+- **E — Auto-advance:** selection jumps to the next idle unit after a unit acts; shared
+  `unitNeedsOrders` predicate. [batch-1 #6]
+- **F — Sleep order:** persistent `'sleep'` stance + `SLEEP_UNIT` toggle (panel button,
+  `Z` key, asleep marker), excluded from idle cycling, wakes on order or enemy-in-sight.
+  [batch-2 #8; keyboard from batch-1 #2 was already shipped]
+
+Out of scope / still open below: buy-tiles-with-gold, audio, roads, naval, modern-era tech
+tree, merge-adjacent-improvements.
+
+---
+
 ## Batch 1 (2026-06-17)
 
 ### 1. Audio — sound effects + background music + settings mute toggle 🟢 NEW
