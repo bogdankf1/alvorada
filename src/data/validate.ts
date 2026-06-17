@@ -23,6 +23,11 @@ export function validateRuleset(rules: Ruleset): string[] {
       if (!has(rules.elevations, el)) errors.push(`resource ${res.id}: unknown elevation ${el}`);
   }
 
+  for (const road of Object.values(rules.roads)) {
+    if (!has(rules.techs, road.requiresTech))
+      errors.push(`road ${road.id}: unknown tech ${road.requiresTech}`);
+  }
+
   for (const imp of Object.values(rules.improvements)) {
     if (!has(rules.techs, imp.requiresTech))
       errors.push(`improvement ${imp.id}: unknown tech ${imp.requiresTech}`);

@@ -5,6 +5,8 @@ import { ctx, customCtx, spawn, refreshVis, thaw, idxOf, flatWorld } from './hel
 import { moveCostOf } from '../src/engine/selectors';
 import { reachableTiles } from '../src/engine/map/pathfind';
 import { beginTurn } from '../src/engine/systems/turn';
+import { applyAction } from '../src/engine/reducer';
+import { validateAction } from '../src/engine/validate';
 
 describe('roads data', () => {
   it('ships a basic road, a move scale, and bumps the schema', () => {
@@ -57,5 +59,34 @@ describe('move-point rescale', () => {
     for (let col = 0; col < s.mapW; col++) s.tiles[9 * s.mapW + col].road = 'road';
     const roadReach = reachableTiles(ctx, s, u).size;
     expect(roadReach).toBeGreaterThan(flatReach);
+  });
+});
+
+describe('BUILD_ROAD', () => {
+  it('orders, then completes to tile.road, keeping any improvement', () => {
+    const base = thaw(flatWorld(12, 10, 1));
+    const w = spawn(base, 0, 'worker', 5, 5);
+    base.tiles[idxOf(base, 5, 5)].improvement = 'farm'; // coexists with a road
+    refreshVis(base);
+    let s = applyAction(ctx, base, { type: 'BUILD_ROAD', player: 0, unit: w.id, road: 'road' });
+    expect(s.units[w.id].order).toMatchObject({ kind: 'road', road: 'road' });
+    expect(s.units[w.id].moves).toBe(0);
+    for (let t = 0; t < ctx.rules.roads.road.turns; t++) { s = thaw(s); beginTurn(ctx, s, 0); }
+    expect(s.tiles[idxOf(s, 5, 5)].road).toBe('road');
+    expect(s.tiles[idxOf(s, 5, 5)].improvement).toBe('farm'); // unchanged
+    expect(s.units[w.id].order).toBeNull();
+  });
+
+  it('rejects an existing road and a tech-gated road without the tech', () => {
+    const s = thaw(flatWorld(12, 10, 1));
+    const w = spawn(s, 0, 'worker', 5, 5);
+    refreshVis(s);
+    s.tiles[idxOf(s, 5, 5)].road = 'road';
+    expect(validateAction(ctx, s, { type: 'BUILD_ROAD', player: 0, unit: w.id, road: 'road' }).ok).toBe(false);
+    s.tiles[idxOf(s, 5, 5)].road = null;
+    const gated = customCtx((r) => {
+      r.roads.rail = { id: 'rail', name: 'Rail', moveCost: 1, turns: 2, requiresTech: 'masonry' };
+    });
+    expect(validateAction(gated, s, { type: 'BUILD_ROAD', player: 0, unit: w.id, road: 'rail' }).ok).toBe(false);
   });
 });

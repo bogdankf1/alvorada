@@ -88,6 +88,15 @@ export function beginTurn(ctx: Ctx, state: GameState, pid: PlayerId): void {
           r: u.r,
         });
       }
+    } else if (u.order?.kind === 'road') {
+      u.moves = 0;
+      u.order.turnsLeft -= 1;
+      if (u.order.turnsLeft <= 0) {
+        const roadId = u.order.road;
+        state.tiles[idx].road = roadId;
+        u.order = null;
+        pushEvent(state, { player: pid, type: 'improvement', msg: `${ctx.rules.roads[roadId].name} completed`, q: u.q, r: u.r });
+      }
     } else if (u.order?.kind === 'goto') {
       const dest = u.order.path[u.order.path.length - 1];
       const path = findPath(ctx, state, u, dest);

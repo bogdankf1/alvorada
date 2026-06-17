@@ -70,6 +70,15 @@ function handle(ctx: Ctx, state: GameState, action: Action): void {
       break;
     }
 
+    case 'BUILD_ROAD': {
+      const unit = state.units[action.unit];
+      if (unit.stance === 'sleep') unit.stance = 'none'; // a new order wakes a sleeper
+      unit.order = { kind: 'road', road: action.road, turnsLeft: ctx.rules.roads[action.road].turns };
+      unit.moves = 0;
+      unit.acted = true;
+      break;
+    }
+
     case 'FORTIFY': {
       const unit = state.units[action.unit];
       unit.stance = 'fortified';

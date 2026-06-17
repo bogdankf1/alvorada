@@ -33,7 +33,9 @@ export function UnitPanel() {
       ? 'Marching…'
       : unit.order?.kind === 'build'
         ? `Building ${gameCtx.rules.improvements[unit.order.improvement].name} (${unit.order.turnsLeft}t)`
-        : null;
+        : unit.order?.kind === 'road'
+          ? `Building ${gameCtx.rules.roads[unit.order.road].name} (${unit.order.turnsLeft}t)`
+          : null;
 
   return (
     <div className="unit-panel plate">
@@ -103,6 +105,9 @@ export function UnitPanel() {
               { type: 'BUILD_IMPROVEMENT', player: viewer, unit: unit.id, improvement: imp.id },
               imp.id,
             ),
+          )}
+          {Object.values(gameCtx.rules.roads).map((road) =>
+            tryButton(`Build ${road.name}`, { type: 'BUILD_ROAD', player: viewer, unit: unit.id, road: road.id }, `road-${road.id}`),
           )}
           {def.abilities?.includes('trade') && (
             <button className="btn" onClick={() => appStore.set({ tradeRouteUnit: unit.id })}>

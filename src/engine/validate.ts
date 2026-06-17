@@ -139,6 +139,22 @@ export function validateAction(ctx: Ctx, state: GameState, action: Action): Vali
       return fail('nothing to attack there');
     }
 
+    case 'BUILD_ROAD': {
+      const v = ownUnit(state, action.player, action.unit);
+      if (!v.unit) return v.error!;
+      const unit = v.unit;
+      if (!ctx.rules.units[unit.def].abilities?.includes('improve')) return fail('only workers build roads');
+      if (unit.moves <= 0) return fail('no movement left');
+      const road = ctx.rules.roads[action.road];
+      if (!road) return fail('unknown road');
+      if (road.requiresTech && !state.players[action.player].techs.includes(road.requiresTech))
+        return fail(`requires ${ctx.rules.techs[road.requiresTech].name}`);
+      const idx = tileIndex({ q: unit.q, r: unit.r }, state.mapW, state.mapH);
+      if (isImpassable(ctx, state, idx)) return fail('cannot build a road here');
+      if (state.tiles[idx].road === road.id) return fail('road already built');
+      return ok;
+    }
+
     case 'BUILD_IMPROVEMENT': {
       const v = ownUnit(state, action.player, action.unit);
       if (!v.unit) return v.error!;
