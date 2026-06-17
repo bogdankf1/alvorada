@@ -809,6 +809,22 @@ export class MapRenderer {
       g.lineCap = 'round';
       g.stroke();
     }
+    // build-progress badge (worker improving this tile)
+    if (u.order?.kind === 'build') {
+      const bx = x + 11, by = y - 11;
+      g.beginPath();
+      g.arc(bx, by, 7, 0, Math.PI * 2);
+      g.fillStyle = css(rgb(PALETTE.brass), 0.95);
+      g.fill();
+      g.strokeStyle = 'rgba(20,16,8,0.8)';
+      g.lineWidth = 1.2;
+      g.stroke();
+      g.fillStyle = '#1b1407';
+      g.font = '700 9px ui-sans-serif, system-ui';
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText(String(u.order.turnsLeft), bx, by + 0.5);
+    }
     g.restore();
   }
 
