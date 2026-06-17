@@ -11,9 +11,11 @@ import { PROMOTIONS } from './promotions';
 import { TRAITS } from './traits';
 import { AGENDAS } from './agendas';
 import { EVENTS } from './events';
+import { ROADS } from './roads';
 
 const SETTINGS: RulesetSettings = {
   workRadius: 2,
+  moveScale: 2,
   cityMinDist: 4,
   citySight: 2,
   cityBaseStrength: 6,
@@ -136,6 +138,7 @@ export const STANDARD_RULESET: Ruleset = {
   features: FEATURES,
   resources: RESOURCES,
   improvements: IMPROVEMENTS,
+  roads: ROADS,
   units: UNITS,
   buildings: BUILDINGS,
   techs: TECHS,

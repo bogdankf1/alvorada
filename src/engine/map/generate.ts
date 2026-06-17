@@ -203,6 +203,7 @@ function blank(terrain: string): Tile {
     feature: null,
     resource: null,
     improvement: null,
+    road: null,
     ownerCity: null,
   };
 }

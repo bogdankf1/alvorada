@@ -20,12 +20,14 @@ export interface Tile {
   feature: string | null;
   resource: string | null;
   improvement: string | null;
+  road: string | null;
   ownerCity: CityId | null; // territory: derived from exactly one place
 }
 
 export type UnitOrder =
   | { kind: 'goto'; path: Axial[] } // remaining steps, executed across turns
-  | { kind: 'build'; improvement: string; turnsLeft: number };
+  | { kind: 'build'; improvement: string; turnsLeft: number }
+  | { kind: 'road'; road: string; turnsLeft: number };
 
 export type Stance = 'none' | 'fortified' | 'skipped' | 'sleep';
 

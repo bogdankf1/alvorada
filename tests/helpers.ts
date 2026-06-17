@@ -33,6 +33,7 @@ export function flatWorld(w = 12, h = 10, playerCount = 2): GameState {
     feature: null as string | null,
     resource: null as string | null,
     improvement: null as string | null,
+    road: null as string | null,
     ownerCity: null as number | null,
   }));
   const civOrder = ['rome', 'egypt', 'babylon', 'hellas'];

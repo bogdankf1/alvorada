@@ -110,6 +110,14 @@ export interface ImprovementDef {
   requiresTech?: string;
 }
 
+export interface RoadDef {
+  id: string;
+  name: string;
+  moveCost: number;      // points to ENTER a tile carrying this road (unscaled)
+  turns: number;         // worker-turns to build
+  requiresTech?: string; // undefined = available from the start
+}
+
 export interface UnitDef {
   id: string;
   name: string;
@@ -251,6 +259,7 @@ export interface TradeRouteSettings {
 
 export interface RulesetSettings {
   workRadius: number; // city works tiles within this distance
+  moveScale: number;
   cityMinDist: number; // min hex distance between city centers
   citySight: number;
   cityBaseStrength: number;
@@ -292,6 +301,7 @@ export interface Ruleset {
   features: Record<string, FeatureDef>;
   resources: Record<string, ResourceDef>;
   improvements: Record<string, ImprovementDef>;
+  roads: Record<string, RoadDef>;
   units: Record<string, UnitDef>;
   buildings: Record<string, BuildingDef>;
   techs: Record<string, TechDef>;
