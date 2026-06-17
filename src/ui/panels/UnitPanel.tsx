@@ -51,7 +51,7 @@ export function UnitPanel() {
           )}
         </span>
         <span>
-          <IconBoots size={12} /> <b>{unit.moves}</b>/{def.moves}
+          <IconBoots size={12} /> <b>{unit.moves / gameCtx.rules.settings.moveScale}</b>/{def.moves}
         </span>
         <span>
           HP <b>{unit.hp}</b>

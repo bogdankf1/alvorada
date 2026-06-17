@@ -7,7 +7,7 @@
  */
 import type { Action, Axial, GameState, Unit } from '../../engine/types';
 import { VIS_UNSEEN, VIS_VISIBLE, sortedIds } from '../../engine/types';
-import { axialOfIndex, hexToPixel, tileIndex, sameHex, SQRT3 } from '../../engine/hex';
+import { axialOfIndex, hexToPixel, tileIndex, neighbors, sameHex, SQRT3 } from '../../engine/hex';
 import { hash2 } from '../../engine/rng';
 import type { Ruleset } from '../../data/types';
 import { resourceRevealed } from '../../engine/selectors';
@@ -390,6 +390,33 @@ export class MapRenderer {
         g.strokeStyle = 'rgba(156,196,212,0.22)';
         g.lineWidth = 1.6;
         g.stroke();
+      }
+    }
+
+    // roads — drawn on the ground, under improvements/resources
+    for (let i = 0; i < s.tiles.length; i++) {
+      if (!s.tiles[i].road) continue;
+      const a = axialOfIndex(i, s.mapW);
+      const p = hexToPixel(a, HEX);
+      g.strokeStyle = 'rgba(120,92,58,0.55)';
+      g.lineWidth = 2.4;
+      g.lineCap = 'round';
+      let connected = false;
+      for (const nb of neighbors(a)) {
+        const ni = tileIndex(nb, s.mapW, s.mapH);
+        if (ni < 0 || !s.tiles[ni].road) continue;
+        connected = true;
+        const np = hexToPixel(nb, HEX);
+        g.beginPath();
+        g.moveTo(p.x, p.y);
+        g.lineTo((p.x + np.x) / 2, (p.y + np.y) / 2);
+        g.stroke();
+      }
+      if (!connected) {
+        g.fillStyle = 'rgba(120,92,58,0.55)';
+        g.beginPath();
+        g.arc(p.x, p.y, 2.4, 0, Math.PI * 2);
+        g.fill();
       }
     }
 
@@ -1061,12 +1088,13 @@ function coLocatedPartner(state: GameState, rules: Ruleset, u: Unit): Unit | nul
 }
 
 function tilesStamp(s: GameState): string {
-  // cheap content stamp: improvements + features + owners change rarely
+  // cheap content stamp: improvements + features + roads + owners change rarely
   let n = 0;
   let o = 0;
   for (const t of s.tiles) {
     if (t.improvement) n++;
     if (t.feature) n += 3;
+    if (t.road) n += 7;
     if (t.ownerCity !== null) o++;
   }
   return `${n}:${o}`;
