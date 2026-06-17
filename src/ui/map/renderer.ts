@@ -825,6 +825,14 @@ export class MapRenderer {
       g.textBaseline = 'middle';
       g.fillText(String(u.order.turnsLeft), bx, by + 0.5);
     }
+    // asleep marker
+    if (u.stance === 'sleep') {
+      g.fillStyle = css(rgb(PALETTE.brass), 0.9);
+      g.font = '700 12px ui-serif, Georgia, serif';
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText('z', x + 11, y - 11);
+    }
     g.restore();
   }
 

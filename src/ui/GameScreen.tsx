@@ -53,6 +53,10 @@ export function GameScreen() {
           if (selectedUnit !== null && isMyTurn())
             humanDispatch({ type: 'FORTIFY', player: viewingPlayer, unit: selectedUnit });
           break;
+        case 'KeyZ':
+          if (selectedUnit !== null && isMyTurn())
+            humanDispatch({ type: 'SLEEP_UNIT', player: viewingPlayer, unit: selectedUnit });
+          break;
         case 'Space':
           if (selectedUnit !== null && isMyTurn()) {
             humanDispatch({ type: 'SKIP_UNIT', player: viewingPlayer, unit: selectedUnit });

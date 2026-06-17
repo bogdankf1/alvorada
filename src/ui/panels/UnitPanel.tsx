@@ -63,6 +63,7 @@ export function UnitPanel() {
         />
       </div>
       {unit.stance === 'fortified' && <div style={{ color: 'var(--brass)', fontSize: 12 }}>Fortified</div>}
+      {unit.stance === 'sleep' && <div style={{ color: 'var(--ivory-dim)', fontSize: 12 }}>Asleep</div>}
       {orderLabel && <div style={{ color: 'var(--ivory-dim)', fontSize: 12 }}>{orderLabel}</div>}
 
       {def.class !== 'civilian' && (() => {
@@ -106,6 +107,9 @@ export function UnitPanel() {
           )}
           {tryButton('Fortify', { type: 'FORTIFY', player: viewer, unit: unit.id })}
           {tryButton('Skip', { type: 'SKIP_UNIT', player: viewer, unit: unit.id })}
+          {unit.stance === 'sleep'
+            ? <button key="wake" className="btn" onClick={() => humanDispatch({ type: 'SLEEP_UNIT', player: viewer, unit: unit.id })}>Wake</button>
+            : tryButton('Sleep', { type: 'SLEEP_UNIT', player: viewer, unit: unit.id })}
           <button
             className="btn btn--danger"
             onClick={() => {
