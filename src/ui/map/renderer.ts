@@ -41,6 +41,7 @@ export interface OverlayState {
   pathPreview: Axial[];
   attackable: Set<number>;
   hoveredTile: number | null;
+  buyable: Map<number, number>; // tile idx → gold cost
 }
 
 interface MoveAnim {
@@ -93,6 +94,7 @@ export class MapRenderer {
     pathPreview: [],
     attackable: new Set(),
     hoveredTile: null,
+    buyable: new Map(),
   };
 
   private terrainLayer: HTMLCanvasElement | null = null;
@@ -605,6 +607,26 @@ export class MapRenderer {
         g.arc(p.x, p.y, 3.4, 0, Math.PI * 2);
         g.fill();
       }
+    }
+    // buyable tiles (a city is selected) — gold ring + cost; dim if unaffordable
+    if (this.overlay.buyable.size) {
+      g.save(); // contain font/textAlign so they don't leak into later overlay draws
+      const selCity = this.overlay.selectedCity !== null ? s.cities[this.overlay.selectedCity] : null;
+      const gold = selCity ? s.players[selCity.owner].gold : 0;
+      for (const [idx, cost] of this.overlay.buyable) {
+        const p = hexToPixel(axialOfIndex(idx, s.mapW), HEX);
+        const afford = gold >= cost;
+        hexPath(g, p.x, p.y, HEX - 3);
+        g.strokeStyle = css(rgb(PALETTE.brass), afford ? 0.85 : 0.4);
+        g.lineWidth = 2.2;
+        g.stroke();
+        g.fillStyle = css(rgb(PALETTE.brass), afford ? 0.95 : 0.5);
+        g.font = '700 11px ui-sans-serif, system-ui';
+        g.textAlign = 'center';
+        g.textBaseline = 'middle';
+        g.fillText(String(cost), p.x, p.y);
+      }
+      g.restore();
     }
     // trade routes
     for (const id of Object.keys(s.tradeRoutes).map(Number).sort((a, b) => a - b)) {

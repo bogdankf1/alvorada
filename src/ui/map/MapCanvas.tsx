@@ -12,7 +12,7 @@ import { playSfx } from '../audio';
 import { axialOfIndex, hexDistance, hexesWithin, pixelToHex, tileIndex } from '../../engine/hex';
 import { HEX } from './art';
 import { VIS_VISIBLE, type Axial } from '../../engine/types';
-import { atWar, cityAt, militaryAt, unitsAt } from '../../engine/selectors';
+import { atWar, buyableTiles, cityAt, militaryAt, tilePurchaseCheck, unitsAt } from '../../engine/selectors';
 import { findPath, reachableTiles } from '../../engine/map/pathfind';
 
 /** The live renderer, readable by HUD widgets (minimap viewport rect). */
@@ -63,6 +63,13 @@ export function MapCanvas() {
     overlay.reachable = new Set();
     overlay.attackable = new Set();
     overlay.pathPreview = [];
+    overlay.buyable = new Map();
+    if (selectedCity !== null && isMyTurn()) {
+      const city = game.cities[selectedCity];
+      if (city && city.owner === viewer) {
+        for (const b of buyableTiles(gameCtx, game, city)) overlay.buyable.set(b.idx, b.cost);
+      }
+    }
 
     const unit = selectedUnit !== null ? game.units[selectedUnit] : null;
     if (unit && unit.owner === viewer && isMyTurn() && unit.moves > 0) {
@@ -287,7 +294,7 @@ export function MapCanvas() {
 
 /** Selection & orders — the shape of a Civ click: select, then point at the world. */
 export function handleTileClick(idx: number, a: Axial, renderer: MapRenderer): void {
-  const { game, viewingPlayer, selectedUnit } = appStore.get();
+  const { game, viewingPlayer, selectedUnit, selectedCity } = appStore.get();
   if (!game) return;
   void renderer;
 
@@ -296,6 +303,17 @@ export function handleTileClick(idx: number, a: Axial, renderer: MapRenderer): v
   const ownUnits = unitsHere.filter((u) => u.owner === viewingPlayer);
   const cityHere = cityAt(game, a);
   const selected = selectedUnit !== null ? game.units[selectedUnit] : null;
+
+  // buying a tile for the selected city
+  if (selectedCity !== null && myTurn) {
+    const city = game.cities[selectedCity];
+    if (city && city.owner === viewingPlayer) {
+      const chk = tilePurchaseCheck(gameCtx, game, viewingPlayer, city, a);
+      if (chk.ok && game.players[viewingPlayer].gold >= chk.cost) {
+        if (humanDispatch({ type: 'BUY_TILE', player: viewingPlayer, city: selectedCity, tile: a })) return;
+      }
+    }
+  }
 
   // acting with a selected unit
   if (selected && selected.owner === viewingPlayer && myTurn) {

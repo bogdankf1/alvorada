@@ -75,6 +75,10 @@ export function CityPanel() {
 
       {city.religion && <div className="city-religion">Follows {game.religions[city.religion]?.name}</div>}
 
+      <div style={{ fontSize: 12, color: 'var(--ivory-dim)', margin: '4px 0' }}>
+        Gold {game.players[city.owner].gold} — click a highlighted tile to buy it
+      </div>
+
       <div className="yields-row">
         {YIELD_KEYS.map((k) => {
           const Icon = YIELD_ICONS[k];
