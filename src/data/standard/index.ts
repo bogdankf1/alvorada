@@ -86,6 +86,7 @@ const SETTINGS: RulesetSettings = {
   religion: { pantheonCost: 20, religionCost: 60, religionTech: 'theology', maxReligions: 4, spreadRange: 6, pressurePerCity: 2, holyCityBonus: 30, holyCityFaithDiv: 2 },
   combat: { xpPerAttack: 4, xpPerKill: 6, xpPerDefend: 3, xpVsBarbCap: 30, promotionThresholds: [10, 25, 45, 70, 100] },
   barbarians: { campCount: 6, startSafeRadius: 6, spawnRadius: 2, spawnEveryTurns: 6, maxNearCamp: 2, campBounty: 25 },
+  tilePurchase: { baseCost: 50, costPerRing: 30, radius: 3 },
   startingUnits: ['settler', 'warrior'],
   diplomacy: {
     termLength: 30,

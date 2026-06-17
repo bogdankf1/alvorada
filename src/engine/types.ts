@@ -233,6 +233,7 @@ export type Action =
   | { type: 'SLEEP_UNIT'; player: PlayerId; unit: UnitId }
   | { type: 'DISBAND'; player: PlayerId; unit: UnitId }
   | { type: 'SET_PRODUCTION'; player: PlayerId; city: CityId; item: ProductionItem }
+  | { type: 'BUY_TILE'; player: PlayerId; city: CityId; tile: Axial }
   | { type: 'SET_SPECIALISTS'; player: PlayerId; city: CityId; specialist: SpecialistType; count: number }
   | { type: 'BUY_ITEM'; player: PlayerId; city: CityId; item: ProductionItem }
   | { type: 'ESTABLISH_TRADE_ROUTE'; player: PlayerId; unit: UnitId; targetCity: CityId }

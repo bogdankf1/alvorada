@@ -18,6 +18,7 @@ import {
   pendingPromotions,
   availablePromotions,
   purchaseCost,
+  tilePurchaseCheck,
   tileOwner,
   tradeOrigin,
 } from './selectors';
@@ -195,6 +196,15 @@ export function validateAction(ctx: Ctx, state: GameState, action: Action): Vali
       const city = state.cities[action.city];
       if (!city || city.owner !== action.player) return fail('not your city');
       return canProduce(ctx, state, city, action.item);
+    }
+
+    case 'BUY_TILE': {
+      const city = state.cities[action.city];
+      if (!city || city.owner !== action.player) return fail('not your city');
+      const chk = tilePurchaseCheck(ctx, state, action.player, city, action.tile);
+      if (!chk.ok) return fail(chk.reason);
+      if (state.players[action.player].gold < chk.cost) return fail(`not enough gold (${chk.cost} needed)`);
+      return ok;
     }
 
     case 'SET_SPECIALISTS': {

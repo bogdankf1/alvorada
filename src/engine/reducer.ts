@@ -5,7 +5,8 @@
 import { produce } from 'immer';
 import type { Action, Ctx, GameState, Proposal } from './types';
 import { validateAction } from './validate';
-import { purchaseCost } from './selectors';
+import { purchaseCost, tilePurchaseCost } from './selectors';
+import { tileIndex } from './hex';
 import { pushEvent } from './events';
 import { executeMovePath } from './systems/movement';
 import { resolveMeleeAttack, resolveRangedAttack } from './systems/combat';
@@ -153,6 +154,16 @@ function handle(ctx: Ctx, state: GameState, action: Action): void {
           r: city.r,
         });
       }
+      break;
+    }
+
+    case 'BUY_TILE': {
+      const city = state.cities[action.city];
+      const player = state.players[action.player];
+      player.gold -= tilePurchaseCost(ctx, city, action.tile);
+      const idx = tileIndex(action.tile, state.mapW, state.mapH);
+      state.tiles[idx].ownerCity = city.id;
+      recomputeVisibility(ctx, state, action.player);
       break;
     }
 

@@ -7,7 +7,7 @@ import type { AiWeights, BeliefDef, CivicEffect, PartialYields, PromotionDef, Sp
 import { addYields, emptyYields, YIELD_KEYS } from '../data/types';
 import type { Axial, City, Ctx, GameState, PlayerId, ProductionItem, TradeRoute, Unit } from './types';
 import { sortedIds } from './types';
-import { hexDistance, hexesWithin, tileIndex } from './hex';
+import { hexDistance, hexesWithin, neighbors, tileIndex } from './hex';
 
 // --- basic lookups ---
 
@@ -693,4 +693,40 @@ export function promotionBonus(
     }
   }
   return Math.floor((base * pct) / 100);
+}
+
+/** Gold cost to buy `tile` for `city` — distance-based; pure. */
+export function tilePurchaseCost(ctx: Ctx, city: City, tile: Axial): number {
+  const tp = ctx.rules.settings.tilePurchase;
+  return tp.baseCost + tp.costPerRing * (hexDistance({ q: city.q, r: city.r }, tile) - 1);
+}
+
+/** Eligibility (in-range, unowned, adjacent to the buyer's land) — NOT affordability. */
+export function tilePurchaseCheck(
+  ctx: Ctx, state: GameState, player: PlayerId, city: City, tile: Axial,
+): { ok: true; cost: number } | { ok: false; reason: string } {
+  const tp = ctx.rules.settings.tilePurchase;
+  const dist = hexDistance({ q: city.q, r: city.r }, tile);
+  if (dist < 1 || dist > tp.radius) return { ok: false, reason: 'tile is out of range' };
+  const idx = tileIndex(tile, state.mapW, state.mapH);
+  if (idx < 0) return { ok: false, reason: 'off the map' };
+  if (state.tiles[idx].ownerCity !== null) return { ok: false, reason: 'tile is already owned' };
+  const adjacent = neighbors(tile).some((nb) => {
+    const ni = tileIndex(nb, state.mapW, state.mapH);
+    return ni >= 0 && tileOwner(state, ni) === player;
+  });
+  if (!adjacent) return { ok: false, reason: 'tile must touch your territory' };
+  return { ok: true, cost: tilePurchaseCost(ctx, city, tile) };
+}
+
+/** Every tile a city may currently buy, with its cost (UI/renderer highlight source). */
+export function buyableTiles(ctx: Ctx, state: GameState, city: City): { idx: number; cost: number }[] {
+  const out: { idx: number; cost: number }[] = [];
+  for (const h of hexesWithin({ q: city.q, r: city.r }, ctx.rules.settings.tilePurchase.radius)) {
+    const idx = tileIndex(h, state.mapW, state.mapH);
+    if (idx < 0) continue;
+    const chk = tilePurchaseCheck(ctx, state, city.owner, city, h);
+    if (chk.ok) out.push({ idx, cost: chk.cost });
+  }
+  return out;
 }
