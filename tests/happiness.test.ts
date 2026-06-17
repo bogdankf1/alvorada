@@ -16,15 +16,23 @@ function oneCity(): { s: ReturnType<typeof flatWorld>; id: number } {
 }
 
 describe('empireHappiness', () => {
-  it('base minus per-city minus per-pop', () => {
+  it('base minus per-city minus per-pop above the free-pop buffer', () => {
     const { s, id } = oneCity();
-    s.cities[id].pop = 3;
-    // base 9 + Pax Romana 3 - perCity 2 - perPop*3 = 12 - 5 = 7
+    s.cities[id].pop = 5;
+    // base 9 + Pax Romana 3 - perCity 2 - perPop*(5-3 free) = 12 - (2 + 2) = 8
     const h = empireHappiness(ctx, s, 0);
     expect(h.happy).toBe(12); // 9 base + 3 Pax Romana
-    expect(h.unhappy).toBe(2 + 3);
-    expect(h.net).toBe(7);
+    expect(h.unhappy).toBe(2 + 2);
+    expect(h.net).toBe(8);
     expect(h.tier).toBe('content');
+  });
+
+  it('population at or under the free-pop buffer costs no happiness', () => {
+    const { s, id } = oneCity();
+    s.cities[id].pop = 3; // == freePopPerCity
+    const h = empireHappiness(ctx, s, 0);
+    expect(h.unhappy).toBe(2); // perCity only; no per-pop
+    expect(h.net).toBe(10);
   });
 
   it('happiness buildings and happiness wonders add happy', () => {
@@ -61,11 +69,11 @@ describe('empireHappiness', () => {
 
   it('tiers: content at 0, unhappy below 0, veryUnhappy at the threshold', () => {
     const { s, id } = oneCity();
-    s.cities[id].pop = 10; // 9+3 - 2 - 10 = 0 → content
+    s.cities[id].pop = 13; // 12 - (2 + (13-3)) = 0 → content
     expect(empireHappiness(ctx, s, 0).tier).toBe('content');
-    s.cities[id].pop = 11; // -1 → unhappy
+    s.cities[id].pop = 14; // -1 → unhappy
     expect(empireHappiness(ctx, s, 0).tier).toBe('unhappy');
-    s.cities[id].pop = 20; // 9+3 - 2 - 20 = -10 → veryUnhappy
+    s.cities[id].pop = 23; // 12 - (2 + (23-3)) = -10 → veryUnhappy
     expect(empireHappiness(ctx, s, 0).tier).toBe('veryUnhappy');
   });
 });
@@ -92,12 +100,18 @@ describe('happiness brake', () => {
     expect(s3.cities[id].food).toBeLessThan(contentFood);
   });
 
-  it('settlers cannot be produced while the empire is unhappy', () => {
+  it('settlers can still be produced while the empire is unhappy (no happiness gate)', () => {
     const { s, id } = oneCity();
-    s.cities[id].pop = 3;
+    s.cities[id].pop = 3; // size gate (>=2) satisfied
     expect(canProduce(ctx, s, s.cities[id], { kind: 'unit', id: 'settler' }).ok).toBe(true);
     const unhappy = customCtx((r) => { r.settings.happiness.perCity = 1000; });
-    expect(canProduce(unhappy, s, s.cities[id], { kind: 'unit', id: 'settler' }).ok).toBe(false);
+    expect(canProduce(unhappy, s, s.cities[id], { kind: 'unit', id: 'settler' }).ok).toBe(true);
+  });
+
+  it('a size-1 city still cannot build a settler', () => {
+    const { s, id } = oneCity();
+    s.cities[id].pop = 1;
+    expect(canProduce(ctx, s, s.cities[id], { kind: 'unit', id: 'settler' }).ok).toBe(false);
   });
 });
 
@@ -146,7 +160,7 @@ describe('happinessBreakdown', () => {
   it('itemizes helping and hurting sources that sum to the net', () => {
     const { s, id } = oneCity();
     const c = s.cities[id];
-    c.pop = 3;
+    c.pop = 5; // above the free-pop buffer (3) so a Population line appears
     c.buildings.push('colosseum'); // +3 happy
     const bd = happinessBreakdown(ctx, s, 0);
     expect(bd.reduce((t, x) => t + x.amount, 0)).toBe(empireHappiness(ctx, s, 0).net);

@@ -61,6 +61,7 @@ const SETTINGS: RulesetSettings = {
     baseEmpire: 9,
     perCity: 2,
     perPop: 1,
+    freePopPerCity: 3,
     occupiedExtra: 3,
     luxuryHappiness: 4,
     unhappyGrowthDivisor: 3,

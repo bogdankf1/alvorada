@@ -368,7 +368,7 @@ export function empireHappiness(ctx: Ctx, state: GameState, pid: PlayerId): Happ
   let happy = h.baseEmpire;
   let unhappy = cities.length * h.perCity;
   for (const c of cities) {
-    unhappy += c.pop * h.perPop;
+    unhappy += Math.max(0, c.pop - h.freePopPerCity) * h.perPop;
     if (c.occupied && !c.buildings.some((b) => ctx.rules.buildings[b].pacifies)) unhappy += h.occupiedExtra;
     for (const b of c.buildings) happy += ctx.rules.buildings[b].happiness ?? 0;
   }
@@ -433,8 +433,8 @@ export function happinessBreakdown(
 
   // hurting
   if (cities.length) out.push({ label: `Cities ×${cities.length}`, amount: -cities.length * h.perCity });
-  const pop = cities.reduce((s, c) => s + c.pop, 0);
-  if (pop) out.push({ label: `Population ×${pop}`, amount: -pop * h.perPop });
+  const taxedPop = cities.reduce((s, c) => s + Math.max(0, c.pop - h.freePopPerCity), 0);
+  if (taxedPop) out.push({ label: `Population ×${taxedPop} (taxable)`, amount: -taxedPop * h.perPop });
   const occ = cities.filter(
     (c) => c.occupied && !c.buildings.some((b) => ctx.rules.buildings[b].pacifies),
   ).length;
@@ -507,8 +507,6 @@ export function canProduce(
     if (def.requiresResource && strategicAvailability(ctx, state, city.owner, def.requiresResource) <= 0)
       return { ok: false, reason: `requires ${ctx.rules.resources[def.requiresResource].name}` };
     if (def.abilities?.includes('foundCity')) {
-      if (empireHappiness(ctx, state, city.owner).net < 0)
-        return { ok: false, reason: 'the empire is too unhappy to support settlers' };
       if (city.pop < 2) return { ok: false, reason: 'city too small (needs population 2)' };
     }
     return { ok: true };

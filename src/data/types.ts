@@ -230,6 +230,7 @@ export interface HappinessSettings {
   baseEmpire: number;
   perCity: number;
   perPop: number;
+  freePopPerCity: number;
   occupiedExtra: number;
   luxuryHappiness: number;
   unhappyGrowthDivisor: number;
