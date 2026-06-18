@@ -882,6 +882,17 @@ export class MapRenderer {
       g.textBaseline = 'middle';
       g.fillText('z', x + 11, y - 11);
     }
+    // embarked marker — a land unit riding the sea (rules-driven water check)
+    const utIdx = tileIndex({ q: u.q, r: u.r }, s.mapW, s.mapH);
+    const ut = utIdx >= 0 ? s.tiles[utIdx] : null;
+    if (this.rules.units[u.def].domain === 'land' && ut && this.rules.terrains[ut.terrain].water) {
+      g.strokeStyle = css(rgb(PALETTE.brass), 0.8);
+      g.lineWidth = 1.6;
+      g.beginPath();
+      g.moveTo(x - 8, y + 13);
+      g.quadraticCurveTo(x, y + 16, x + 8, y + 13);
+      g.stroke();
+    }
     g.restore();
   }
 

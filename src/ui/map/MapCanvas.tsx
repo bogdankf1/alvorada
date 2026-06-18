@@ -12,7 +12,7 @@ import { playSfx } from '../audio';
 import { axialOfIndex, hexDistance, hexesWithin, pixelToHex, tileIndex } from '../../engine/hex';
 import { HEX } from './art';
 import { VIS_VISIBLE, type Axial } from '../../engine/types';
-import { atWar, buyableTiles, cityAt, militaryAt, tilePurchaseCheck, unitsAt } from '../../engine/selectors';
+import { atWar, buyableTiles, cityAt, isWater, militaryAt, tilePurchaseCheck, unitsAt } from '../../engine/selectors';
 import { findPath, reachableTiles } from '../../engine/map/pathfind';
 
 /** The live renderer, readable by HUD widgets (minimap viewport rect). */
@@ -341,6 +341,15 @@ export function handleTileClick(idx: number, a: Axial, renderer: MapRenderer): v
         }
         return;
       }
+    }
+
+    // embark: a tech'd land unit clicks an adjacent water tile from land
+    const clickedWater = isWater(gameCtx, game.tiles[idx].terrain);
+    const adjacent = hexDistance({ q: selected.q, r: selected.r }, a) === 1;
+    const onLand = !isWater(gameCtx, game.tiles[tileIndex({ q: selected.q, r: selected.r }, game.mapW, game.mapH)].terrain);
+    const canEmbark = def.domain === 'land' && game.players[viewingPlayer].techs.includes(gameCtx.rules.settings.naval.embarkTech);
+    if (clickedWater && adjacent && onLand && canEmbark) {
+      if (humanDispatch({ type: 'MOVE_UNIT', player: viewingPlayer, unit: selected.id, path: [a] })) return;
     }
 
     // movement order (also multi-turn goto)
