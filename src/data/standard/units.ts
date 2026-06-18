@@ -153,6 +153,19 @@ export const UNITS: Record<string, UnitDef> = {
     class: 'civilian', domain: 'land', abilities: ['trade'],
     requiresTech: 'currency', art: { glyph: 'gear' },
   },
+  // --- naval units ---
+  galley: {
+    id: 'galley', name: 'Galley', cost: 60, moves: 3, sight: 2, strength: 12,
+    class: 'melee', domain: 'sea', requiresTech: 'bronze_working', art: { glyph: 'sword' },
+  },
+  galleass: {
+    id: 'galleass', name: 'Galleass', cost: 110, moves: 3, sight: 2, strength: 14,
+    ranged: { strength: 16, range: 2 }, class: 'ranged', domain: 'sea', requiresTech: 'machinery', art: { glyph: 'bow' },
+  },
+  frigate: {
+    id: 'frigate', name: 'Frigate', cost: 150, moves: 4, sight: 2, strength: 20,
+    ranged: { strength: 28, range: 2 }, class: 'ranged', domain: 'sea', requiresTech: 'metallurgy', art: { glyph: 'bow' },
+  },
   // --- civ uniques ---
   legion: {
     id: 'legion', name: 'Legion', cost: 88, moves: 2, sight: 2, strength: 18,

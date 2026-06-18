@@ -14,6 +14,7 @@ import {
   growthThreshold,
   isCivilian,
   isImpassable,
+  isWater,
   itemCost,
   militaryAt,
   tileYields,
@@ -80,7 +81,10 @@ export function placeProducedUnit(ctx: Ctx, state: GameState, city: City, defId:
   const candidates = [center, ...ring(center, 1), ...ring(center, 2)];
   for (const a of candidates) {
     const idx = tileIndex(a, state.mapW, state.mapH);
-    if (idx < 0 || isImpassable(ctx, state, idx)) continue;
+    if (idx < 0) continue;
+    const wantsWater = def.domain === 'sea';
+    if (wantsWater !== isWater(ctx, state.tiles[idx].terrain)) continue; // sea→water, land→land
+    if (def.domain === 'land' && isImpassable(ctx, state, idx)) continue; // mountains block land units
     const owner = state.tiles[idx].ownerCity;
     if (owner !== null && state.cities[owner]?.owner !== city.owner) continue;
     const mil = militaryAt(ctx, state, a);

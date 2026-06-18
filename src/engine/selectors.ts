@@ -511,6 +511,8 @@ export function canProduce(
     if (def.abilities?.includes('foundCity')) {
       if (city.pop < 2) return { ok: false, reason: 'city too small (needs population 2)' };
     }
+    if (def.domain === 'sea' && !isCoastal(ctx, state, city))
+      return { ok: false, reason: 'only a coastal city can build ships' };
     return { ok: true };
   }
   const def = ctx.rules.buildings[item.id];

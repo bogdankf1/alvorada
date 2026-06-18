@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { ctx, flatWorld, spawn, idxOf, refreshVis, thaw } from './helpers';
 import { SCHEMA_VERSION } from '../src/engine/serialize';
-import { isEmbarked, isCoastal, unitCanOccupy } from '../src/engine/selectors';
+import { isEmbarked, isCoastal, unitCanOccupy, canProduce } from '../src/engine/selectors';
 import { tileIndex } from '../src/engine/hex';
 import { findPath } from '../src/engine/map/pathfind';
 import { validateAction } from '../src/engine/validate';
@@ -73,6 +73,24 @@ describe('domain-aware movement', () => {
     refreshVis(s);
     const res = validateAction(ctx, s, { type: 'MOVE_UNIT', player: 0, unit: u.id, path: [{ q: 8, r: 5 }] });
     expect(res.ok).toBe(false);
+  });
+});
+
+describe('naval units & coastal production', () => {
+  it('a coastal city can produce a Galley; an inland city cannot', () => {
+    const s = coastWorld();
+    s.players[0].techs.push('bronze_working');
+    const coastal = { q: 7, r: 5, owner: 0, buildings: [] as string[], pop: 3 } as any;
+    const inland = { q: 2, r: 5, owner: 0, buildings: [] as string[], pop: 3 } as any;
+    expect(canProduce(ctx, s, coastal, { kind: 'unit', id: 'galley' }).ok).toBe(true);
+    expect(canProduce(ctx, s, inland, { kind: 'unit', id: 'galley' }).ok).toBe(false);
+  });
+
+  it('a sea unit may occupy water but not land', () => {
+    const s = coastWorld();
+    const g = spawn(s, 0, 'galley', 10, 5); // on water
+    expect(unitCanOccupy(ctx, s, g, idxOf(s, 11, 5))).toBe(true);  // water
+    expect(unitCanOccupy(ctx, s, g, idxOf(s, 5, 5))).toBe(false);  // land
   });
 });
 
