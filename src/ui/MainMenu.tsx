@@ -12,6 +12,7 @@ const SIZES = [
 
 export function MainMenu() {
   const [size, setSize] = useState<(typeof SIZES)[number]['id']>('standard');
+  const [mapType, setMapType] = useState<'continents' | 'islands'>('continents');
   const [civ, setCiv] = useState('rome');
   const [seedText, setSeedText] = useState(() => String(randomSeed()));
   const autosave = useMemo(loadAutosave, []);
@@ -31,6 +32,7 @@ export function MainMenu() {
         mapW: cfg.w,
         mapH: cfg.h,
         players,
+        mapType,
       }),
     );
   };
@@ -62,6 +64,18 @@ export function MainMenu() {
                 <small>
                   {s.w}×{s.h} · {s.blurb}
                 </small>
+              </div>
+            ))}
+          </div>
+          <div className="menu-row">
+            {(['continents', 'islands'] as const).map((mt) => (
+              <div
+                key={mt}
+                className={`choice ${mapType === mt ? 'is-active' : ''}`}
+                onClick={() => setMapType(mt)}
+              >
+                {mt === 'continents' ? 'Continents' : 'Islands'}
+                <small>{mt === 'continents' ? 'one landmass' : 'seas to cross'}</small>
               </div>
             ))}
           </div>
