@@ -14,6 +14,7 @@ import { TileInfo } from './panels/TileInfo';
 import { AiLog } from './panels/AiLog';
 import { AiThinkingBanner, EventModal, GameMenu, ProposalModal, ReligionModal, TradeRouteModal, VictoryOverlay, WarConfirm } from './panels/Modals';
 import { Chronicle } from './panels/Chronicle';
+import { MilestoneBanner } from './panels/MilestoneBanner';
 import { Demographics } from './panels/Demographics';
 import { VictoryProgress } from './panels/VictoryProgress';
 import { appStore, useApp } from '../app/store';
@@ -101,6 +102,7 @@ export function GameScreen() {
       <AiThinkingBanner />
       <Notifications />
       <EraCeremony />
+      <MilestoneBanner />
       <CityPanel />
       <UnitPanel />
       <TileInfo />
