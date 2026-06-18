@@ -269,6 +269,12 @@ export function cityYields(ctx: Ctx, state: GameState, city: City): CityYieldBre
     const def = ctx.rules.buildings[b];
     addYields(total, def.yields);
     if (def.perPop) total[def.perPop.yield] += Math.floor(city.pop / def.perPop.per);
+    if (def.perWorkedWater) {
+      const n = alloc.worked.filter(
+        (idx) => ctx.rules.terrains[state.tiles[idx].terrain].water,
+      ).length;
+      total[def.perWorkedWater.yield] += n * def.perWorkedWater.amount;
+    }
   }
   if (s.sciencePerPopHalf) total.science += Math.floor(city.pop / 2);
   addYields(total, wonderOwnerEffects(ctx, state, city.owner).empire);
@@ -523,6 +529,8 @@ export function canProduce(
   if (city.buildings.includes(item.id)) return { ok: false, reason: 'already built' };
   if (def.requiresTech && !player.techs.includes(def.requiresTech))
     return { ok: false, reason: `requires ${ctx.rules.techs[def.requiresTech].name}` };
+  if (def.requiresCoastal && !isCoastal(ctx, state, city))
+    return { ok: false, reason: 'only a coastal city can build a harbor' };
   if (def.wonder && state.wondersBuilt[item.id] !== undefined)
     return { ok: false, reason: 'wonder already built elsewhere' };
   return { ok: true };

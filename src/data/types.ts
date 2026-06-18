@@ -179,6 +179,8 @@ export interface BuildingDef {
   cost: number;
   yields: PartialYields;
   perPop?: { yield: YieldKey; per: number }; // +1 yield per `per` population
+  perWorkedWater?: { yield: YieldKey; amount: number };
+  requiresCoastal?: boolean;
   defense?: { strength: number };
   requiresTech?: string;
   civ?: string; // if set, only this civ may build it

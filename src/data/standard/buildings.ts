@@ -48,6 +48,16 @@ export const BUILDINGS: Record<string, BuildingDef> = {
     requiresTech: 'masonry',
     art: { glyph: 'wall' },
   },
+  harbor: {
+    id: 'harbor',
+    name: 'Harbor',
+    cost: 90,
+    yields: {},
+    requiresTech: 'bronze_working',
+    requiresCoastal: true,
+    perWorkedWater: { yield: 'production', amount: 1 },
+    art: { glyph: 'amphora' },
+  },
   market: {
     id: 'market',
     name: 'Market',

@@ -98,3 +98,28 @@ describe('Fishing Boats', () => {
     ).toBe(false);
   });
 });
+
+describe('Harbor', () => {
+  it('is coastal-gated', () => {
+    const { s } = seaWorld();
+    s.players[0].techs.push('bronze_working');
+    const coastal = { q: 7, r: 5, owner: 0, buildings: [] as string[], pop: 3 } as any;
+    const inland = { q: 2, r: 5, owner: 0, buildings: [] as string[], pop: 3 } as any;
+    expect(canProduce(ctx, s, coastal, { kind: 'building', id: 'harbor' }).ok).toBe(true);
+    expect(canProduce(ctx, s, inland, { kind: 'building', id: 'harbor' }).ok).toBe(false);
+  });
+
+  it('adds +1 production per worked water tile', () => {
+    const { s, id } = seaWorld();
+    const city = s.cities[id];
+    city.pop = 7; // enough citizens to work all ring-1 tiles (incl. the 2 coast tiles)
+    const base = cityYields(ctx, s, city);
+    const waterWorked = base.worked.filter(
+      (idx) => ctx.rules.terrains[s.tiles[idx].terrain].water,
+    ).length;
+    city.buildings.push('harbor');
+    const withHarbor = cityYields(ctx, s, city);
+    expect(withHarbor.total.production - base.total.production).toBe(waterWorked);
+    expect(waterWorked).toBeGreaterThan(0); // the coastal city actually works water
+  });
+});
