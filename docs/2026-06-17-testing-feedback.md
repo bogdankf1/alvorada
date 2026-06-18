@@ -130,7 +130,17 @@ the improvement loop:
 
 **Naval coastal-first bet COMPLETE (both specs).** Remaining naval = **Track C** (islands + naval AI).
 
-Backlog remaining below: naval track C, modern-era tech tree, merge-adjacent-improvements, civilopedia.
+## ✅ Track C — Islands Map-Gen (Spec A of 2) — SHIPPED (2026-06-18, merged to `main` locally)
+
+Opt-in island maps. 264 tests green, **no schema bump** (config-only), **re-tune-free** (continents default + seeds 314/949 untouched). Decomposed Track C into **Spec A (islands map-gen, this)** + **Spec B (naval AI, next)**.
+- **Opt-in `mapType: 'continents' | 'islands'`** (default continents) — the existing generator stays byte-identical behind the branch; new `generateIslandsMap` is fully separate.
+- **Topology:** "continents + islands" — `K = max(2, round(players/2))` large landmasses (~2 civs each) from multi-center elevation falloff + scattered deep-ocean islets; starts distributed across the K largest components (`placeStartsIslands`, with the 8-attempt retry rejecting seeds that don't separate).
+- **UI:** Continents/Islands toggle in the new-game menu.
+- **Determinism dual-guard:** a continents-output regression fingerprint + the full self-play suite both prove the default world is unchanged. Island game is a *smoke* test (runs 40 turns legally + replays) — no victory-seed test until naval AI exists.
+
+**Next: Spec B — Naval AI** (the hard half: AI builds ships/work-boats/harbors, embarks+escorts settlers to colonize islets/other continents, sea exploration, naval defense/war). This is where AI coastal economies finally start shifting victory seeds.
+
+Backlog remaining below: naval Spec B (naval AI), modern-era tech tree, merge-adjacent-improvements, civilopedia.
 
 ---
 
