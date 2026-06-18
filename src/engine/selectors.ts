@@ -806,7 +806,7 @@ export function victoryProgress(ctx: Ctx, state: GameState, pid: PlayerId): Vict
   const strongest = nonBarb
     .filter((p) => p.alive && p.id !== pid)
     .reduce((m, r) => Math.max(m, r.cultureTotal * v.culture.dominanceFactor), 0);
-  const culture = strongest > 0 ? inf / strongest : 1;
+  const culture = inf / Math.max(0.0001, strongest); // clamped denom: reads ~0 early, →1 only as you truly dominate
 
   const myScore = computeScore(ctx, state, pid);
   const score = myScore / v.scoreThreshold;
