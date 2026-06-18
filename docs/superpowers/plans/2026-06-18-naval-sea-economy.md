@@ -93,11 +93,21 @@ A sea-domain civilian with the `improve` ability, buildable only by coastal citi
 Create `tests/sea-economy.test.ts`:
 ```ts
 import { describe, it, expect } from 'vitest';
-import { ctx, flatWorld, spawn, idxOf, refreshVis, thaw, fullRound } from './helpers';
+import { ctx, flatWorld, spawn, idxOf, refreshVis, thaw } from './helpers';
 import { tileIndex } from '../src/engine/hex';
 import { canProduce, tileYields, cityYields } from '../src/engine/selectors';
 import { validateAction } from '../src/engine/validate';
 import { applyAction } from '../src/engine/reducer';
+import type { GameState } from '../src/engine/types';
+
+// `endTurn`/`fullRound` are file-local helpers (same pattern as tests/engine.test.ts — they are NOT exported from helpers.ts).
+const endTurn = (s: GameState) => applyAction(ctx, s, { type: 'END_TURN', player: s.currentPlayer });
+const fullRound = (s: GameState) => {
+  const n = s.players.filter((p) => p.alive).length;
+  let st = s;
+  for (let i = 0; i < n; i++) st = endTurn(st);
+  return st;
+};
 
 /** A coastal city for player 0 at (7,5); everything east of q=8 is coast. Returns state + city id. */
 function seaWorld(): { s: ReturnType<typeof flatWorld>; id: number } {
