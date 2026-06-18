@@ -109,6 +109,7 @@ export function TopBar() {
         <span className="per-turn">/ {gameCtx.rules.settings.victory.scoreThreshold}</span>
       </span>
       <button className="btn btn--ghost" onClick={() => appStore.set({ overlay: 'civics' })} title="Civics (C)">Civics</button>
+      <button className="btn btn--ghost" onClick={() => appStore.set({ overlay: 'victory' })} title="Victory progress (V)">Victory</button>
       <button
         className="btn btn--ghost"
         onClick={() => appStore.set({ overlay: 'diplomacy' })}

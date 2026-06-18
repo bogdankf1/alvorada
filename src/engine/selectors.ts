@@ -732,3 +732,53 @@ export function buyableTiles(ctx: Ctx, state: GameState, city: City): { idx: num
   }
   return out;
 }
+
+export interface VictoryPath {
+  kind: 'conquest' | 'science' | 'culture' | 'score';
+  pct: number; // 0..1
+  label: string;
+  detail: string;
+}
+
+/** Prerequisite closure (BFS over TechDef.prereqs) of the science-capstone tech. */
+function capstoneClosure(ctx: Ctx): Set<string> {
+  const seen = new Set<string>();
+  const stack = [ctx.rules.settings.victory.scienceCapstone];
+  while (stack.length) {
+    const id = stack.pop()!;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    for (const pre of ctx.rules.techs[id]?.prereqs ?? []) stack.push(pre);
+  }
+  return seen;
+}
+
+/** Pure progress (0..1) toward each of the four victory paths, for the UI finish line. */
+export function victoryProgress(ctx: Ctx, state: GameState, pid: PlayerId): VictoryPath[] {
+  const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
+  const v = ctx.rules.settings.victory;
+  const nonBarb = state.players.filter((p) => !p.barbarian);
+  const rivalsAtStart = nonBarb.length - 1;
+  const aliveRivals = nonBarb.filter((p) => p.alive && p.id !== pid).length;
+  const conquest = rivalsAtStart > 0 ? (rivalsAtStart - aliveRivals) / rivalsAtStart : 0;
+
+  const closure = capstoneClosure(ctx);
+  const have = state.players[pid].techs.filter((t) => closure.has(t)).length;
+  const science = closure.size ? have / closure.size : 0;
+
+  const inf = influence(ctx, state, pid);
+  const strongest = nonBarb
+    .filter((p) => p.alive && p.id !== pid)
+    .reduce((m, r) => Math.max(m, r.cultureTotal * v.culture.dominanceFactor), 0);
+  const culture = strongest > 0 ? inf / strongest : 1;
+
+  const myScore = computeScore(ctx, state, pid);
+  const score = myScore / v.scoreThreshold;
+
+  return [
+    { kind: 'conquest', pct: clamp01(conquest), label: 'Conquest', detail: `${aliveRivals} rival empire(s) remain` },
+    { kind: 'science', pct: clamp01(science), label: 'Science', detail: `${have}/${closure.size} techs to ${ctx.rules.techs[v.scienceCapstone].name}` },
+    { kind: 'culture', pct: clamp01(culture), label: 'Culture', detail: state.turn < v.culture.minTurn ? `available after turn ${v.culture.minTurn}` : `${inf} influence vs rivals` },
+    { kind: 'score', pct: clamp01(score), label: 'Score', detail: `${myScore}/${v.scoreThreshold} · turn ${state.turn}/${v.turnLimit}` },
+  ];
+}
