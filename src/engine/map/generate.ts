@@ -268,6 +268,53 @@ function placeStarts(
   return null;
 }
 
+function placeStartsIslands(
+  tiles: Tile[], W: number, H: number,
+  component: number[], componentSizes: number[], playerCount: number, rules: Ruleset,
+): Axial[] | null {
+  const K = Math.max(2, Math.round(playerCount / 2));
+  const ranked = componentSizes
+    .map((size, id) => ({ id, size }))
+    .sort((a, b) => b.size - a.size || a.id - b.id);
+  if (ranked.length < K) return null;
+  const continents = ranked.slice(0, K);
+  const quotas = new Array(K).fill(0);
+  for (let i = 0; i < playerCount; i++) quotas[i % K]++;
+  for (let c = 0; c < K; c++) if (continents[c].size < 3 * quotas[c]) return null;
+
+  const chosen: Axial[] = [];
+  for (let c = 0; c < K; c++) {
+    const comp = continents[c].id;
+    const quota = quotas[c];
+    const cands: { a: Axial; score: number; i: number }[] = [];
+    for (let i = 0; i < tiles.length; i++) {
+      if (component[i] !== comp) continue;
+      const t = tiles[i];
+      if (t.elevation === 'mountain' || t.terrain === 'snow' || t.terrain === 'desert') continue;
+      const a = axialOfIndex(i, W);
+      const col = i % W;
+      if (col < 2 || col > W - 3 || a.r < 2 || a.r > H - 3) continue;
+      cands.push({ a, score: startScore(tiles, W, H, a, rules), i });
+    }
+    if (cands.length < quota) return null;
+    cands.sort((x, y) => y.score - x.score || x.i - y.i);
+    let placed: Axial[] | null = null;
+    for (let minDist = Math.max(6, Math.floor((W + H) / 8)); minDist >= 3; minDist--) {
+      const pick: Axial[] = [];
+      for (const cd of cands) {
+        if (pick.every((s) => hexDistance(s, cd.a) >= minDist)) {
+          pick.push(cd.a);
+          if (pick.length === quota) break;
+        }
+      }
+      if (pick.length === quota) { placed = pick; break; }
+    }
+    if (!placed) return null;
+    chosen.push(...placed);
+  }
+  return chosen;
+}
+
 function generateIslandsMap(config: GameConfig, rules: Ruleset): GeneratedMap {
   const { mapW: W, mapH: H, seed } = config;
   const n = W * H;
@@ -358,9 +405,7 @@ function tryGenerateIslands(
   paintClimate(tiles, W, H, n, elevation, land, px, py, seed);
   placeResources(tiles, n, rng, rules);
 
-  // TEMPORARY: largest-component placement; a later task distributes across continents.
-  const mainContinent = componentSizes.indexOf(Math.max(...componentSizes));
-  const starts = placeStarts(tiles, W, H, component, mainContinent, playerCount, rules);
+  const starts = placeStartsIslands(tiles, W, H, component, componentSizes, playerCount, rules);
   if (!starts) return null;
 
   fairnessPass(tiles, W, H, starts, rules);

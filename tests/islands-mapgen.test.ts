@@ -74,3 +74,19 @@ describe('islands map-gen', () => {
     expect(sizes.some((s) => s >= 1 && s <= 6)).toBe(true);
   });
 });
+
+describe('islands start distribution', () => {
+  it('spreads the 4 starts across >= 2 landmasses, none on a tiny islet', () => {
+    const W = 46;
+    const m = generateMap(cfg(2025, 'islands'), STANDARD_RULESET);
+    const { comp, sizes } = label(m, W, 28);
+    // label indexes comp by flat i = r*W + offsetCol; convert axial start to flat correctly
+    const startComps = m.starts.map((s) => {
+      const col = s.q + ((s.r - (s.r & 1)) >> 1);
+      return comp[s.r * W + col];
+    });
+    expect(new Set(startComps).size).toBeGreaterThanOrEqual(2);            // distributed
+    for (const c of startComps) expect(sizes[c]).toBeGreaterThanOrEqual(6); // a continent, not an islet
+    expect(m.starts.length).toBe(4);
+  });
+});
