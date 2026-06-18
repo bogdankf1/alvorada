@@ -13,6 +13,7 @@ import { TileInfo } from './panels/TileInfo';
 import { AiLog } from './panels/AiLog';
 import { AiThinkingBanner, EventModal, GameMenu, ProposalModal, ReligionModal, TradeRouteModal, VictoryOverlay, WarConfirm } from './panels/Modals';
 import { Chronicle } from './panels/Chronicle';
+import { Demographics } from './panels/Demographics';
 import { VictoryProgress } from './panels/VictoryProgress';
 import { appStore, useApp } from '../app/store';
 import { endTurnRequest, humanDispatch, isMyTurn, selectNextIdleUnit } from './actions';
@@ -64,6 +65,9 @@ export function GameScreen() {
         case 'KeyV':
           appStore.set({ overlay: ov === 'victory' ? null : 'victory' });
           break;
+        case 'KeyB':
+          appStore.set({ overlay: ov === 'demographics' ? null : 'demographics' });
+          break;
         case 'KeyN':
           selectNextIdleUnit();
           break;
@@ -105,6 +109,7 @@ export function GameScreen() {
       {overlay === 'diplomacy' && <ForeignAffairs />}
       {overlay === 'chronicle' && <Chronicle />}
       {overlay === 'victory' && <VictoryProgress />}
+      {overlay === 'demographics' && <Demographics />}
       <GameMenu />
       <WarConfirm />
       <ProposalModal />

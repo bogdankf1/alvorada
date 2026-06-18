@@ -753,6 +753,42 @@ function capstoneClosure(ctx: Ctx): Set<string> {
   return seen;
 }
 
+export interface DemoRow {
+  player: PlayerId;
+  civ: string;
+  name: string;
+  isYou: boolean;
+  score: number;
+  techs: number;
+  gold: number;
+  pop: number;
+  military: number;
+  influence: number;
+}
+
+/** You + every met, alive, non-barbarian rival, with comparison metrics (fog-honest). */
+export function demographics(ctx: Ctx, state: GameState, pid: PlayerId): DemoRow[] {
+  const rows: DemoRow[] = [];
+  for (const p of state.players) {
+    if (p.barbarian || !p.alive) continue;
+    const isYou = p.id === pid;
+    if (!isYou && !state.relations[pid][p.id].met) continue;
+    rows.push({
+      player: p.id,
+      civ: p.civ,
+      name: p.name,
+      isYou,
+      score: computeScore(ctx, state, p.id),
+      techs: p.techs.length,
+      gold: p.gold,
+      pop: playerCities(state, p.id).reduce((s, c) => s + c.pop, 0),
+      military: militaryPower(ctx, state, p.id),
+      influence: influence(ctx, state, p.id),
+    });
+  }
+  return rows;
+}
+
 /** Pure progress (0..1) toward each of the four victory paths, for the UI finish line. */
 export function victoryProgress(ctx: Ctx, state: GameState, pid: PlayerId): VictoryPath[] {
   const clamp01 = (x: number) => Math.max(0, Math.min(1, x));

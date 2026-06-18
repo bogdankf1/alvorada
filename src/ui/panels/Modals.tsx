@@ -5,7 +5,7 @@ import { appStore, useApp } from '../../app/store';
 import { humanDispatch } from '../actions';
 import { LocalGame, currentGame, gameCtx, quitToMenu, startGame } from '../../app/driver';
 import { exportSave, importSave } from '../../app/save';
-import { computeScore, playerCities } from '../../engine/selectors';
+import { computeScore, influence, militaryPower, playerCities } from '../../engine/selectors';
 import { validateAction } from '../../engine/validate';
 
 export function WarConfirm() {
@@ -112,6 +112,7 @@ export function VictoryOverlay() {
   const winner = game.winner ? game.players[game.winner.player] : null;
   const won = game.winner?.player === viewer;
   const scores = game.players
+    .filter((p) => !p.barbarian)
     .map((p) => ({ p, score: computeScore(gameCtx, game, p.id) }))
     .sort((a, b) => b.score - a.score);
 
@@ -133,18 +134,21 @@ export function VictoryOverlay() {
             : 'Your last city is lost, your people scattered.'}
         </div>
         <table className="score-table">
+          <thead>
+            <tr><th style={{ textAlign: 'left' }}>Nation</th><th>Score</th><th>Techs</th><th>Pop</th><th>Military</th><th>Culture</th></tr>
+          </thead>
           <tbody>
             {scores.map(({ p, score }) => (
               <tr key={p.id} style={{ opacity: p.alive ? 1 : 0.45 }}>
                 <td>
-                  <span
-                    className="civ-dot"
-                    style={{ background: p.color, display: 'inline-block', marginRight: 8 }}
-                  />
-                  {p.name} · {gameCtx.rules.civs[p.civ].name}
-                  {!p.alive && ' †'}
+                  <span className="civ-dot" style={{ background: p.color, display: 'inline-block', marginRight: 8 }} />
+                  {p.name} · {gameCtx.rules.civs[p.civ].name}{!p.alive && ' †'}
                 </td>
                 <td>{score}</td>
+                <td>{p.techs.length}</td>
+                <td>{playerCities(game, p.id).reduce((s, c) => s + c.pop, 0)}</td>
+                <td>{militaryPower(gameCtx, game, p.id)}</td>
+                <td>{influence(gameCtx, game, p.id)}</td>
               </tr>
             ))}
           </tbody>

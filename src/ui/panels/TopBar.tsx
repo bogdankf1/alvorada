@@ -110,6 +110,7 @@ export function TopBar() {
       </span>
       <button className="btn btn--ghost" onClick={() => appStore.set({ overlay: 'civics' })} title="Civics (C)">Civics</button>
       <button className="btn btn--ghost" onClick={() => appStore.set({ overlay: 'victory' })} title="Victory progress (V)">Victory</button>
+      <button className="btn btn--ghost" onClick={() => appStore.set({ overlay: 'demographics' })} title="Demographics (B)">Demographics</button>
       <button
         className="btn btn--ghost"
         onClick={() => appStore.set({ overlay: 'diplomacy' })}
