@@ -78,6 +78,22 @@ Still open below: naval, modern-era tech tree, merge-adjacent-improvements.
 
 ---
 
+## ✅ Legibility — SHIPPED (2026-06-18, merged to `main` locally)
+
+The roadmap's "contained" track (civilopedia deferred per the user). 240 tests green,
+**UI-layer + two pure selectors only — no engine logic, no schema bump, no determinism risk:**
+- **Victory-progress overlay** (`V`) — `victoryProgress` selector → four bars: conquest (rivals
+  eliminated), science (% of the capstone's prereq-closure held), culture (influence vs the
+  strongest rival's culture×factor), score (vs threshold + turn/limit). The finish line. [roadmap #6]
+- **Demographics overlay** (`B`) — `demographics` selector → you vs **met** rivals across
+  score/techs/gold/pop/military/culture; the end-game `VictoryOverlay` got the same metric columns.
+- **Era ceremony** — full-screen card when you advance an era (UI hook on `currentEra`).
+- **Milestone banners** — prominent centered banner for wonder-built / religion-founded.
+
+Still open below: civilopedia (deferred), naval, modern-era tech tree, merge-adjacent-improvements.
+
+---
+
 ## Batch 1 (2026-06-17)
 
 ### 1. Audio — sound effects + background music + settings mute toggle 🟢 NEW
