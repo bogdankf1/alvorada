@@ -7,6 +7,7 @@ import { initialState } from '../src/engine/state';
 import { applyAction } from '../src/engine/reducer';
 import { gameHash } from '../src/engine/serialize';
 import { decide } from '../src/ai/decide';
+import { axialOfIndex, neighbors, tileIndex } from '../src/engine/hex';
 import { ctx } from './helpers';
 
 const FOUR: PlayerSpec[] = [
@@ -36,21 +37,23 @@ describe('continents output (regression guard)', () => {
   });
 });
 
-/** Label connected land components; return per-tile component id (-1 for ocean) + sizes. */
+/**
+ * Label connected land components; return per-tile component id (-1 for ocean) + sizes.
+ * Uses the engine's own hex adjacency (`neighbors`/`axialOfIndex`/`tileIndex`) so the
+ * labeling is identical to the generator's — NOT hand-rolled offset math.
+ */
 function label(m: GeneratedMap, W: number, H: number) {
   const comp = new Array(m.tiles.length).fill(-1);
   const sizes: number[] = [];
   const isLand = (i: number) => m.tiles[i].terrain !== 'ocean' && m.tiles[i].terrain !== 'coast';
   for (let i = 0; i < m.tiles.length; i++) {
     if (!isLand(i) || comp[i] !== -1) continue;
-    let size = 0; const q = [i]; comp[i] = sizes.length;
-    while (q.length) {
-      const cur = q.pop()!; size++;
-      const a = { q: cur % W, r: Math.floor(cur / W) };
-      for (const nb of [ {q:a.q+1,r:a.r},{q:a.q-1,r:a.r},{q:a.q,r:a.r+1},{q:a.q,r:a.r-1},{q:a.q+1,r:a.r-1},{q:a.q-1,r:a.r+1} ]) {
-        if (nb.q < 0 || nb.q >= W || nb.r < 0 || nb.r >= H) continue;
-        const j = nb.r * W + nb.q;
-        if (isLand(j) && comp[j] === -1) { comp[j] = comp[cur]; q.push(j); }
+    let size = 0; const queue = [i]; comp[i] = sizes.length;
+    while (queue.length) {
+      const cur = queue.pop()!; size++;
+      for (const nb of neighbors(axialOfIndex(cur, W))) {
+        const j = tileIndex(nb, W, H);
+        if (j >= 0 && isLand(j) && comp[j] === -1) { comp[j] = comp[cur]; queue.push(j); }
       }
     }
     sizes.push(size);
@@ -82,14 +85,10 @@ describe('islands map-gen', () => {
 
 describe('islands start distribution', () => {
   it('spreads the 4 starts across >= 2 landmasses, none on a tiny islet', () => {
-    const W = 46;
+    const W = 46, H = 28;
     const m = generateMap(cfg(2025, 'islands'), STANDARD_RULESET);
-    const { comp, sizes } = label(m, W, 28);
-    // label indexes comp by flat i = r*W + offsetCol; convert axial start to flat correctly
-    const startComps = m.starts.map((s) => {
-      const col = s.q + ((s.r - (s.r & 1)) >> 1);
-      return comp[s.r * W + col];
-    });
+    const { comp, sizes } = label(m, W, H);
+    const startComps = m.starts.map((s) => comp[tileIndex(s, W, H)]);
     expect(new Set(startComps).size).toBeGreaterThanOrEqual(2);            // distributed
     for (const c of startComps) expect(sizes[c]).toBeGreaterThanOrEqual(6); // a continent, not an islet
     expect(m.starts.length).toBe(4);
