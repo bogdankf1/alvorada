@@ -179,6 +179,7 @@ export interface GameConfig {
   mapW: number;
   mapH: number;
   players: PlayerSpec[];
+  mapType?: 'continents' | 'islands';
 }
 
 export const VIS_UNSEEN = 0;
