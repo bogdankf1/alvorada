@@ -8,6 +8,7 @@ import { TechTree } from './panels/TechTree';
 import { Civics } from './panels/Civics';
 import { ForeignAffairs } from './panels/ForeignAffairs';
 import { Notifications } from './panels/Notifications';
+import { EraCeremony } from './panels/EraCeremony';
 import { HudRight } from './panels/HudRight';
 import { TileInfo } from './panels/TileInfo';
 import { AiLog } from './panels/AiLog';
@@ -99,6 +100,7 @@ export function GameScreen() {
       <TopBar />
       <AiThinkingBanner />
       <Notifications />
+      <EraCeremony />
       <CityPanel />
       <UnitPanel />
       <TileInfo />
