@@ -111,11 +111,26 @@ The roadmap's biggest deferred bet (#13), decomposed.
   seed re-tuned 938→949; science 314 held).
 - **UI** — embark-on-click + an embarked wave marker.
 
-**Still open: Spec 2 (Sea economy)** — sea resources + fishing boats + Work Boats + cities working
-sea tiles + harbor. **Track C** — islands/multi-landmass map-gen + full naval AI.
+**Track C** (still deferred) — islands/multi-landmass map-gen + full naval AI.
 
-Backlog remaining below: naval Spec 2 + track C, modern-era tech tree, merge-adjacent-improvements,
-civilopedia.
+## ✅ Naval — Sea Economy (Spec 2 of 2) — SHIPPED (2026-06-18, merged to `main` locally)
+
+Closes the naval coastal-first bet. 258 tests green, **schema 11→12**, **re-tune-free** (both victory
+seeds held — no re-seed). The brainstorm reframe: most "sea economy" already existed (coastal cities
+already work claimed water tiles; `fish` already gives +2 food when revealed), so the slice shrank to
+the improvement loop:
+- **Work Boat** — sea-domain civilian, `improve` ability, coastal-only, gated `pottery`, reusable.
+- **Fishing Boats** — improvement built only on a `fish` tile (`requiresResource`); `fish.bonusImproved`
+  +1 food/+1 gold → improved fish-coast tile = food 4 / gold 2.
+- **Harbor** — coastal-only building, gated `bronze_working`, +1 production per worked water tile.
+- **Engine:** `BUILD_IMPROVEMENT` validate relaxed to elevation-only (Work Boats build on water; land
+  Workers still can't); `BuildingDef.perWorkedWater`/`requiresCoastal`; `cityYields` water-tile bonus.
+- **Determinism:** `src/ai` untouched — AI builds neither Work Boat (units picked by explicit id) nor
+  Harbor (not in `buildingPriorityFor`), consistent with "defer naval AI to track C". Human-only this slice.
+
+**Naval coastal-first bet COMPLETE (both specs).** Remaining naval = **Track C** (islands + naval AI).
+
+Backlog remaining below: naval track C, modern-era tech tree, merge-adjacent-improvements, civilopedia.
 
 ---
 
