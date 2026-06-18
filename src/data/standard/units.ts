@@ -154,6 +154,19 @@ export const UNITS: Record<string, UnitDef> = {
     requiresTech: 'currency', art: { glyph: 'gear' },
   },
   // --- naval units ---
+  work_boat: {
+    id: 'work_boat',
+    name: 'Work Boat',
+    cost: 40,
+    moves: 3,
+    sight: 2,
+    strength: 0,
+    class: 'civilian',
+    domain: 'sea',
+    requiresTech: 'pottery',
+    abilities: ['improve'],
+    art: { glyph: 'gear' },
+  },
   galley: {
     id: 'galley', name: 'Galley', cost: 60, moves: 3, sight: 2, strength: 12,
     class: 'melee', domain: 'sea', requiresTech: 'bronze_working', art: { glyph: 'sword' },
