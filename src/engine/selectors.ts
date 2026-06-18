@@ -654,6 +654,34 @@ export function unitHasPromoFlag(ctx: Ctx, unit: Unit, flag: 'ignoreZoc' | 'heal
   return (unit.promotions ?? []).some((id) => !!ctx.rules.promotions[id]?.effect[flag]);
 }
 
+/** A land-domain unit standing on a water tile is "embarked". */
+export function isEmbarked(ctx: Ctx, state: GameState, unit: Unit): boolean {
+  if (ctx.rules.units[unit.def].domain !== 'land') return false;
+  const idx = tileIndex({ q: unit.q, r: unit.r }, state.mapW, state.mapH);
+  if (idx < 0) return false;
+  return isWater(ctx, state.tiles[idx].terrain);
+}
+
+/** A city with at least one adjacent water tile. */
+export function isCoastal(ctx: Ctx, state: GameState, city: { q: number; r: number }): boolean {
+  for (const nb of neighbors({ q: city.q, r: city.r })) {
+    const idx = tileIndex(nb, state.mapW, state.mapH);
+    if (idx >= 0 && isWater(ctx, state.tiles[idx].terrain)) return true;
+  }
+  return false;
+}
+
+/** Can `unit` legally OCCUPY tile `idx` (for execution + the embark step)? Permissive:
+ *  sea→water only; land→land always, water only if the owner has the embark tech. */
+export function unitCanOccupy(ctx: Ctx, state: GameState, unit: Unit, idx: number): boolean {
+  const t = state.tiles[idx];
+  if (ctx.rules.elevations[t.elevation].impassable) return false;
+  const water = isWater(ctx, t.terrain);
+  if (ctx.rules.units[unit.def].domain === 'sea') return water;
+  if (!water) return true;
+  return state.players[unit.owner].techs.includes(ctx.rules.settings.naval.embarkTech);
+}
+
 /** A unit that still needs its first order this turn (untouched, can still act). */
 export function unitNeedsOrders(unit: Unit): boolean {
   return unit.moves > 0 && !unit.acted && !unit.order && unit.stance !== 'fortified' && unit.stance !== 'sleep';

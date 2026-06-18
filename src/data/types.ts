@@ -127,7 +127,7 @@ export interface UnitDef {
   strength: number; // melee attack & defense strength
   ranged?: { strength: number; range: number };
   class: UnitClass;
-  domain: 'land'; // extension point: 'sea', 'air'
+  domain: 'land' | 'sea';
   abilities?: UnitAbility[];
   bonuses?: { vsClass?: UnitClass; vsCity?: boolean; pct: number }[];
   requiresTech?: string;
@@ -290,6 +290,7 @@ export interface RulesetSettings {
   combat: { xpPerAttack: number; xpPerKill: number; xpPerDefend: number; xpVsBarbCap: number; promotionThresholds: number[] };
   barbarians: { campCount: number; startSafeRadius: number; spawnRadius: number; spawnEveryTurns: number; maxNearCamp: number; campBounty: number };
   tilePurchase: { baseCost: number; costPerRing: number; radius: number };
+  naval: { embarkTech: string; embarkedDefense: number };
   startingUnits: string[];
   diplomacy: DiplomacySettings;
 }
