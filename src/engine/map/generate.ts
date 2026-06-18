@@ -100,46 +100,52 @@ function tryGenerate(
   if (componentSizes.length === 0) return null;
   const mainContinent = componentSizes.indexOf(Math.max(...componentSizes));
 
-  // --- 3. climate -> base terrain ---
+  // --- 3+4. climate -> terrain (+ hills/mountains, features, coast) ---
   const tiles: Tile[] = new Array(n);
+  paintClimate(tiles, W, H, n, elevation, land, px, py, seed);
+
+  // --- 5. resources ---
+  placeResources(tiles, n, rng, rules);
+
+  // --- 6. starts on the main continent ---
+  const starts = placeStarts(tiles, W, H, component, mainContinent, playerCount, rules);
+  if (!starts) return null;
+
+  // --- 7. fairness ---
+  fairnessPass(tiles, W, H, starts, rules);
+
+  return { tiles, starts };
+}
+
+/** Step 3+4: climate -> base terrain + hills/mountains + features, then coast pass. Mutates `tiles`. */
+function paintClimate(
+  tiles: Tile[], W: number, H: number, n: number,
+  elevation: number[], land: boolean[], px: number[], py: number[], seed: number,
+): void {
   const landElevSorted = elevation.filter((_, i) => land[i]).sort((a, b) => a - b);
   const hillLevel = landElevSorted[Math.floor(landElevSorted.length * HILL_PCT)] ?? Infinity;
-  const mountainLevel =
-    landElevSorted[Math.floor(landElevSorted.length * MOUNTAIN_PCT)] ?? Infinity;
-
+  const mountainLevel = landElevSorted[Math.floor(landElevSorted.length * MOUNTAIN_PCT)] ?? Infinity;
   for (let i = 0; i < n; i++) {
     const a = axialOfIndex(i, W);
-    if (!land[i]) {
-      tiles[i] = blank('ocean');
-      continue;
-    }
-    const lat = Math.abs(a.r - (H - 1) / 2) / ((H - 1) / 2); // 0 equator, 1 pole
+    if (!land[i]) { tiles[i] = blank('ocean'); continue; }
+    const lat = Math.abs(a.r - (H - 1) / 2) / ((H - 1) / 2);
     const temp = 1 - lat + (fbm(px[i] * 0.08, py[i] * 0.08, seed + 31) - 0.5) * 0.28;
     const moist = fbm(px[i] * 0.07, py[i] * 0.07, seed + 67);
-
     let terrain: string;
     if (temp < 0.14) terrain = 'snow';
     else if (temp < 0.32) terrain = 'tundra';
     else if (temp > 0.72 && moist < 0.42) terrain = 'desert';
     else if (moist < 0.45) terrain = 'plains';
     else terrain = 'grassland';
-
     const t = blank(terrain);
     if (elevation[i] > mountainLevel) t.elevation = 'mountain';
     else if (elevation[i] > hillLevel) t.elevation = 'hill';
-
-    // features
     if (t.elevation !== 'mountain') {
       const forestNoise = fbm(px[i] * 0.09, py[i] * 0.09, seed + 131);
       if (temp > 0.74 && moist > 0.58 && (terrain === 'grassland' || terrain === 'plains')) {
         t.feature = 'jungle';
-      } else if (
-        forestNoise > 0.56 &&
-        moist > 0.42 &&
-        temp > 0.2 &&
-        temp < 0.8 &&
-        (terrain === 'grassland' || terrain === 'plains' || terrain === 'tundra')
-      ) {
+      } else if (forestNoise > 0.56 && moist > 0.42 && temp > 0.2 && temp < 0.8 &&
+        (terrain === 'grassland' || terrain === 'plains' || terrain === 'tundra')) {
         t.feature = 'forest';
       } else if (terrain === 'desert' && t.elevation === 'flat' && hash2(i, 9, seed) < 0.05) {
         t.feature = 'oasis';
@@ -147,8 +153,6 @@ function tryGenerate(
     }
     tiles[i] = t;
   }
-
-  // --- 4. coast pass ---
   for (let i = 0; i < n; i++) {
     if (land[i]) continue;
     const isCoast = neighbors(axialOfIndex(i, W)).some((nb) => {
@@ -157,16 +161,17 @@ function tryGenerate(
     });
     if (isCoast) tiles[i].terrain = 'coast';
   }
+}
 
-  // --- 5. resources (weighted by def spawn tables) ---
+/** Step 5: weighted resources. Mutates `tiles`, draws from `rng`. */
+function placeResources(tiles: Tile[], n: number, rng: Rng, rules: Ruleset): void {
   const resourceDefs = Object.values(rules.resources).sort((a, b) => a.id.localeCompare(b.id));
   for (let i = 0; i < n; i++) {
     const t = tiles[i];
     if (t.elevation === 'mountain' || t.feature === 'oasis') continue;
     if (rng.next() >= RESOURCE_CHANCE) continue;
     const candidates = resourceDefs.filter(
-      (r) =>
-        r.spawn.terrains.includes(t.terrain) &&
+      (r) => r.spawn.terrains.includes(t.terrain) &&
         (!r.spawn.elevations || r.spawn.elevations.includes(t.elevation)),
     );
     if (!candidates.length) continue;
@@ -174,26 +179,20 @@ function tryGenerate(
     let roll = rng.next() * totalWeight;
     for (const r of candidates) {
       roll -= r.spawn.weight;
-      if (roll <= 0) {
-        t.resource = r.id;
-        break;
-      }
+      if (roll <= 0) { t.resource = r.id; break; }
     }
   }
+}
 
-  // --- 6. starts on the main continent ---
-  const starts = placeStarts(tiles, W, H, component, mainContinent, playerCount, rules);
-  if (!starts) return null;
-
-  // --- 7. fairness: strategic resources near every start ---
+/** Step 7: strategic-resource fairness near every start. Mutates `tiles`. */
+function fairnessPass(tiles: Tile[], W: number, H: number, starts: Axial[], rules: Ruleset): void {
+  const resourceDefs = Object.values(rules.resources).sort((a, b) => a.id.localeCompare(b.id));
   for (const start of starts) {
     for (const res of resourceDefs) {
       if (res.kind !== 'strategic') continue;
       ensureResourceNear(tiles, W, H, start, res.id, 2, 4, rules);
     }
   }
-
-  return { tiles, starts };
 }
 
 function blank(terrain: string): Tile {
