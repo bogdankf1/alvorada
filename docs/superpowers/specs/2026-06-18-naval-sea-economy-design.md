@@ -111,7 +111,7 @@ harbor: {
 
 Four small, localized hooks. Each is a no-op for everything that exists today (no land tile, no AI city is affected), which is the basis of the re-tune-free claim.
 
-### 1. `BuildingDef` type — `src/engine/types.ts`
+### 1. `BuildingDef` type — `src/data/types.ts`
 
 Add two optional fields to the `BuildingDef` interface:
 
@@ -211,7 +211,7 @@ Bump `SCHEMA_VERSION` 11 → 12 in `src/engine/serialize.ts`. Old autosaves drop
 - `src/data/standard/units.ts` — add `work_boat`.
 - `src/data/standard/resources.ts` — add `fishing_boats` improvement; wire `fish.improvedBy`/`bonusImproved`.
 - `src/data/standard/buildings.ts` — add `harbor`.
-- `src/engine/types.ts` — `BuildingDef.perWorkedWater`, `BuildingDef.requiresCoastal`.
+- `src/data/types.ts` — `BuildingDef.perWorkedWater`, `BuildingDef.requiresCoastal`.
 - `src/engine/selectors.ts` — `cityYields` perWorkedWater loop; `canProduce` coastal-building gate.
 - `src/engine/validate.ts` — `BUILD_IMPROVEMENT` elevation-only impassable reject.
 - `src/engine/serialize.ts` — `SCHEMA_VERSION` 11 → 12.
