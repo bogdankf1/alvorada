@@ -442,6 +442,35 @@ function paintQuarry(g: CanvasRenderingContext2D, cx: number, cy: number, _q: nu
   g.strokeRect(x + 6, y + 5, 4.5, 3.2);
 }
 
+/** Fishing Boats: a small hull float and net stakes bobbing in the water. */
+function paintFishingBoats(g: CanvasRenderingContext2D, cx: number, cy: number, q: number, r: number, seed: number): void {
+  const x = cx;
+  const y = cy + 1;
+  const w = HEX * 0.42;
+  // a small buoy float
+  g.fillStyle = 'rgba(212,196,140,0.95)';
+  g.strokeStyle = 'rgba(60,48,34,0.85)';
+  g.lineWidth = 1.2;
+  g.beginPath();
+  g.ellipse(x, y - 2, w * 0.34, HEX * 0.16, 0, 0, Math.PI * 2);
+  g.fill();
+  g.stroke();
+  // net stakes poking out of the water
+  g.lineCap = 'round';
+  g.lineWidth = 1.4;
+  g.strokeStyle = 'rgba(60,48,34,0.8)';
+  const stakes = 4;
+  for (let i = 0; i < stakes; i++) {
+    const t = (i / (stakes - 1) - 0.5) * 2; // -1..1
+    const sx = x + t * w;
+    const jitter = (hash2(q + i, r, seed + 91) - 0.5) * 2.5;
+    g.beginPath();
+    g.moveTo(sx, y + 4 + jitter);
+    g.lineTo(sx, y - 1 + jitter);
+    g.stroke();
+  }
+}
+
 /** Plantation: regular rows of small orchard trees (cultivated, unlike wild forest). */
 function paintPlantation(g: CanvasRenderingContext2D, cx: number, cy: number, q: number, r: number, seed: number): void {
   g.save();
@@ -496,6 +525,9 @@ export function paintImprovement(
       break;
     case 'plantation':
       paintPlantation(g, cx, cy, q, r, seed);
+      break;
+    case 'fishing_boats':
+      paintFishingBoats(g, cx, cy, q, r, seed);
       break;
   }
 }
