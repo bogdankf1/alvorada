@@ -12,6 +12,7 @@ import {
   cityAt,
   cityDistanceOk,
   isCivilian,
+  isEmbarked,
   isImpassable,
   isWater,
   militaryAt,
@@ -105,6 +106,12 @@ export function validateAction(ctx: Ctx, state: GameState, action: Action): Vali
       if (!v.unit) return v.error!;
       const unit = v.unit;
       const def = ctx.rules.units[unit.def];
+      if (isEmbarked(ctx, state, unit)) return fail('embarked units cannot attack');
+      if (def.domain === 'sea' && cityAt(state, action.target)) return fail('ships cannot storm cities');
+      if (def.domain === 'land') {
+        const ti = tileIndex(action.target, state.mapW, state.mapH);
+        if (ti >= 0 && isWater(ctx, state.tiles[ti].terrain)) return fail('land units cannot strike ships at sea');
+      }
       if (def.strength <= 0) return fail('civilians cannot attack');
       if (def.ranged) return fail('ranged units attack from afar');
       if (unit.moves <= 0) return fail('no movement left');
@@ -128,6 +135,7 @@ export function validateAction(ctx: Ctx, state: GameState, action: Action): Vali
       if (!v.unit) return v.error!;
       const unit = v.unit;
       const def = ctx.rules.units[unit.def];
+      if (isEmbarked(ctx, state, unit)) return fail('embarked units cannot attack');
       if (!def.ranged) return fail('this unit has no ranged attack');
       if (unit.moves <= 0) return fail('no movement left');
       const dist = hexDistance({ q: unit.q, r: unit.r }, action.target);

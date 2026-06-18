@@ -6,7 +6,7 @@
  */
 import type { City, Ctx, GameState, Unit } from '../types';
 import { tileIndex } from '../hex';
-import { cityAt, civilianAt, defenseBonusAt, militaryAt, pendingPromotions, promotionBonus, wonderOwnerEffects } from '../selectors';
+import { cityAt, civilianAt, defenseBonusAt, isEmbarked, militaryAt, pendingPromotions, promotionBonus, wonderOwnerEffects } from '../selectors';
 import { recomputeVisibility } from '../map/visibility';
 import { pushEvent } from '../events';
 import { captureCity } from './cities';
@@ -45,6 +45,7 @@ export function rangedStrength(ctx: Ctx, unit: Unit, vs: { unit?: Unit; city?: b
 }
 
 export function defenseStrength(ctx: Ctx, state: GameState, unit: Unit): number {
+  if (isEmbarked(ctx, state, unit)) return ctx.rules.settings.naval.embarkedDefense; // weak; no terrain/fortify
   const def = ctx.rules.units[unit.def];
   const idx = tileIndex({ q: unit.q, r: unit.r }, state.mapW, state.mapH);
   let s = hpScaled(def.strength, unit.hp) + defenseBonusAt(ctx, state, idx);

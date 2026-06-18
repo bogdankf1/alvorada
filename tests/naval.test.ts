@@ -1,11 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { ctx, flatWorld, spawn, idxOf, refreshVis, thaw } from './helpers';
+import { ctx, flatWorld, spawn, idxOf, refreshVis, thaw, declareWarBetween } from './helpers';
 import { SCHEMA_VERSION } from '../src/engine/serialize';
 import { isEmbarked, isCoastal, unitCanOccupy, canProduce } from '../src/engine/selectors';
 import { tileIndex } from '../src/engine/hex';
 import { findPath } from '../src/engine/map/pathfind';
 import { validateAction } from '../src/engine/validate';
 import { applyAction } from '../src/engine/reducer';
+import { defenseStrength } from '../src/engine/systems/combat';
 
 /** Paint axial q≥8 as coast so everything east of q=8 is sea (off-map coords skipped). */
 function coastWorld() {
@@ -97,3 +98,24 @@ describe('naval units & coastal production', () => {
 function isWaterAt(s: ReturnType<typeof flatWorld>, a: { q: number; r: number }) {
   return s.tiles[idxOf(s, a.q, a.r)].terrain === 'coast' || s.tiles[idxOf(s, a.q, a.r)].terrain === 'ocean';
 }
+
+describe('naval combat', () => {
+  it('an embarked unit cannot attack and defends weakly', () => {
+    const s = thaw(coastWorld());
+    const emb = spawn(s, 0, 'warrior', 10, 5, { stance: 'none' }); // on water = embarked
+    spawn(s, 1, 'warrior', 9, 5); // adjacent land enemy
+    declareWarBetween(s, 0, 1);
+    refreshVis(s);
+    expect(validateAction(ctx, s, { type: 'ATTACK', player: 0, unit: emb.id, target: { q: 9, r: 5 } }).ok).toBe(false);
+    expect(defenseStrength(ctx, s, emb)).toBe(ctx.rules.settings.naval.embarkedDefense); // defends weakly
+  });
+
+  it('a ranged ship may bombard an enemy embarked unit', () => {
+    const s = thaw(coastWorld());
+    const frig = spawn(s, 0, 'frigate', 10, 5);
+    spawn(s, 1, 'warrior', 11, 5); // enemy embarked (on water)
+    declareWarBetween(s, 0, 1);
+    refreshVis(s);
+    expect(validateAction(ctx, s, { type: 'RANGED_ATTACK', player: 0, unit: frig.id, target: { q: 11, r: 5 } }).ok).toBe(true);
+  });
+});
