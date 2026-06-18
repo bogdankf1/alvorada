@@ -3,6 +3,11 @@ import { STANDARD_RULESET } from '../src/data/standard';
 import { generateMap } from '../src/engine/map/generate';
 import type { GeneratedMap } from '../src/engine/map/generate';
 import type { GameConfig, PlayerSpec } from '../src/engine/types';
+import { initialState } from '../src/engine/state';
+import { applyAction } from '../src/engine/reducer';
+import { gameHash } from '../src/engine/serialize';
+import { decide } from '../src/ai/decide';
+import { ctx } from './helpers';
 
 const FOUR: PlayerSpec[] = [
   { civ: 'rome', controller: 'ai' },
@@ -89,4 +94,30 @@ describe('islands start distribution', () => {
     for (const c of startComps) expect(sizes[c]).toBeGreaterThanOrEqual(6); // a continent, not an islet
     expect(m.starts.length).toBe(4);
   });
+});
+
+describe('islands self-play smoke', () => {
+  it('a 4-player island game runs ~40 turns legally and replays bit-identically', () => {
+    const config = cfg(2025, 'islands');
+    const run = () => {
+      let s = initialState(config, ctx);
+      const log: any[] = [];
+      while (s.phase === 'playing' && s.turn <= 40) {
+        const pid = s.currentPlayer;
+        for (let i = 0; ; i++) {
+          expect(i, `turn ${s.turn} p${pid}: action cap`).toBeLessThan(400);
+          const { action } = decide(ctx, s, pid);
+          s = applyAction(ctx, s, action); // an illegal AI action throws -> fails the test
+          log.push(action);
+          if (action.type === 'END_TURN' || s.phase === 'ended') break;
+        }
+      }
+      return { s, log };
+    };
+    const a = run();
+    expect(a.s.turn).toBeGreaterThan(1);
+    let replay = initialState(config, ctx);
+    for (const act of a.log) replay = applyAction(ctx, replay, act);
+    expect(gameHash(replay)).toBe(gameHash(a.s));
+  }, 60_000);
 });
