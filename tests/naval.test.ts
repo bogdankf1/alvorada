@@ -1,8 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { ctx, flatWorld, spawn, idxOf } from './helpers';
+import { ctx, flatWorld, spawn, idxOf, refreshVis, thaw } from './helpers';
 import { SCHEMA_VERSION } from '../src/engine/serialize';
 import { isEmbarked, isCoastal, unitCanOccupy } from '../src/engine/selectors';
 import { tileIndex } from '../src/engine/hex';
+import { findPath } from '../src/engine/map/pathfind';
+import { validateAction } from '../src/engine/validate';
+import { applyAction } from '../src/engine/reducer';
 
 /** Paint axial q≥8 as coast so everything east of q=8 is sea (off-map coords skipped). */
 function coastWorld() {
@@ -43,3 +46,36 @@ describe('naval foundations', () => {
     expect(unitCanOccupy(ctx, s, warrior, waterIdx)).toBe(true);
   });
 });
+
+describe('domain-aware movement', () => {
+  it('findPath never routes an on-land land unit through water', () => {
+    const s = coastWorld();
+    const u = spawn(s, 0, 'warrior', 7, 5);
+    refreshVis(s);
+    s.players[0].techs.push(ctx.rules.settings.naval.embarkTech);
+    const path = findPath(ctx, s, u, { q: 11, r: 5 });
+    if (path) for (const step of path) expect(isWaterAt(s, step)).toBe(false);
+  });
+
+  it('a tech land unit can deliberately embark one step onto adjacent water', () => {
+    const s = thaw(coastWorld());
+    spawn(s, 0, 'settler', 5, 5); // keep player 0 alive after move (no city)
+    const u = spawn(s, 0, 'warrior', 7, 5);
+    s.players[0].techs.push(ctx.rules.settings.naval.embarkTech);
+    refreshVis(s);
+    const s2 = applyAction(ctx, s, { type: 'MOVE_UNIT', player: 0, unit: u.id, path: [{ q: 8, r: 5 }] });
+    expect(isEmbarked(ctx, s2, s2.units[u.id])).toBe(true);
+  });
+
+  it('without the embark tech, stepping onto water is rejected', () => {
+    const s = thaw(coastWorld());
+    const u = spawn(s, 0, 'warrior', 7, 5);
+    refreshVis(s);
+    const res = validateAction(ctx, s, { type: 'MOVE_UNIT', player: 0, unit: u.id, path: [{ q: 8, r: 5 }] });
+    expect(res.ok).toBe(false);
+  });
+});
+
+function isWaterAt(s: ReturnType<typeof flatWorld>, a: { q: number; r: number }) {
+  return s.tiles[idxOf(s, a.q, a.r)].terrain === 'coast' || s.tiles[idxOf(s, a.q, a.r)].terrain === 'ocean';
+}

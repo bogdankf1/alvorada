@@ -9,12 +9,12 @@ import {
   cityAt,
   civilianAt,
   isCivilian,
-  isImpassable,
   militaryAt,
   moveCostOf,
   atWar,
   bordersOpenTo,
   tileOwner,
+  unitCanOccupy,
   unitHasPromoFlag,
 } from '../selectors';
 import { recomputeVisibility } from '../map/visibility';
@@ -75,7 +75,7 @@ export function executeMovePath(ctx: Ctx, state: GameState, unit: Unit, path: Ax
       blocked = true;
       break;
     }
-    if (isImpassable(ctx, state, idx)) {
+    if (!unitCanOccupy(ctx, state, unit, idx)) {
       blocked = true;
       break;
     }

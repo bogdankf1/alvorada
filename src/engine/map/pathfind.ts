@@ -12,7 +12,7 @@
 import type { Axial, Ctx, GameState, Unit } from '../types';
 import { VIS_EXPLORED, VIS_VISIBLE, sortedIds } from '../types';
 import { axialOfIndex, hexDistance, neighbors, tileIndex } from '../hex';
-import { atWar, bordersOpenTo, isCivilian, isImpassable, moveCostOf, tileOwner } from '../selectors';
+import { atWar, bordersOpenTo, isCivilian, isImpassable, isWater, moveCostOf, tileOwner } from '../selectors';
 
 interface HeapNode {
   idx: number;
@@ -72,6 +72,9 @@ export function moveRulesFor(ctx: Ctx, state: GameState, unit: Unit): MoveRules 
   const pid = unit.owner;
   const vis = state.visibility[pid];
   const civilian = isCivilian(ctx, unit);
+  const domain = ctx.rules.units[unit.def].domain;
+  const startIdx = tileIndex({ q: unit.q, r: unit.r }, state.mapW, state.mapH);
+  const unitOnWater = isWater(ctx, state.tiles[startIdx].terrain);
 
   // occupancy snapshot (own units always known; enemies only when visible)
   const militaryBlocked = new Set<number>();
@@ -106,7 +109,13 @@ export function moveRulesFor(ctx: Ctx, state: GameState, unit: Unit): MoveRules 
   return {
     canEnter(idx: number): boolean {
       const explored = vis[idx] >= VIS_EXPLORED;
-      if (explored && isImpassable(ctx, state, idx)) return false;
+      // domain-aware terrain filter — the coastline (land vs water) is treated as known
+      // even in fog, so land units never plan a route through the sea (and never auto-embark).
+      const t = state.tiles[idx];
+      const water = isWater(ctx, t.terrain);
+      if (domain === 'sea') { if (!water) return false; }           // sea: water only
+      else if (water && !unitOnWater) return false;                 // land: no water unless embarked
+      if (explored && ctx.rules.elevations[t.elevation].impassable) return false; // mountains block all
       if (civilian ? civilianBlocked.has(idx) : militaryBlocked.has(idx)) return false;
       if (explored) {
         const owner = tileOwner(state, idx);

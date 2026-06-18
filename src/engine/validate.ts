@@ -15,6 +15,7 @@ import {
   isImpassable,
   isWater,
   militaryAt,
+  unitCanOccupy,
   pendingPromotions,
   availablePromotions,
   purchaseCost,
@@ -85,6 +86,14 @@ export function validateAction(ctx: Ctx, state: GameState, action: Action): Vali
       }
       const first = tileIndex(action.path[0], state.mapW, state.mapH);
       if (first < 0) return fail('path leaves the map');
+      // embark: a tech'd land unit may step from land onto an adjacent water tile,
+      // which strict auto-routing forbids. Permit it explicitly.
+      const here = state.tiles[tileIndex({ q: unit.q, r: unit.r }, state.mapW, state.mapH)];
+      const firstWater = isWater(ctx, state.tiles[first].terrain);
+      if (firstWater && unitCanOccupy(ctx, state, unit, first) && !isWater(ctx, here.terrain)) {
+        if (militaryAt(ctx, state, action.path[0])) return fail('that water is occupied');
+        return ok;
+      }
       if (!moveRulesFor(ctx, state, unit).canEnter(first)) return fail('that way is blocked');
       const cityThere = cityAt(state, action.path[0]);
       if (cityThere && cityThere.owner !== unit.owner) return fail('enemy cities must be stormed');

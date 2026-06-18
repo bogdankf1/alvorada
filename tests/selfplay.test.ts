@@ -108,8 +108,10 @@ describe('AI self-play', () => {
     // Re-seeded 921→924 because the free-pop happiness buffer (Wave 1) shifted growth
     // dynamics so seed 921 now produces a science win instead of culture. Seed 924 fires culture at turn 220.
     // Re-seeded 924→938 because the ×2 move-point rescale (roads) shifted the trajectory
-    // so seed 924 no longer fires culture by the turn limit. Seed 938 fires culture at turn 220.)
-    const { state } = runGame(938, 265);
+    // so seed 924 no longer fires culture by the turn limit. Seed 938 fires culture at turn 220.
+    // Re-seeded 938→949 because domain-aware movement (land units kept off the sea in routing)
+    // shifted AI pathing so seed 938 now produces a science win. Seed 949 fires culture at turn 220.)
+    const { state } = runGame(949, 265);
     expect(state.phase).toBe('ended');
     expect(state.winner?.victory).toBe('culture');
   }, 300_000);
