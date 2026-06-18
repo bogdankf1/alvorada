@@ -30,3 +30,47 @@ describe('continents output (regression guard)', () => {
     expect(fingerprint(generateMap(cfg(67890), STANDARD_RULESET))).toBe('d62ce45a');
   });
 });
+
+/** Label connected land components; return per-tile component id (-1 for ocean) + sizes. */
+function label(m: GeneratedMap, W: number, H: number) {
+  const comp = new Array(m.tiles.length).fill(-1);
+  const sizes: number[] = [];
+  const isLand = (i: number) => m.tiles[i].terrain !== 'ocean' && m.tiles[i].terrain !== 'coast';
+  for (let i = 0; i < m.tiles.length; i++) {
+    if (!isLand(i) || comp[i] !== -1) continue;
+    let size = 0; const q = [i]; comp[i] = sizes.length;
+    while (q.length) {
+      const cur = q.pop()!; size++;
+      const a = { q: cur % W, r: Math.floor(cur / W) };
+      for (const nb of [ {q:a.q+1,r:a.r},{q:a.q-1,r:a.r},{q:a.q,r:a.r+1},{q:a.q,r:a.r-1},{q:a.q+1,r:a.r-1},{q:a.q-1,r:a.r+1} ]) {
+        if (nb.q < 0 || nb.q >= W || nb.r < 0 || nb.r >= H) continue;
+        const j = nb.r * W + nb.q;
+        if (isLand(j) && comp[j] === -1) { comp[j] = comp[cur]; q.push(j); }
+      }
+    }
+    sizes.push(size);
+  }
+  return { comp, sizes };
+}
+
+describe('islands map-gen', () => {
+  it('is deterministic for a fixed seed', () => {
+    const a = generateMap(cfg(2025, 'islands'), STANDARD_RULESET);
+    const b = generateMap(cfg(2025, 'islands'), STANDARD_RULESET);
+    expect(fingerprint(a)).toBe(fingerprint(b));
+    expect(a.starts).toEqual(b.starts);
+  });
+
+  it('produces at least K=2 sizable landmasses', () => {
+    const m = generateMap(cfg(2025, 'islands'), STANDARD_RULESET);
+    const { sizes } = label(m, 46, 28);
+    const sizable = sizes.filter((s) => s >= 6).sort((x, y) => y - x);
+    expect(sizable.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('scatters at least one small islet (a tiny land component)', () => {
+    const m = generateMap(cfg(2025, 'islands'), STANDARD_RULESET);
+    const { sizes } = label(m, 46, 28);
+    expect(sizes.some((s) => s >= 1 && s <= 6)).toBe(true);
+  });
+});

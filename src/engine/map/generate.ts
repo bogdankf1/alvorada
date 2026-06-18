@@ -24,7 +24,14 @@ const HILL_PCT = 0.72; // land percentile above which hills appear
 const MOUNTAIN_PCT = 0.94;
 const RESOURCE_CHANCE = 0.11;
 
+const LAND_FRACTION_ISLANDS = 0.32;
+const FALLOFF_INNER = 0.28;
+const FALLOFF_STRENGTH = 1.6;
+const ISLET_BAND = 0.55;
+const ISLET_THRESHOLD = 0.985;
+
 export function generateMap(config: GameConfig, rules: Ruleset): GeneratedMap {
+  if (config.mapType === 'islands') return generateIslandsMap(config, rules);
   const { mapW: W, mapH: H, seed } = config;
   const n = W * H;
   const playerCount = config.players.length;
@@ -259,6 +266,105 @@ function placeStarts(
     }
   }
   return null;
+}
+
+function generateIslandsMap(config: GameConfig, rules: Ruleset): GeneratedMap {
+  const { mapW: W, mapH: H, seed } = config;
+  const n = W * H;
+  const playerCount = config.players.length;
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const rng = makeRng((seed ^ (attempt * 0x9e3779b9)) | 0);
+    const result = tryGenerateIslands(W, H, n, seed + attempt * 7919, rng, rules, playerCount);
+    if (result) return result;
+  }
+  throw new Error('island map generation failed: could not place starts');
+}
+
+function tryGenerateIslands(
+  W: number, H: number, n: number, seed: number, rng: Rng, rules: Ruleset, playerCount: number,
+): GeneratedMap | null {
+  const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+  const K = Math.max(2, Math.round(playerCount / 2));
+
+  const maxPix = hexToPixel({ q: W, r: H }, 1);
+  const cols = Math.ceil(Math.sqrt(K));
+  const rows = Math.ceil(K / cols);
+  const centers: { x: number; y: number }[] = [];
+  for (let k = 0; k < K; k++) {
+    const gx = k % cols, gy = Math.floor(k / cols);
+    const nx = clamp((gx + 0.5 + (hash2(k, 1, seed) - 0.5) * 0.7) / cols, 0.18, 0.82);
+    const ny = clamp((gy + 0.5 + (hash2(k, 2, seed) - 0.5) * 0.7) / rows, 0.18, 0.82);
+    centers.push({ x: nx * maxPix.x, y: ny * maxPix.y });
+  }
+
+  const elevation = new Array<number>(n);
+  const px = new Array<number>(n);
+  const py = new Array<number>(n);
+  const dNear = new Array<number>(n);
+  for (let i = 0; i < n; i++) {
+    const a = axialOfIndex(i, W);
+    const p = hexToPixel(a, 1);
+    px[i] = p.x; py[i] = p.y;
+    let dn = Infinity;
+    for (const c of centers) {
+      const cx = (p.x - c.x) / maxPix.x;
+      const cy = (p.y - c.y) / maxPix.y;
+      const d = Math.sqrt(cx * cx * 1.15 + cy * cy * 1.35);
+      if (d < dn) dn = d;
+    }
+    dNear[i] = dn;
+    const falloff = Math.max(0, dn - FALLOFF_INNER) * FALLOFF_STRENGTH;
+    elevation[i] = fbm(p.x * NOISE_SCALE, p.y * NOISE_SCALE, seed) - falloff;
+  }
+  const sorted = [...elevation].sort((a, b) => a - b);
+  const seaLevel = sorted[Math.floor(n * (1 - LAND_FRACTION_ISLANDS))];
+  const land = elevation.map((e, i) => {
+    const a = axialOfIndex(i, W);
+    const col = i % W;
+    if (col === 0 || col === W - 1 || a.r === 0 || a.r === H - 1) return false;
+    return e > seaLevel;
+  });
+
+  for (let i = 0; i < n; i++) {
+    if (land[i]) continue;
+    const a = axialOfIndex(i, W);
+    const col = i % W;
+    if (col === 0 || col === W - 1 || a.r === 0 || a.r === H - 1) continue;
+    if (dNear[i] > ISLET_BAND && hash2(i, 17, seed) > ISLET_THRESHOLD) land[i] = true;
+  }
+
+  const component = new Array<number>(n).fill(-1);
+  let componentCount = 0;
+  const componentSizes: number[] = [];
+  for (let i = 0; i < n; i++) {
+    if (!land[i] || component[i] !== -1) continue;
+    let size = 0;
+    const queue = [i];
+    component[i] = componentCount;
+    while (queue.length) {
+      const cur = queue.pop()!;
+      size++;
+      for (const nb of neighbors(axialOfIndex(cur, W))) {
+        const j = tileIndex(nb, W, H);
+        if (j >= 0 && land[j] && component[j] === -1) { component[j] = componentCount; queue.push(j); }
+      }
+    }
+    componentSizes.push(size);
+    componentCount++;
+  }
+  if (componentSizes.length === 0) return null;
+
+  const tiles: Tile[] = new Array(n);
+  paintClimate(tiles, W, H, n, elevation, land, px, py, seed);
+  placeResources(tiles, n, rng, rules);
+
+  // TEMPORARY: largest-component placement; a later task distributes across continents.
+  const mainContinent = componentSizes.indexOf(Math.max(...componentSizes));
+  const starts = placeStarts(tiles, W, H, component, mainContinent, playerCount, rules);
+  if (!starts) return null;
+
+  fairnessPass(tiles, W, H, starts, rules);
+  return { tiles, starts };
 }
 
 /** Top spawned `resId` up to `want` sources within `radius` of a start. */
