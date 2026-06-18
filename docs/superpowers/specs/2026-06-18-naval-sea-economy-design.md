@@ -85,7 +85,7 @@ fish: {
 ```
 
 - `requiresResource: true` + only `fish` having `improvedBy: 'fishing_boats'` means a Work Boat can build it **only on a fish tile** (the `matchesResource` path in `BUILD_IMPROVEMENT` validation). The improvement's own `yields` are empty; the reward comes entirely from `fish.bonusImproved`.
-- Net effect: an improved fish tile yields **food 3 / gold 1** (base food 2 + bonusImproved food 1 / gold 1). Fish's *base* +2 food is unchanged → AI (which never builds Fishing Boats) sees the identical fish yield it sees today.
+- Net effect on the full tile yield (coast terrain itself yields food 1 / gold 1): an **un**improved fish-coast tile = food 3 / gold 1 (coast 1/1 + fish food 2); an **improved** fish-coast tile = **food 4 / gold 2** (+ bonusImproved food 1 / gold 1). Fish's *base* +2 food is unchanged → AI (which never builds Fishing Boats) sees the identical fish yield it sees today.
 
 ### `buildings.ts` — Harbor
 
@@ -194,7 +194,7 @@ New file `tests/sea-economy.test.ts` (reuse the `coastWorld()` fixture pattern f
 1. **Work Boat is coastal-gated:** a coastal city `canProduce` `work_boat` is ok; an inland city is not. (After `players[0].techs.push('pottery')`.)
 2. **Work Boat builds Fishing Boats on a fish tile:** place fish on a coast tile owned by the player, a Work Boat on it, push `pottery`; `BUILD_IMPROVEMENT` with `improvement: 'fishing_boats'` is ok and sets `tile.improvement === 'fishing_boats'`.
 3. **Fishing Boats is fish-only:** the same build on a plain coast tile (no resource) fails (`needs a matching resource`); on a land tile fails.
-4. **Improved fish yield:** `tileYields` on an owned fish tile with `fishing_boats` and the player revealing fish = food 3 / gold 1.
+4. **Improved fish yield:** `tileYields` on a fish-coast tile = food 3 / gold 1 unimproved; after building `fishing_boats` = food 4 / gold 2 (the +1 food / +1 gold delta is `bonusImproved`).
 5. **Harbor production:** a coastal city with a `harbor` and N worked water tiles gets +N production vs the same city without it; assert via `cityYields`. Also: `canProduce` `harbor` is ok for a coastal city and fails for an inland city.
 6. **Land Worker still can't build on water:** a land `worker` cannot `BUILD_IMPROVEMENT` a `farm` (or `fishing_boats`) on a water tile.
 
