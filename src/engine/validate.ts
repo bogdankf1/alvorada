@@ -185,7 +185,7 @@ export function validateAction(ctx: Ctx, state: GameState, action: Action): Vali
         return fail(`requires ${ctx.rules.techs[imp.requiresTech].name}`);
       const idx = tileIndex({ q: unit.q, r: unit.r }, state.mapW, state.mapH);
       const tile = state.tiles[idx];
-      if (isImpassable(ctx, state, idx)) return fail('cannot improve this terrain');
+      if (ctx.rules.elevations[tile.elevation].impassable) return fail('cannot improve this terrain');
       const owner = tileOwner(state, idx);
       if (owner !== action.player) return fail('workers build only inside your borders');
 

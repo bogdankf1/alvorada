@@ -33,6 +33,8 @@ export const RESOURCES: Record<string, ResourceDef> = {
     name: 'Fish',
     kind: 'bonus',
     yields: { food: 2 },
+    improvedBy: 'fishing_boats',
+    bonusImproved: { food: 1, gold: 1 },
     spawn: { terrains: ['coast'], weight: 9 },
   },
   gold_ore: {
@@ -128,6 +130,14 @@ export const IMPROVEMENTS: Record<string, ImprovementDef> = {
   plantation: {
     id: 'plantation', name: 'Plantation', turns: 5, yields: { gold: 1 },
     requiresResource: true, requiresTech: 'pottery',
+  },
+  fishing_boats: {
+    id: 'fishing_boats',
+    name: 'Fishing Boats',
+    turns: 4,
+    yields: {},
+    requiresResource: true,
+    requiresTech: 'pottery',
   },
   clear: {
     id: 'clear',
