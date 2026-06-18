@@ -126,7 +126,7 @@ function hasGarrison(ctx: Ctx, state: GameState, city: City): boolean {
 
 function bestMilitary(ctx: Ctx, state: GameState, city: City): ProductionItem | null {
   const ranked = Object.values(ctx.rules.units)
-    .filter((u) => u.class !== 'civilian')
+    .filter((u) => u.class !== 'civilian' && u.domain !== 'sea')
     .sort(
       (a, b) =>
         Math.max(b.strength, b.ranged?.strength ?? 0) - Math.max(a.strength, a.ranged?.strength ?? 0) ||
