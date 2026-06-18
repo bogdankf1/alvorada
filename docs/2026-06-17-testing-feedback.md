@@ -94,6 +94,31 @@ Still open below: civilopedia (deferred), naval, modern-era tech tree, merge-adj
 
 ---
 
+## ✅ Naval — Combat Core (Spec 1 of 2) — SHIPPED (2026-06-18, merged to `main` locally)
+
+The structural foundation for naval, coastal-first slice. 251 tests green, **schema 10→11**.
+The roadmap's biggest deferred bet (#13), decomposed.
+- **Sea domain** — `UnitDef.domain: 'land'|'sea'`; domain-aware movement (sea units → water only;
+  land units → land only unless embarked). `isEmbarked`/`isCoastal`/`unitCanOccupy` helpers.
+- **Embarkation** — a *deliberate* one-step move onto adjacent water, gated behind `bronze_working`;
+  embarked = a land unit on a water tile (derived). Can't attack, defends at a fixed 5, destroyed
+  if it loses. Land units never AUTO-route into the sea (keeps AI/determinism clean).
+- **Naval units** — Galley (melee), Galleass + Frigate (ranged bombard), built in **coastal cities**
+  only, spawned on adjacent water.
+- **Coastal raiding** — ranged ships bombard coastal cities (no capture) / land / embarked units;
+  land archers shoot ships back. Reuses the combat engine.
+- **AI** — builds no naval, never embarks → land self-play byte-identical (only the marginal culture
+  seed re-tuned 938→949; science 314 held).
+- **UI** — embark-on-click + an embarked wave marker.
+
+**Still open: Spec 2 (Sea economy)** — sea resources + fishing boats + Work Boats + cities working
+sea tiles + harbor. **Track C** — islands/multi-landmass map-gen + full naval AI.
+
+Backlog remaining below: naval Spec 2 + track C, modern-era tech tree, merge-adjacent-improvements,
+civilopedia.
+
+---
+
 ## Batch 1 (2026-06-17)
 
 ### 1. Audio — sound effects + background music + settings mute toggle 🟢 NEW
