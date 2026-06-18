@@ -21,7 +21,7 @@ function coastWorld() {
 }
 
 describe('naval foundations', () => {
-  it('schema is 11', () => { expect(SCHEMA_VERSION).toBe(11); });
+  it('schema is 12', () => { expect(SCHEMA_VERSION).toBe(12); });
 
   it('isEmbarked: a land unit on water is embarked; on land is not', () => {
     const s = coastWorld();

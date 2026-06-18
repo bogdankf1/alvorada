@@ -17,8 +17,8 @@ function oneCity(c = ctx) {
 }
 
 describe('events: foundation', () => {
-  it('schema is 11 and the ruleset validates', () => {
-    expect(SCHEMA_VERSION).toBe(11);
+  it('schema is 12 and the ruleset validates', () => {
+    expect(SCHEMA_VERSION).toBe(12);
     expect(validateRuleset(STANDARD_RULESET)).toEqual([]);
   });
   it('initial state has empty pendingEvent/chronicle/firedEvents', () => {
