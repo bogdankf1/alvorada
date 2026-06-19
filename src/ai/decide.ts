@@ -450,9 +450,9 @@ function decideMilitary(ctx: Ctx, state: GameState, unit: Unit): AiDecision | nu
   if (def.domain === 'sea') {
     const fight = navalFight(ctx, state, unit);
     if (fight) return fight;
-    // escort the nearest friendly embarked civilian
+    // escort the nearest friendly embarked unit (civilian or military)
     const escortee = playerUnits(state, pid)
-      .filter((u) => isCivilian(ctx, u) && isWater(ctx, state.tiles[tileIndex({ q: u.q, r: u.r }, state.mapW, state.mapH)].terrain))
+      .filter((u) => u.id !== unit.id && isWater(ctx, state.tiles[tileIndex({ q: u.q, r: u.r }, state.mapW, state.mapH)].terrain))
       .sort((a, b) => hexDistance(here, { q: a.q, r: a.r }) - hexDistance(here, { q: b.q, r: b.r }) || a.id - b.id)[0];
     if (escortee && hexDistance(here, { q: escortee.q, r: escortee.r }) > 1) {
       const d = moveAlong(ctx, state, unit, { q: escortee.q, r: escortee.r }, 'escorting a settler at sea');
@@ -548,7 +548,7 @@ function campaignOrders(ctx: Ctx, state: GameState, unit: Unit): AiDecision | nu
 
   const unitNear = hexDistance({ q: unit.q, r: unit.r }, { q: staging.q, r: staging.r }) <= 3;
   if (gatheredStrength >= needed) {
-    // advance on the target
+    // advance on the target — by land if possible, else embark and storm the shore
     const ringSpots = hexesWithin({ q: target.q, r: target.r }, 1).filter((h) => !(h.q === target.q && h.r === target.r));
     for (const h of ringSpots) {
       const idx = tileIndex(h, state.mapW, state.mapH);
@@ -556,7 +556,18 @@ function campaignOrders(ctx: Ctx, state: GameState, unit: Unit): AiDecision | nu
       const d = moveAlong(ctx, state, unit, h, `advancing on ${target.name}`);
       if (d) return d;
     }
-    return moveAlong(ctx, state, unit, { q: target.q, r: target.r }, `advancing on ${target.name}`);
+    const byLand = moveAlong(ctx, state, unit, { q: target.q, r: target.r }, `advancing on ${target.name}`);
+    if (byLand) return byLand;
+    // sea invasion: no land route — embark a melee unit and sail to the target's shore
+    if (!isCivilian(ctx, unit) && !ctx.rules.units[unit.def].ranged) {
+      for (const h of ringSpots) {
+        const sea = seaPath(ctx, state, unit, h);
+        if (sea && sea.length) {
+          return { action: { type: 'MOVE_UNIT', player: pid, unit: unit.id, path: sea }, reason: `embarking to storm ${target.name}` };
+        }
+      }
+    }
+    return null;
   }
   if (!unitNear) {
     return moveAlong(
@@ -602,4 +613,9 @@ export function decideWorkBoatForTest(ctx: Ctx, state: GameState, unit: Unit): A
 /** Test seam: expose the military decision (includes sea branch). */
 export function decideMilitaryForTest(ctx: Ctx, state: GameState, unit: Unit): AiDecision | null {
   return decideMilitary(ctx, state, unit);
+}
+
+/** Test seam: expose the campaign orders function. */
+export function campaignOrdersForTest(ctx: Ctx, state: GameState, unit: Unit): AiDecision | null {
+  return campaignOrders(ctx, state, unit);
 }

@@ -5,6 +5,8 @@ import { validateAction } from '../src/engine/validate';
 import { applyAction } from '../src/engine/reducer';
 import { attackStrength } from '../src/engine/systems/combat';
 import { coastalBonusForTest } from '../src/ai/economy';
+import { campaignOrdersForTest } from '../src/ai/decide';
+import type { Action } from '../src/engine/types';
 
 /** Land west of a sea channel (q in {8,9}); enemy city sits on the west shore at (7,5). */
 function shoreWorld() {
@@ -71,6 +73,39 @@ describe('amphibious penalty & capture', () => {
     const moved = s2.units[w.id];
     expect(moved.q).toBe(7); expect(moved.r).toBe(5);              // advanced onto the city tile
     expect(s2.tiles[idxOf(s2, 7, 5)].terrain).not.toBe('coast');  // it's land — the attacker disembarked
+  });
+});
+
+describe('sea invasion', () => {
+  it('a gathered army with a sea-only enemy city embarks to assault it', () => {
+    const { s, cityId } = shoreWorld(); // enemy city at (7,5) on WEST shore; sea channel q in {8,9}
+    // east landmass (q>=10) is land; player 0 stages there
+    for (let r = 0; r < s.mapH; r++) for (let q = 10; q < s.mapW; q++) {
+      const i = tileIndex({ q, r }, s.mapW, s.mapH); if (i >= 0) s.tiles[i].terrain = 'grassland';
+    }
+    s.currentPlayer = 0;
+    const settler = spawn(s, 0, 'settler', 12, 5);
+    refreshVis(s);
+    let s2 = applyAction(ctx, s, { type: 'FOUND_CITY', player: 0, unit: settler.id });
+    s2 = thaw(s2);
+    s2.players[0].techs.push(ctx.rules.settings.naval.embarkTech);
+    declareWarBetween(s2, 0, 1);
+    // a strong gathered host beside the staging city so the muster gate (gathered >= cityStrength*2) passes
+    const host = [
+      spawn(s2, 0, 'warrior', 11, 5), spawn(s2, 0, 'warrior', 12, 6),
+      spawn(s2, 0, 'warrior', 11, 6), spawn(s2, 0, 'warrior', 12, 4),
+      spawn(s2, 0, 'warrior', 11, 4), spawn(s2, 0, 'warrior', 13, 5),
+    ];
+    refreshVis(s2);
+    // reveal the western landmass (where the enemy city sits) so campaignOrders can target it
+    for (let r = 0; r < s2.mapH; r++) for (let q = 0; q < 10; q++) {
+      const i = tileIndex({ q, r }, s2.mapW, s2.mapH);
+      if (i >= 0) s2.visibility[0][i] = Math.max(s2.visibility[0][i], 1);
+    }
+    const d = campaignOrdersForTest(ctx, s2, host[0]);
+    expect(d?.action.type).toBe('MOVE_UNIT');
+    const move = d!.action as Extract<Action, { type: 'MOVE_UNIT' }>;
+    expect(move.path.some((p) => s2.tiles[idxOf(s2, p.q, p.r)].terrain === 'coast')).toBe(true); // heads to sea
   });
 });
 
