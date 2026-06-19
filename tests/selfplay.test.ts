@@ -110,8 +110,10 @@ describe('AI self-play', () => {
     // Re-seeded 924→938 because the ×2 move-point rescale (roads) shifted the trajectory
     // so seed 924 no longer fires culture by the turn limit. Seed 938 fires culture at turn 220.
     // Re-seeded 938→949 because domain-aware movement (land units kept off the sea in routing)
-    // shifted AI pathing so seed 938 now produces a science win. Seed 949 fires culture at turn 220.)
-    const { state } = runGame(949, 265);
+    // shifted AI pathing so seed 938 now produces a science win. Seed 949 fires culture at turn 220.
+    // Re-seeded 949→960 because naval AI (Track C Spec B — explorer galleys + peacetime sea crossings)
+    // shifted coastal AI trajectories so seed 949 now produces a science win. Seed 960 fires culture at turn 232.)
+    const { state } = runGame(960, 265);
     expect(state.phase).toBe('ended');
     expect(state.winner?.victory).toBe('culture');
   }, 300_000);
