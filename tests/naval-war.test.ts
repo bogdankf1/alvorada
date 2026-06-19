@@ -78,7 +78,7 @@ describe('amphibious penalty & capture', () => {
 
 describe('sea invasion', () => {
   it('a gathered army with a sea-only enemy city embarks to assault it', () => {
-    const { s, cityId } = shoreWorld(); // enemy city at (7,5) on WEST shore; sea channel q in {8,9}
+    const { s } = shoreWorld(); // enemy city at (7,5) on WEST shore; sea channel q in {8,9}
     // east landmass (q>=10) is land; player 0 stages there
     for (let r = 0; r < s.mapH; r++) for (let q = 10; q < s.mapW; q++) {
       const i = tileIndex({ q, r }, s.mapW, s.mapH); if (i >= 0) s.tiles[i].terrain = 'grassland';
