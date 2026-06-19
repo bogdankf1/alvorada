@@ -106,7 +106,11 @@ export function validateAction(ctx: Ctx, state: GameState, action: Action): Vali
       if (!v.unit) return v.error!;
       const unit = v.unit;
       const def = ctx.rules.units[unit.def];
-      if (isEmbarked(ctx, state, unit)) return fail('embarked units cannot attack');
+      // amphibious assault: an embarked MELEE unit may storm an adjacent shore (land target).
+      // (Water targets stay blocked by the land-domain check below, so embarked units can't fight ships;
+      //  ranged/civilian embarked units are rejected here.)
+      if (isEmbarked(ctx, state, unit) && (def.ranged || def.strength <= 0))
+        return fail('only embarked soldiers can storm the shore');
       if (def.domain === 'sea' && cityAt(state, action.target)) return fail('ships cannot storm cities');
       if (def.domain === 'land') {
         const ti = tileIndex(action.target, state.mapW, state.mapH);
