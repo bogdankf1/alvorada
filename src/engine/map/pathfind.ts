@@ -68,13 +68,17 @@ export interface MoveRules {
   cost(idx: number): number;
 }
 
-export function moveRulesFor(ctx: Ctx, state: GameState, unit: Unit): MoveRules {
+export function moveRulesFor(ctx: Ctx, state: GameState, unit: Unit, opts?: { embark?: boolean }): MoveRules {
   const pid = unit.owner;
   const vis = state.visibility[pid];
   const civilian = isCivilian(ctx, unit);
   const domain = ctx.rules.units[unit.def].domain;
   const startIdx = tileIndex({ q: unit.q, r: unit.r }, state.mapW, state.mapH);
   const unitOnWater = isWater(ctx, state.tiles[startIdx].terrain);
+  const embarkAllowed =
+    opts?.embark === true &&
+    domain !== 'sea' &&
+    state.players[pid].techs.includes(ctx.rules.settings.naval.embarkTech);
 
   // occupancy snapshot (own units always known; enemies only when visible)
   const militaryBlocked = new Set<number>();
@@ -114,7 +118,7 @@ export function moveRulesFor(ctx: Ctx, state: GameState, unit: Unit): MoveRules 
       const t = state.tiles[idx];
       const water = isWater(ctx, t.terrain);
       if (domain === 'sea') { if (!water) return false; }           // sea: water only
-      else if (water && !unitOnWater) return false;                 // land: no water unless embarked
+      else if (water && !unitOnWater && !embarkAllowed) return false; // land: no water unless embarked (or planning a crossing)
       if (explored && ctx.rules.elevations[t.elevation].impassable) return false; // mountains block all
       if (civilian ? civilianBlocked.has(idx) : militaryBlocked.has(idx)) return false;
       if (explored) {
@@ -131,13 +135,13 @@ export function moveRulesFor(ctx: Ctx, state: GameState, unit: Unit): MoveRules 
 }
 
 /** A* from the unit to dest. Returns the step list (excluding start) or null. */
-export function findPath(ctx: Ctx, state: GameState, unit: Unit, dest: Axial): Axial[] | null {
+export function findPath(ctx: Ctx, state: GameState, unit: Unit, dest: Axial, opts?: { embark?: boolean }): Axial[] | null {
   const W = state.mapW;
   const H = state.mapH;
   const start = tileIndex({ q: unit.q, r: unit.r }, W, H);
   const goal = tileIndex(dest, W, H);
   if (goal < 0 || start === goal) return null;
-  const rules = moveRulesFor(ctx, state, unit);
+  const rules = moveRulesFor(ctx, state, unit, opts);
   if (!rules.canEnter(goal)) return null;
 
   const dist = new Map<number, number>();
