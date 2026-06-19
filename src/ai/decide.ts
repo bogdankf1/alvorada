@@ -236,8 +236,10 @@ function decideSettler(ctx: Ctx, state: GameState, unit: Unit): AiDecision | nul
     const dest = axialOfIndex(best.idx, state.mapW);
     const d = moveAlong(ctx, state, unit, dest, `settler heads to a valley scored ${best.score}`);
     if (d) return d;
-    // land route failed — try an escorted sea crossing to the best overseas site
-    if (hasGalleyEscort(ctx, state, pid)) {
+    // land route failed — try a sea crossing to the best overseas site.
+    // Cross with an escort, or freely in peacetime (no enemy ships threaten the passage).
+    const atPeace = !state.players.some((p) => p.alive && atWar(state, pid, p.id));
+    if (hasGalleyEscort(ctx, state, pid) || atPeace) {
       const sea = seaPath(ctx, state, unit, dest);
       if (sea && sea.length) {
         return {

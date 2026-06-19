@@ -199,6 +199,15 @@ function wantsWorkBoat(ctx: Ctx, state: GameState, city: City): boolean {
 /** Test seam. */
 export function wantsWorkBoatForTest(ctx: Ctx, state: GameState, city: City): boolean { return wantsWorkBoat(ctx, state, city); }
 
+/** A coastal city wants a galley to chart the seas / find rivals when it owns no warship and rivals are unmet. */
+function wantsGalley(ctx: Ctx, state: GameState, city: City): boolean {
+  if (!isCoastal(ctx, state, city)) return false;
+  const pid = city.owner;
+  if (playerCities(state, pid).length < 2) return false; // expand first; explore the seas once established
+  if (playerUnits(state, pid).some((u) => ctx.rules.units[u.def].domain === 'sea' && !isCivilian(ctx, u))) return false;
+  return state.players.some((p) => p.alive && !p.barbarian && p.id !== pid && !state.relations[pid][p.id].met);
+}
+
 export function pickProduction(
   ctx: Ctx,
   state: GameState,
@@ -240,6 +249,11 @@ export function pickProduction(
     return { item: { kind: 'unit', id: 'scout' }, reason: 'the world is unmapped' };
   }
 
+  // 2d. eyes on the seas: a coastal city builds an early galley to chart the waters and find rivals
+  if (wantsGalley(ctx, state, city) && canProduce(ctx, state, city, { kind: 'unit', id: 'galley' }).ok) {
+    return { item: { kind: 'unit', id: 'galley' }, reason: 'a galley to chart the seas' };
+  }
+
   // 3. expansion while the land is open
   const settlersAlive = myUnits.filter((u) => ctx.rules.units[u.def].abilities?.includes('foundCity')).length;
   const spots = knownGoodSpots(ctx, state, pid);
@@ -264,6 +278,7 @@ export function pickProduction(
   if (wantsWorkBoat(ctx, state, city) && canProduce(ctx, state, city, { kind: 'unit', id: 'work_boat' }).ok) {
     return { item: { kind: 'unit', id: 'work_boat' }, reason: 'a work boat to harvest the fishery' };
   }
+
 
   // 4b. a caravan opens trade income once the homeland is tended
   if (

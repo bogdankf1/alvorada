@@ -120,3 +120,41 @@ describe('islands self-play smoke', () => {
     expect(gameHash(replay)).toBe(gameHash(a.s));
   }, 60_000);
 });
+
+describe('islands naval-AI behavior', () => {
+  it('over a long island game, an AI expands overseas and rivals meet across water', () => {
+    // Seed 23 reliably produces overseas colonization: by ~turn 140 the AI charts the seas,
+    // ships escorted settlers across, and founds cities on a second landmass. (Overseas
+    // colonization is emergent/seed-dependent — see the diag sweep in the plan's Task 7.)
+    const config = cfg(23, 'islands');
+    let s = initialState(config, ctx);
+    const log: any[] = [];
+    while (s.phase === 'playing' && s.turn <= 140) {
+      const pid = s.currentPlayer;
+      for (let i = 0; ; i++) {
+        expect(i, `turn ${s.turn} p${pid}: action cap`).toBeLessThan(400);
+        const { action } = decide(ctx, s, pid);
+        s = applyAction(ctx, s, action);
+        log.push(action);
+        if (action.type === 'END_TURN' || s.phase === 'ended') break;
+      }
+    }
+    const { comp } = label(s as any, config.mapW, config.mapH);
+    const flat = (q: number, r: number) => tileIndex({ q, r }, config.mapW, config.mapH);
+    let overseasFound = false;
+    for (const p of s.players.filter((pl) => pl.alive && !pl.barbarian)) {
+      const cities = Object.values(s.cities).filter((c) => c.owner === p.id);
+      if (cities.length < 2) continue;
+      const capComp = comp[flat(cities[0].q, cities[0].r)];
+      if (cities.some((c) => comp[flat(c.q, c.r)] !== capComp)) overseasFound = true;
+    }
+    const metAcrossWater = s.players.some((_p, i) =>
+      s.players.some((_q, j) => i !== j && s.relations[i][j].met),
+    );
+    expect(metAcrossWater).toBe(true);
+    expect(overseasFound).toBe(true);
+    let replay = initialState(config, ctx);
+    for (const act of log) replay = applyAction(ctx, replay, act);
+    expect(gameHash(replay)).toBe(gameHash(s));
+  }, 120_000);
+});
