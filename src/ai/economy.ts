@@ -5,7 +5,7 @@
  */
 import type { AiWeights } from '../data/types';
 import type { City, Ctx, GameState, PlayerId, ProductionItem, Unit } from '../engine/types';
-import { VIS_UNSEEN } from '../engine/types';
+import { VIS_UNSEEN, VIS_VISIBLE } from '../engine/types';
 import { axialOfIndex, hexDistance, hexesWithin, tileIndex } from '../engine/hex';
 import {
   atWar,
@@ -125,9 +125,34 @@ function hasGarrison(ctx: Ctx, state: GameState, city: City): boolean {
   );
 }
 
+/** True when a coastal city has a reason to build warships. */
+export function navalNeed(ctx: Ctx, state: GameState, city: City): boolean {
+  const pid = city.owner;
+  if (!isCoastal(ctx, state, city)) return false;
+  // an enemy ship we can currently see
+  for (const id of Object.keys(state.units).map(Number)) {
+    const u = state.units[id];
+    if (u.owner === pid || ctx.rules.units[u.def].domain !== 'sea') continue;
+    if (!atWar(state, pid, u.owner)) continue;
+    const idx = tileIndex({ q: u.q, r: u.r }, state.mapW, state.mapH);
+    if (state.visibility[pid][idx] === VIS_VISIBLE) return true;
+  }
+  // a friendly embarked civilian needing escort
+  for (const u of playerUnits(state, pid)) {
+    if (!isCivilian(ctx, u)) continue;
+    const idx = tileIndex({ q: u.q, r: u.r }, state.mapW, state.mapH);
+    if (isWater(ctx, state.tiles[idx].terrain)) return true;
+  }
+  return false;
+}
+
+/** Test seam. */
+export function navalNeedForTest(ctx: Ctx, state: GameState, city: City): boolean { return navalNeed(ctx, state, city); }
+
 function bestMilitary(ctx: Ctx, state: GameState, city: City): ProductionItem | null {
+  const allowSea = navalNeed(ctx, state, city);
   const ranked = Object.values(ctx.rules.units)
-    .filter((u) => u.class !== 'civilian' && u.domain !== 'sea')
+    .filter((u) => u.class !== 'civilian' && (allowSea || u.domain !== 'sea'))
     .sort(
       (a, b) =>
         Math.max(b.strength, b.ranged?.strength ?? 0) - Math.max(a.strength, a.ranged?.strength ?? 0) ||

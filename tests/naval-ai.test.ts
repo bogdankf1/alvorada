@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { ctx, flatWorld, spawn, idxOf, refreshVis, thaw } from './helpers';
+import { ctx, flatWorld, spawn, idxOf, refreshVis, thaw, declareWarBetween } from './helpers';
 import { tileIndex } from '../src/engine/hex';
 import { findPath } from '../src/engine/map/pathfind';
 import { decideSettlerForTest, decideWorkBoatForTest } from '../src/ai/decide';
 import type { Action } from '../src/engine/types';
 import { canProduce } from '../src/engine/selectors';
 import { applyAction } from '../src/engine/reducer';
-import { wantsWorkBoatForTest } from '../src/ai/economy';
+import { wantsWorkBoatForTest, navalNeedForTest } from '../src/ai/economy';
 
 /** Land everywhere except a vertical sea channel at q in {8,9}; west land, east land. */
 function channelWorld() {
@@ -127,5 +127,35 @@ describe('work boat orders', () => {
     const d = decideWorkBoatForTest(ctx, s, wb);
     expect(d?.action.type).toBe('BUILD_IMPROVEMENT');
     expect((d!.action as any).improvement).toBe('fishing_boats');
+  });
+});
+
+describe('naval production', () => {
+  function coastalCityWith(techs: string[]) {
+    let s = flatWorld(18, 12, 2);
+    for (let r = 0; r < s.mapH; r++) for (let q = 8; q < s.mapW; q++) {
+      const i = tileIndex({ q, r }, s.mapW, s.mapH); if (i >= 0) s.tiles[i].terrain = 'coast';
+    }
+    const settler = spawn(s, 0, 'settler', 7, 5);
+    refreshVis(s);
+    s = applyAction(ctx, s, { type: 'FOUND_CITY', player: 0, unit: settler.id });
+    s = thaw(s);
+    s.players[0].techs.push(...techs);
+    return { s, id: Object.keys(s.cities).map(Number)[0] };
+  }
+
+  it('naval need is true when an enemy ship is visible near home waters', () => {
+    const { s, id } = coastalCityWith(['bronze_working']);
+    spawn(s, 0, 'warrior', 7, 5);          // garrison
+    spawn(s, 1, 'galley', 9, 5);           // hostile ship offshore
+    declareWarBetween(s, 0, 1);
+    refreshVis(s);
+    expect(navalNeedForTest(ctx, s, s.cities[id])).toBe(true);
+  });
+
+  it('no naval need in peacetime with no ships and no embarked civilians', () => {
+    const { s, id } = coastalCityWith(['bronze_working']);
+    refreshVis(s);
+    expect(navalNeedForTest(ctx, s, s.cities[id])).toBe(false);
   });
 });
