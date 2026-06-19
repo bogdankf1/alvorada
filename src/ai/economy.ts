@@ -274,11 +274,10 @@ export function pickProduction(
     return { item: { kind: 'unit', id: 'worker' }, reason: 'fields need hands' };
   }
 
-  // 4c. a coastal city with a fish tile wants a Work Boat
+  // 4a. a coastal city with a fish tile wants a Work Boat
   if (wantsWorkBoat(ctx, state, city) && canProduce(ctx, state, city, { kind: 'unit', id: 'work_boat' }).ok) {
     return { item: { kind: 'unit', id: 'work_boat' }, reason: 'a work boat to harvest the fishery' };
   }
-
 
   // 4b. a caravan opens trade income once the homeland is tended
   if (
