@@ -148,9 +148,17 @@ The AI now uses the sea on island maps. 275 tests green, **no schema bump**. Use
 
 **Track C "Presence" is complete — islands are a real, alive game** (AIs explore, colonize overseas, run coastal economies, skirmish at sea).
 
-**Deferred: Spec B2 — Naval War** (amphibious invasions: transport armies across water + capture enemy coastal cities — the hard 4X-AI problem). **Follow-up lever:** the AI settles by yield, not shore, so it rarely founds coastal cities — valuing coastalness on islands would make naval bootstrapping more reliable (a playtest/balance tuning effort, natural to fold into B2).
+## ✅ Track C — Naval War (Spec B2 of 2) — SHIPPED (2026-06-19, merged to `main` locally) — NAVAL BET COMPLETE
 
-Backlog remaining below: naval Spec B2 (amphibious war), modern-era tech tree, merge-adjacent-improvements, civilopedia.
+Cross-water conquest + coastal reliability. 283 tests green, **no schema bump, no re-tune** (seeds 314/960 held).
+- **Amphibious assault rule** (engine, tiny): an embarked melee unit may storm an adjacent land target, **disembarking onto it on capture** (the melee resolver already advances the attacker — no execution change). A new capability for the human too. −33% amphibious attack penalty (data-driven); embarked units still can't fight ships or bombard.
+- **Coastal valuing** (AI): a `+6` coastal bonus in `knownGoodSpots` → the AI founds coastal cities → reliable naval bootstrapping.
+- **Sea-invasion AI**: `campaignOrders` embarks a gathered army toward a sea-only enemy city; escort warships screen it; ship bombardment softens the city; the amphibious assault auto-fires via the existing `navalFight` once a unit is adjacent.
+- **Determinism:** no re-tune — the rule is inert without embarked units (≈all continents play) and the invasion AI only fires on sea-only targets. Replays bit-identical.
+
+**The whole naval arc is done** (combat-core → sea-economy → islands map-gen → naval AI → naval war): islands are a real game where the AI explores, colonizes overseas, runs coastal economies, and wages amphibious war. Across-water conquest is emergent (the behavioral test locks seed 960; same-landmass war is more common). **Lesson:** the review caught an unused-local that broke `tsc`/`npm run build` but not `npm test` — run the build, not just the tests, before declaring green.
+
+Backlog remaining below: modern-era tech tree, merge-adjacent-improvements, civilopedia. **Naval follow-ups (revisitable, balance/playtest):** make islands the default map once playtested; raise across-water conquest/colonization reliability; carrier/air domain (never scoped).
 
 ---
 
