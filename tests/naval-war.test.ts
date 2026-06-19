@@ -4,6 +4,7 @@ import { tileIndex } from '../src/engine/hex';
 import { validateAction } from '../src/engine/validate';
 import { applyAction } from '../src/engine/reducer';
 import { attackStrength } from '../src/engine/systems/combat';
+import { coastalBonusForTest } from '../src/ai/economy';
 
 /** Land west of a sea channel (q in {8,9}); enemy city sits on the west shore at (7,5). */
 function shoreWorld() {
@@ -70,5 +71,18 @@ describe('amphibious penalty & capture', () => {
     const moved = s2.units[w.id];
     expect(moved.q).toBe(7); expect(moved.r).toBe(5);              // advanced onto the city tile
     expect(s2.tiles[idxOf(s2, 7, 5)].terrain).not.toBe('coast');  // it's land — the attacker disembarked
+  });
+});
+
+describe('coastal settle preference', () => {
+  it('a coastal site gets the coastal bonus; an inland site does not', () => {
+    let s = flatWorld(20, 14, 2);
+    for (let r = 0; r < s.mapH; r++) for (let q = 12; q < s.mapW; q++) {
+      const i = tileIndex({ q, r }, s.mapW, s.mapH); if (i >= 0) s.tiles[i].terrain = 'coast';
+    }
+    const coastal = { q: 11, r: 5 }; // beside the sea at q=12 → coastal
+    const inland = { q: 3, r: 5 };   // far from water → not coastal
+    expect(coastalBonusForTest(ctx, s, coastal)).toBeGreaterThan(0);
+    expect(coastalBonusForTest(ctx, s, inland)).toBe(0);
   });
 });

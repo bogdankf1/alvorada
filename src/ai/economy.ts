@@ -27,6 +27,8 @@ import {
 } from '../engine/selectors';
 import { validateAction } from '../engine/validate';
 
+const COASTAL_BONUS = 6;
+
 /** Static backbone with situational bumps; first available wins. */
 export function pickResearch(ctx: Ctx, state: GameState, pid: PlayerId): { tech: string; reason: string } | null {
   const available = availableTechs(ctx, state, pid);
@@ -46,6 +48,15 @@ export function pickResearch(ctx: Ctx, state: GameState, pid: PlayerId): { tech:
     }
   }
   return { tech: available[0], reason: 'remaining technology' };
+}
+
+/** A settle-site bonus for coastal tiles (they can build ships/harbors). */
+function coastalBonus(ctx: Ctx, state: GameState, a: { q: number; r: number }): number {
+  return isCoastal(ctx, state, a) ? COASTAL_BONUS : 0;
+}
+/** Test seam. */
+export function coastalBonusForTest(ctx: Ctx, state: GameState, a: { q: number; r: number }): number {
+  return coastalBonus(ctx, state, a);
 }
 
 export function knownGoodSpots(
@@ -71,6 +82,7 @@ export function knownGoodSpots(
       score += y.food * 3 + y.production * 2 + y.gold;
       if (state.tiles[j].resource) score += 3;
     }
+    score += coastalBonus(ctx, state, a);
     if (score >= 18) out.push({ idx, score });
   }
   out.sort((a, b) => b.score - a.score || a.idx - b.idx);
