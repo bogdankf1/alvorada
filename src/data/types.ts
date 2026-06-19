@@ -292,7 +292,7 @@ export interface RulesetSettings {
   combat: { xpPerAttack: number; xpPerKill: number; xpPerDefend: number; xpVsBarbCap: number; promotionThresholds: number[] };
   barbarians: { campCount: number; startSafeRadius: number; spawnRadius: number; spawnEveryTurns: number; maxNearCamp: number; campBounty: number };
   tilePurchase: { baseCost: number; costPerRing: number; radius: number };
-  naval: { embarkTech: string; embarkedDefense: number };
+  naval: { embarkTech: string; embarkedDefense: number; amphibiousAttackPct: number };
   startingUnits: string[];
   diplomacy: DiplomacySettings;
 }

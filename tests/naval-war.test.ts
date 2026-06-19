@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { ctx, flatWorld, spawn, refreshVis, thaw, declareWarBetween } from './helpers';
+import { ctx, flatWorld, spawn, refreshVis, thaw, declareWarBetween, idxOf } from './helpers';
 import { tileIndex } from '../src/engine/hex';
 import { validateAction } from '../src/engine/validate';
 import { applyAction } from '../src/engine/reducer';
+import { attackStrength } from '../src/engine/systems/combat';
 
 /** Land west of a sea channel (q in {8,9}); enemy city sits on the west shore at (7,5). */
 function shoreWorld() {
@@ -44,5 +45,30 @@ describe('amphibious assault rule', () => {
     declareWarBetween(s, 0, 1);
     refreshVis(s);
     expect(validateAction(ctx, s, { type: 'ATTACK', player: 0, unit: a.id, target: { q: 7, r: 5 } }).ok).toBe(false);
+  });
+});
+
+describe('amphibious penalty & capture', () => {
+  it('amphibious attack strength is lower than a normal attack', () => {
+    const s = flatWorld(8, 8, 2);
+    const w = spawn(s, 0, 'warrior', 3, 3);
+    const def = ctx.rules.units['warrior'];
+    const normal = attackStrength(ctx, w, { city: true });
+    const amphib = attackStrength(ctx, w, { city: true, amphibious: true });
+    expect(amphib).toBe(normal + Math.floor((def.strength * ctx.rules.settings.naval.amphibiousAttackPct) / 100));
+    expect(amphib).toBeLessThan(normal);
+  });
+
+  it('an embarked melee assault that breaks a coastal city captures it and disembarks the attacker', () => {
+    const { s, cityId } = shoreWorld();
+    s.cities[cityId].hp = 1; // on the brink
+    const w = spawn(s, 0, 'warrior', 8, 5); // embarked, adjacent to the city at (7,5)
+    declareWarBetween(s, 0, 1);
+    refreshVis(s);
+    const s2 = applyAction(ctx, s, { type: 'ATTACK', player: 0, unit: w.id, target: { q: 7, r: 5 } });
+    expect(s2.cities[cityId].owner).toBe(0);                       // captured
+    const moved = s2.units[w.id];
+    expect(moved.q).toBe(7); expect(moved.r).toBe(5);              // advanced onto the city tile
+    expect(s2.tiles[idxOf(s2, 7, 5)].terrain).not.toBe('coast');  // it's land — the attacker disembarked
   });
 });

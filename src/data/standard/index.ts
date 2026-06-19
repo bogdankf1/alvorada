@@ -89,7 +89,7 @@ const SETTINGS: RulesetSettings = {
   combat: { xpPerAttack: 4, xpPerKill: 6, xpPerDefend: 3, xpVsBarbCap: 30, promotionThresholds: [10, 25, 45, 70, 100] },
   barbarians: { campCount: 6, startSafeRadius: 6, spawnRadius: 2, spawnEveryTurns: 6, maxNearCamp: 2, campBounty: 25 },
   tilePurchase: { baseCost: 50, costPerRing: 30, radius: 3 },
-  naval: { embarkTech: 'bronze_working', embarkedDefense: 5 },
+  naval: { embarkTech: 'bronze_working', embarkedDefense: 5, amphibiousAttackPct: -33 },
   startingUnits: ['settler', 'warrior'],
   diplomacy: {
     termLength: 30,

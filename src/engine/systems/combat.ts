@@ -28,9 +28,11 @@ function classBonus(ctx: Ctx, attacker: Unit, vs: { unit?: Unit; city?: boolean 
   return Math.floor((def.strength * pct) / 100);
 }
 
-export function attackStrength(ctx: Ctx, unit: Unit, vs: { unit?: Unit; city?: boolean }): number {
+export function attackStrength(ctx: Ctx, unit: Unit, vs: { unit?: Unit; city?: boolean; amphibious?: boolean }): number {
   const def = ctx.rules.units[unit.def];
-  return hpScaled(def.strength, unit.hp) + classBonus(ctx, unit, vs) + promotionBonus(ctx, unit, 'attack', vs, def.strength);
+  let s = hpScaled(def.strength, unit.hp) + classBonus(ctx, unit, vs) + promotionBonus(ctx, unit, 'attack', vs, def.strength);
+  if (vs.amphibious) s += Math.floor((def.strength * ctx.rules.settings.naval.amphibiousAttackPct) / 100); // negative
+  return s;
 }
 
 export function rangedStrength(ctx: Ctx, unit: Unit, vs: { unit?: Unit; city?: boolean }): number {
@@ -123,7 +125,8 @@ export function resolveMeleeAttack(
   const defender = militaryAt(ctx, state, target);
   if (!defender) return;
 
-  const attEff = attackStrength(ctx, attacker, { unit: defender });
+  const amphibious = isEmbarked(ctx, state, attacker);
+  const attEff = attackStrength(ctx, attacker, { unit: defender, amphibious });
   const defEff = defenseStrength(ctx, state, defender);
   const dmgToDefender = damageFor(ctx, attEff, defEff);
   const dmgToAttacker = damageFor(ctx, defEff, attEff);
@@ -155,7 +158,8 @@ export function resolveMeleeAttack(
 }
 
 function resolveCityMelee(ctx: Ctx, state: GameState, attacker: Unit, city: City): void {
-  const attEff = attackStrength(ctx, attacker, { city: true });
+  const amphibious = isEmbarked(ctx, state, attacker);
+  const attEff = attackStrength(ctx, attacker, { city: true, amphibious });
   const defEff = cityStrength(ctx, state, city);
   const dmgToCity = damageFor(ctx, attEff, defEff);
   const dmgToAttacker = damageFor(ctx, defEff, attEff);
