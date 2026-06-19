@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ctx, flatWorld, spawn, idxOf, refreshVis, thaw, declareWarBetween } from './helpers';
 import { tileIndex } from '../src/engine/hex';
 import { findPath } from '../src/engine/map/pathfind';
-import { decideSettlerForTest, decideWorkBoatForTest } from '../src/ai/decide';
+import { decideSettlerForTest, decideWorkBoatForTest, decideMilitaryForTest } from '../src/ai/decide';
 import type { Action } from '../src/engine/types';
 import { canProduce } from '../src/engine/selectors';
 import { applyAction } from '../src/engine/reducer';
@@ -157,5 +157,34 @@ describe('naval production', () => {
     const { s, id } = coastalCityWith(['bronze_working']);
     refreshVis(s);
     expect(navalNeedForTest(ctx, s, s.cities[id])).toBe(false);
+  });
+});
+
+describe('naval combat & exploration', () => {
+  function seaWorld() {
+    const s = flatWorld(18, 12, 2);
+    for (let r = 0; r < s.mapH; r++) for (let q = 8; q < s.mapW; q++) {
+      const i = tileIndex({ q, r }, s.mapW, s.mapH); if (i >= 0) s.tiles[i].terrain = 'coast';
+    }
+    return s;
+  }
+
+  it('a ranged ship bombards an adjacent enemy ship', () => {
+    const s = seaWorld();
+    const frig = spawn(s, 0, 'frigate', 10, 5);
+    spawn(s, 1, 'galley', 11, 5);
+    declareWarBetween(s, 0, 1);
+    s.players[0].techs.push('metallurgy');
+    refreshVis(s);
+    const d = decideMilitaryForTest(ctx, s, frig);
+    expect(d?.action.type).toBe('RANGED_ATTACK');
+  });
+
+  it('an idle galley in peacetime heads for the unexplored sea', () => {
+    const s = seaWorld();
+    const g = spawn(s, 0, 'galley', 10, 5);
+    refreshVis(s); // only a small bubble is explored -> a clear sea frontier exists
+    const d = decideMilitaryForTest(ctx, s, g);
+    expect(d?.action.type).toBe('MOVE_UNIT');
   });
 });

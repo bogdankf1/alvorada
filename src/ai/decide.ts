@@ -13,6 +13,7 @@ import {
   cityDistanceOk,
   hasMet,
   isCivilian,
+  isWater,
   militaryAt,
   militaryPower,
   pendingPromotions,
@@ -352,12 +353,12 @@ function decideScout(ctx: Ctx, state: GameState, unit: Unit): AiDecision | null 
   return null;
 }
 
-function decideMilitary(ctx: Ctx, state: GameState, unit: Unit): AiDecision | null {
+/** Shared ranged/melee targeting for any military unit (sea or land). */
+function navalFight(ctx: Ctx, state: GameState, unit: Unit): AiDecision | null {
   const pid = unit.owner;
   const def = ctx.rules.units[unit.def];
   const here = { q: unit.q, r: unit.r };
 
-  // 4a. shoot what's in range
   if (def.ranged) {
     let target: { a: Axial; label: string; priority: number } | null = null;
     for (const h of hexesWithin(here, def.ranged.range)) {
@@ -382,7 +383,7 @@ function decideMilitary(ctx: Ctx, state: GameState, unit: Unit): AiDecision | nu
       };
     }
   } else {
-    // 4b. melee: storm an adjacent city, else hit the weakest adjacent enemy
+    // melee: storm an adjacent city, else hit the weakest adjacent enemy
     let bestCity: City | null = null;
     let bestEnemy: Unit | null = null;
     for (const nb of neighbors(here)) {
@@ -410,6 +411,59 @@ function decideMilitary(ctx: Ctx, state: GameState, unit: Unit): AiDecision | nu
       };
     }
   }
+  return null;
+}
+
+function decideSeaScout(ctx: Ctx, state: GameState, unit: Unit): AiDecision | null {
+  const pid = unit.owner;
+  const vis = state.visibility[pid];
+  const frontier: { a: Axial; dist: number; idx: number }[] = [];
+  for (let idx = 0; idx < state.tiles.length; idx++) {
+    if (vis[idx] === VIS_UNSEEN) continue;
+    if (!ctx.rules.terrains[state.tiles[idx].terrain].water) continue; // ships explore by water
+    const a = axialOfIndex(idx, state.mapW);
+    const touchesUnknown = neighbors(a).some((nb) => {
+      const j = tileIndex(nb, state.mapW, state.mapH);
+      return j >= 0 && vis[j] === VIS_UNSEEN;
+    });
+    if (!touchesUnknown) continue;
+    const dist = hexDistance(a, { q: unit.q, r: unit.r });
+    if (dist === 0) continue;
+    frontier.push({ a, dist, idx });
+  }
+  frontier.sort((x, y) => x.dist - y.dist || x.idx - y.idx);
+  for (const c of frontier.slice(0, 12)) {
+    const d = moveAlong(ctx, state, unit, c.a, `charting the sea at distance ${c.dist}`);
+    if (d) return d;
+  }
+  return null;
+}
+
+function decideMilitary(ctx: Ctx, state: GameState, unit: Unit): AiDecision | null {
+  const pid = unit.owner;
+  const def = ctx.rules.units[unit.def];
+  const here = { q: unit.q, r: unit.r };
+
+  // sea branch: fight, escort, explore, or hold station
+  if (def.domain === 'sea') {
+    const fight = navalFight(ctx, state, unit);
+    if (fight) return fight;
+    // escort the nearest friendly embarked civilian
+    const escortee = playerUnits(state, pid)
+      .filter((u) => isCivilian(ctx, u) && isWater(ctx, state.tiles[tileIndex({ q: u.q, r: u.r }, state.mapW, state.mapH)].terrain))
+      .sort((a, b) => hexDistance(here, { q: a.q, r: a.r }) - hexDistance(here, { q: b.q, r: b.r }) || a.id - b.id)[0];
+    if (escortee && hexDistance(here, { q: escortee.q, r: escortee.r }) > 1) {
+      const d = moveAlong(ctx, state, unit, { q: escortee.q, r: escortee.r }, 'escorting a settler at sea');
+      if (d) return d;
+    }
+    const explore = decideSeaScout(ctx, state, unit);
+    if (explore) return explore;
+    return unit.stance === 'fortified' ? null : { action: { type: 'FORTIFY', player: pid, unit: unit.id }, reason: 'holding home waters' };
+  }
+
+  // 4a/4b. shoot what's in range / melee
+  const fight = navalFight(ctx, state, unit);
+  if (fight) return fight;
 
   // 4c. campaign: gather, then march on the nearest known enemy city
   const campaign = campaignOrders(ctx, state, unit);
@@ -541,4 +595,9 @@ export function decideSettlerForTest(ctx: Ctx, state: GameState, unit: Unit): Ai
 /** Test seam: expose the work boat decision. */
 export function decideWorkBoatForTest(ctx: Ctx, state: GameState, unit: Unit): AiDecision | null {
   return decideWorkBoat(ctx, state, unit);
+}
+
+/** Test seam: expose the military decision (includes sea branch). */
+export function decideMilitaryForTest(ctx: Ctx, state: GameState, unit: Unit): AiDecision | null {
+  return decideMilitary(ctx, state, unit);
 }
