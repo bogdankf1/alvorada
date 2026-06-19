@@ -138,9 +138,19 @@ Opt-in island maps. 264 tests green, **no schema bump** (config-only), **re-tune
 - **UI:** Continents/Islands toggle in the new-game menu.
 - **Determinism dual-guard:** a continents-output regression fingerprint + the full self-play suite both prove the default world is unchanged. Island game is a *smoke* test (runs 40 turns legally + replays) — no victory-seed test until naval AI exists.
 
-**Next: Spec B — Naval AI** (the hard half: AI builds ships/work-boats/harbors, embarks+escorts settlers to colonize islets/other continents, sea exploration, naval defense/war). This is where AI coastal economies finally start shifting victory seeds.
+## ✅ Track C — Naval AI (Spec B of 2, "Presence & Expansion") — SHIPPED (2026-06-19, merged to `main` locally)
 
-Backlog remaining below: naval Spec B (naval AI), modern-era tech tree, merge-adjacent-improvements, civilopedia.
+The AI now uses the sea on island maps. 275 tests green, **no schema bump**. User capped scope at **Presence & Expansion** (amphibious invasions deferred → Spec B2).
+- **One engine change:** opt-in `findPath(…, { embark: true })` (default-off → byte-identical) so the AI can plan a land unit's first step onto water; everything after is the existing pathfinder + executor.
+- **AI behaviors (all in `src/ai/`):** overseas settling (escorted, or at peace), coastal economy (builds Work Boats + Harbors, sails Work Boats to fish), need-gated warship production, naval combat (bombard/melee/escort) + sea exploration.
+- **Bootstrap fix** (integration test caught it): the AI rarely founds coastal cities + naval need was too narrow → it never built galleys. Fixed with a high-priority "explorer galley" for established coastal cities + peacetime sea crossings. Overseas colonization now works on ~half of seeds (emergent); the behavioral test locks seed 23.
+- **Determinism:** re-tuned only the culture seed (949→960); science (314) held; replays bit-identical.
+
+**Track C "Presence" is complete — islands are a real, alive game** (AIs explore, colonize overseas, run coastal economies, skirmish at sea).
+
+**Deferred: Spec B2 — Naval War** (amphibious invasions: transport armies across water + capture enemy coastal cities — the hard 4X-AI problem). **Follow-up lever:** the AI settles by yield, not shore, so it rarely founds coastal cities — valuing coastalness on islands would make naval bootstrapping more reliable (a playtest/balance tuning effort, natural to fold into B2).
+
+Backlog remaining below: naval Spec B2 (amphibious war), modern-era tech tree, merge-adjacent-improvements, civilopedia.
 
 ---
 
