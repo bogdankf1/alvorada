@@ -158,3 +158,48 @@ describe('islands naval-AI behavior', () => {
     expect(gameHash(replay)).toBe(gameHash(s));
   }, 120_000);
 });
+
+describe('islands naval-war behavior', () => {
+  it('over a long island game, an AI captures a rival city across water', () => {
+    // Seed 960 demonstrates amphibious conquest: an AI ships an escorted army across the sea
+    // and storms a rival's coastal city on another landmass. (Emergent/seed-dependent — most
+    // island wars are fought on the shared home landmass; true across-water conquest is rarer.
+    // Re sea: this seed number is also the CONTINENTS culture-victory seed, but that's a
+    // different game (mapType 'islands' here) — no coupling.)
+    const config = cfg(960, 'islands');
+    let s = initialState(config, ctx);
+    const founders = new Map<number, number>();
+    for (const id of Object.keys(s.cities)) founders.set(Number(id), s.cities[Number(id)].owner);
+    const log: any[] = [];
+    while (s.phase === 'playing' && s.turn <= 200) {
+      const pid = s.currentPlayer;
+      for (let i = 0; ; i++) {
+        expect(i, `turn ${s.turn} p${pid}: action cap`).toBeLessThan(400);
+        const { action } = decide(ctx, s, pid);
+        s = applyAction(ctx, s, action);
+        log.push(action);
+        for (const id of Object.keys(s.cities)) {
+          const n = Number(id);
+          if (!founders.has(n)) founders.set(n, s.cities[n].owner);
+        }
+        if (action.type === 'END_TURN' || s.phase === 'ended') break;
+      }
+    }
+    const { comp } = label(s as any, config.mapW, config.mapH);
+    const flat = (q: number, r: number) => tileIndex({ q, r }, config.mapW, config.mapH);
+    // a city now owned by someone other than its founder, whose own home landmass differs from the city's
+    let conquestAcrossWater = false;
+    for (const c of Object.values(s.cities)) {
+      const founder = founders.get(c.id);
+      if (founder === undefined || founder === c.owner) continue;
+      const ownerCities = Object.values(s.cities).filter((x) => x.owner === c.owner);
+      if (!ownerCities.length) continue;
+      const ownerHome = comp[flat(ownerCities[0].q, ownerCities[0].r)];
+      if (comp[flat(c.q, c.r)] !== ownerHome) conquestAcrossWater = true;
+    }
+    expect(conquestAcrossWater).toBe(true);
+    let replay = initialState(config, ctx);
+    for (const act of log) replay = applyAction(ctx, replay, act);
+    expect(gameHash(replay)).toBe(gameHash(s));
+  }, 200_000);
+});
