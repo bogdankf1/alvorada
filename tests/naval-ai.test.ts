@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { ctx, flatWorld, spawn, idxOf, refreshVis } from './helpers';
 import { tileIndex } from '../src/engine/hex';
 import { findPath } from '../src/engine/map/pathfind';
+import { decideSettlerForTest } from '../src/ai/decide';
+import type { Action } from '../src/engine/types';
 
 /** Land everywhere except a vertical sea channel at q in {8,9}; west land, east land. */
 function channelWorld() {
@@ -33,5 +35,36 @@ describe('embark pathfinding', () => {
     const u = spawn(s, 0, 'settler', 5, 5); // no embark tech
     refreshVis(s);
     expect(findPath(ctx, s, u, { q: 13, r: 5 }, { embark: true })).toBeNull();
+  });
+});
+
+function overseasWorld() {
+  const s = flatWorld(18, 12, 2);
+  for (let r = 0; r < s.mapH; r++) {
+    for (const q of [8, 9]) {
+      const i = tileIndex({ q, r }, s.mapW, s.mapH);
+      if (i >= 0) s.tiles[i].terrain = 'coast';
+    }
+  }
+  return s;
+}
+
+describe('overseas settling', () => {
+  it('a settler with only an overseas site + a galley + embark tech sets out to sea', () => {
+    const s = overseasWorld();
+    spawn(s, 0, 'warrior', 2, 5);                 // a garrison so player 0 is a going concern
+    const settler = spawn(s, 0, 'settler', 6, 5); // on home land beside the channel
+    spawn(s, 0, 'galley', 8, 5);                  // an escort is available
+    s.players[0].techs.push(ctx.rules.settings.naval.embarkTech);
+    refreshVis(s);
+    // reveal the east side as explored so knownGoodSpots can score it
+    for (let r = 0; r < s.mapH; r++) for (let q = 10; q < 16; q++) {
+      const i = tileIndex({ q, r }, s.mapW, s.mapH);
+      if (i >= 0) s.visibility[0][i] = Math.max(s.visibility[0][i], 1);
+    }
+    const d = decideSettlerForTest(ctx, s, settler);
+    expect(d?.action.type).toBe('MOVE_UNIT');
+    const move = d!.action as Extract<Action, { type: 'MOVE_UNIT' }>;
+    expect(move.path.some((p) => s.tiles[idxOf(s, p.q, p.r)].terrain === 'coast')).toBe(true);
   });
 });

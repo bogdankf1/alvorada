@@ -202,6 +202,16 @@ function moveAlong(ctx: Ctx, state: GameState, unit: Unit, dest: Axial, reason: 
   };
 }
 
+/** A route that may embark across water (AI overseas intents only). Null if the unit can't embark. */
+function seaPath(ctx: Ctx, state: GameState, unit: Unit, dest: Axial): Axial[] | null {
+  if (!state.players[unit.owner].techs.includes(ctx.rules.settings.naval.embarkTech)) return null;
+  return findPath(ctx, state, unit, dest, { embark: true });
+}
+
+function hasGalleyEscort(ctx: Ctx, state: GameState, pid: PlayerId): boolean {
+  return playerUnits(state, pid).some((u) => ctx.rules.units[u.def].domain === 'sea' && !isCivilian(ctx, u));
+}
+
 function decideSettler(ctx: Ctx, state: GameState, unit: Unit): AiDecision | null {
   const pid = unit.owner;
   const spots = knownGoodSpots(ctx, state, pid);
@@ -224,6 +234,16 @@ function decideSettler(ctx: Ctx, state: GameState, unit: Unit): AiDecision | nul
     const dest = axialOfIndex(best.idx, state.mapW);
     const d = moveAlong(ctx, state, unit, dest, `settler heads to a valley scored ${best.score}`);
     if (d) return d;
+    // land route failed — try an escorted sea crossing to the best overseas site
+    if (hasGalleyEscort(ctx, state, pid)) {
+      const sea = seaPath(ctx, state, unit, dest);
+      if (sea && sea.length) {
+        return {
+          action: { type: 'MOVE_UNIT', player: pid, unit: unit.id, path: sea },
+          reason: `settler sets out by sea for a valley scored ${best.score}`,
+        };
+      }
+    }
   }
   // nowhere to settle: found in place if legal at all
   if (canFoundHere) {
@@ -500,4 +520,9 @@ function diploReason(action: Action, state: GameState): string {
 /** Test seam: expose the otherwise-internal war counsel. */
 export function considerWarForTest(ctx: Ctx, state: GameState, pid: PlayerId): AiDecision | null {
   return considerWar(ctx, state, pid);
+}
+
+/** Test seam: expose the settler decision. */
+export function decideSettlerForTest(ctx: Ctx, state: GameState, unit: Unit): AiDecision | null {
+  return decideSettler(ctx, state, unit);
 }
