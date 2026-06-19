@@ -15,6 +15,7 @@ import {
   empireHappiness,
   hasMet,
   isCivilian,
+  isCoastal,
   isImpassable,
   isWater,
   militaryPower,
@@ -139,7 +140,7 @@ function bestMilitary(ctx: Ctx, state: GameState, city: City): ProductionItem | 
   return null;
 }
 
-const BUILDING_PRIORITY = ['monument', 'shrine', 'granary', 'library', 'walls', 'market', 'workshop', 'aqueduct', 'temple', 'colosseum', 'courthouse', 'university', 'observatory', 'bank', 'castle', 'monastery', 'cathedral'];
+const BUILDING_PRIORITY = ['monument', 'shrine', 'granary', 'library', 'walls', 'market', 'harbor', 'workshop', 'aqueduct', 'temple', 'colosseum', 'courthouse', 'university', 'observatory', 'bank', 'castle', 'monastery', 'cathedral'];
 
 const FOCUS_BUILDINGS: Record<string, string[]> = {
   faith: ['shrine', 'temple', 'monastery', 'cathedral'],
@@ -154,6 +155,24 @@ function buildingPriorityFor(tw: Required<AiWeights>): string[] {
     if (tw[k] > 0) for (const b of FOCUS_BUILDINGS[k]) if (!front.includes(b)) front.push(b);
   return [...front, ...BUILDING_PRIORITY.filter((b) => !front.includes(b))];
 }
+
+/** A coastal city wants a Work Boat if it owns an unimproved fish tile and none is already targeted/here. */
+function wantsWorkBoat(ctx: Ctx, state: GameState, city: City): boolean {
+  if (!isCoastal(ctx, state, city)) return false;
+  if (playerUnits(state, city.owner).some((u) => u.def === 'work_boat')) return false; // one at a time
+  for (const h of hexesWithin({ q: city.q, r: city.r }, ctx.rules.settings.workRadius)) {
+    const idx = tileIndex(h, state.mapW, state.mapH);
+    if (idx < 0) continue;
+    const t = state.tiles[idx];
+    if (tileOwner(state, idx) !== city.owner) continue;
+    if (t.resource && ctx.rules.resources[t.resource]?.improvedBy === 'fishing_boats' && t.improvement !== 'fishing_boats')
+      return true;
+  }
+  return false;
+}
+
+/** Test seam. */
+export function wantsWorkBoatForTest(ctx: Ctx, state: GameState, city: City): boolean { return wantsWorkBoat(ctx, state, city); }
 
 export function pickProduction(
   ctx: Ctx,
@@ -214,6 +233,11 @@ export function pickProduction(
   const workers = myUnits.filter((u) => ctx.rules.units[u.def].abilities?.includes('improve')).length;
   if (workers < Math.min(myCities.length, 3) && canProduce(ctx, state, city, { kind: 'unit', id: 'worker' }).ok) {
     return { item: { kind: 'unit', id: 'worker' }, reason: 'fields need hands' };
+  }
+
+  // 4c. a coastal city with a fish tile wants a Work Boat
+  if (wantsWorkBoat(ctx, state, city) && canProduce(ctx, state, city, { kind: 'unit', id: 'work_boat' }).ok) {
+    return { item: { kind: 'unit', id: 'work_boat' }, reason: 'a work boat to harvest the fishery' };
   }
 
   // 4b. a caravan opens trade income once the homeland is tended
