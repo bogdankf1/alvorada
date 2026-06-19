@@ -316,6 +316,28 @@ export function knownPower(ctx: Ctx, state: GameState, viewer: PlayerId, target:
   return power;
 }
 
+/** Best fishing-boats job for a sea-domain Work Boat: an owned water tile with a matching resource. */
+export function bestSeaWorkerJob(ctx: Ctx, state: GameState, worker: Unit): { idx: number; improvement: string } | null {
+  const pid = worker.owner;
+  let best: { idx: number; dist: number; i: number } | null = null;
+  for (const city of playerCities(state, pid)) {
+    for (const h of hexesWithin({ q: city.q, r: city.r }, ctx.rules.settings.workRadius)) {
+      const idx = tileIndex(h, state.mapW, state.mapH);
+      if (idx < 0) continue;
+      const t = state.tiles[idx];
+      if (!isWater(ctx, t.terrain) || tileOwner(state, idx) !== pid) continue;
+      if (!t.resource || ctx.rules.resources[t.resource]?.improvedBy !== 'fishing_boats') continue;
+      if (t.improvement === 'fishing_boats') continue;
+      const probe = { ...worker, q: h.q, r: h.r };
+      const probeState = { ...state, units: { ...state.units, [worker.id]: probe } };
+      if (!validateAction(ctx, probeState, { type: 'BUILD_IMPROVEMENT', player: pid, unit: worker.id, improvement: 'fishing_boats' }).ok) continue;
+      const dist = hexDistance({ q: worker.q, r: worker.r }, h);
+      if (!best || dist < best.dist || (dist === best.dist && idx < best.i)) best = { idx, dist, i: idx };
+    }
+  }
+  return best ? { idx: best.idx, improvement: 'fishing_boats' } : null;
+}
+
 /** Best improvement job on owned tiles near our cities; returns build target. */
 export function bestWorkerJob(
   ctx: Ctx,

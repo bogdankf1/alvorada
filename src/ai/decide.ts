@@ -23,7 +23,7 @@ import {
 import { validateAction } from '../engine/validate';
 import { findPath } from '../engine/map/pathfind';
 import { cityStrength } from '../engine/systems/combat';
-import { bestWorkerJob, knownGoodSpots, knownPower, pickProduction, pickResearch } from './economy';
+import { bestSeaWorkerJob, bestWorkerJob, knownGoodSpots, knownPower, pickProduction, pickResearch } from './economy';
 import { initiateDiplomacy } from './diplomacy';
 import { civicAction } from './civics';
 import { barbarianDecide } from './barbarian';
@@ -188,7 +188,8 @@ function decideUnit(ctx: Ctx, state: GameState, unit: Unit): AiDecision | null {
   const def = ctx.rules.units[unit.def];
   if (def.abilities?.includes('trade')) return decideCaravan(ctx, state, unit);
   if (def.abilities?.includes('foundCity')) return decideSettler(ctx, state, unit);
-  if (def.abilities?.includes('improve')) return decideWorker(ctx, state, unit);
+  if (def.abilities?.includes('improve'))
+    return def.domain === 'sea' ? decideWorkBoat(ctx, state, unit) : decideWorker(ctx, state, unit);
   if (unit.def === 'scout') return decideScout(ctx, state, unit) ?? decideMilitary(ctx, state, unit);
   return decideMilitary(ctx, state, unit);
 }
@@ -271,6 +272,16 @@ function decideWorker(ctx: Ctx, state: GameState, unit: Unit): AiDecision | null
     };
   }
   return moveAlong(ctx, state, unit, target, `worker walks to a ${job.improvement} site`);
+}
+
+function decideWorkBoat(ctx: Ctx, state: GameState, unit: Unit): AiDecision | null {
+  const job = bestSeaWorkerJob(ctx, state, unit);
+  if (!job) return null;
+  const target = axialOfIndex(job.idx, state.mapW);
+  if (unit.q === target.q && unit.r === target.r) {
+    return { action: { type: 'BUILD_IMPROVEMENT', player: unit.owner, unit: unit.id, improvement: job.improvement }, reason: 'a work boat lays fishing nets' };
+  }
+  return moveAlong(ctx, state, unit, target, 'work boat sails to a fishery');
 }
 
 function pickTradeTarget(ctx: Ctx, state: GameState, unit: Unit): City | null {
@@ -525,4 +536,9 @@ export function considerWarForTest(ctx: Ctx, state: GameState, pid: PlayerId): A
 /** Test seam: expose the settler decision. */
 export function decideSettlerForTest(ctx: Ctx, state: GameState, unit: Unit): AiDecision | null {
   return decideSettler(ctx, state, unit);
+}
+
+/** Test seam: expose the work boat decision. */
+export function decideWorkBoatForTest(ctx: Ctx, state: GameState, unit: Unit): AiDecision | null {
+  return decideWorkBoat(ctx, state, unit);
 }

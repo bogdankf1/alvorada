@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ctx, flatWorld, spawn, idxOf, refreshVis, thaw } from './helpers';
 import { tileIndex } from '../src/engine/hex';
 import { findPath } from '../src/engine/map/pathfind';
-import { decideSettlerForTest } from '../src/ai/decide';
+import { decideSettlerForTest, decideWorkBoatForTest } from '../src/ai/decide';
 import type { Action } from '../src/engine/types';
 import { canProduce } from '../src/engine/selectors';
 import { applyAction } from '../src/engine/reducer';
@@ -104,5 +104,28 @@ describe('coastal production', () => {
     expect(canProduce(ctx, s, coastal, { kind: 'building', id: 'harbor' }).ok).toBe(true);
     expect(canProduce(ctx, s, inland, { kind: 'unit', id: 'work_boat' }).ok).toBe(false);
     expect(canProduce(ctx, s, inland, { kind: 'building', id: 'harbor' }).ok).toBe(false);
+  });
+});
+
+describe('work boat orders', () => {
+  it('a Work Boat on an owned fish tile is told to build Fishing Boats', () => {
+    let s = flatWorld(18, 12, 2);
+    for (let r = 0; r < s.mapH; r++) for (const q of [8, 9, 10]) {
+      const i = tileIndex({ q, r }, s.mapW, s.mapH); if (i >= 0) s.tiles[i].terrain = 'coast';
+    }
+    const settler = spawn(s, 0, 'settler', 7, 5);
+    refreshVis(s);
+    s = applyAction(ctx, s, { type: 'FOUND_CITY', player: 0, unit: settler.id });
+    s = thaw(s);
+    const id = Object.keys(s.cities).map(Number)[0];
+    s.players[0].techs.push('pottery');
+    const fishIdx = idxOf(s, 8, 5);
+    s.tiles[fishIdx].ownerCity = id;
+    s.tiles[fishIdx].resource = 'fish';
+    const wb = spawn(s, 0, 'work_boat', 8, 5);
+    refreshVis(s);
+    const d = decideWorkBoatForTest(ctx, s, wb);
+    expect(d?.action.type).toBe('BUILD_IMPROVEMENT');
+    expect((d!.action as any).improvement).toBe('fishing_boats');
   });
 });
