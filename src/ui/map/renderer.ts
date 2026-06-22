@@ -394,6 +394,8 @@ export class MapRenderer {
     }
 
     // roads — drawn on the ground, under improvements/resources
+    const cityTileIdx = new Set<number>();
+    for (const c of Object.values(s.cities)) cityTileIdx.add(tileIndex({ q: c.q, r: c.r }, s.mapW, s.mapH));
     for (let i = 0; i < s.tiles.length; i++) {
       if (!s.tiles[i].road) continue;
       const a = axialOfIndex(i, s.mapW);
@@ -404,7 +406,7 @@ export class MapRenderer {
       let connected = false;
       for (const nb of neighbors(a)) {
         const ni = tileIndex(nb, s.mapW, s.mapH);
-        if (ni < 0 || !s.tiles[ni].road) continue;
+        if (ni < 0 || (!s.tiles[ni].road && !cityTileIdx.has(ni))) continue; // join roads AND adjacent cities
         connected = true;
         const np = hexToPixel(nb, HEX);
         g.beginPath();
