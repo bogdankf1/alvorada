@@ -147,4 +147,12 @@ export const IMPROVEMENTS: Record<string, ImprovementDef> = {
     clearsFeature: true,
     requiresTech: 'mining',
   },
+  lumber_mill: {
+    id: 'lumber_mill',
+    name: 'Lumber Mill',
+    turns: 4,
+    yields: { production: 2 },
+    requiresFeature: 'forest',
+    requiresTech: 'construction',
+  },
 };

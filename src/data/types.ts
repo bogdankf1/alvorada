@@ -107,6 +107,7 @@ export interface ImprovementDef {
   validElevations?: string[];
   requiresResource?: boolean; // only on a tile whose resource is improvedBy === this
   clearsFeature?: boolean; // chop: removes the feature on completion, builds nothing
+  requiresFeature?: string; // builds only on a tile that HAS this feature, and does not clear it
   requiresTech?: string;
 }
 

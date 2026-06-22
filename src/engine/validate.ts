@@ -209,6 +209,11 @@ export function validateAction(ctx: Ctx, state: GameState, action: Action): Vali
         if (!ctx.rules.features[tile.feature].removable) return fail('cannot be cleared');
         return ok;
       }
+      if (imp.requiresFeature) {
+        if (tile.feature !== imp.requiresFeature) return fail(`needs ${ctx.rules.features[imp.requiresFeature].name}`);
+        if (tile.improvement === imp.id) return fail('already improved');
+        return ok;
+      }
       if (tile.feature) return fail('the land must be cleared first');
       if (tile.improvement === imp.id) return fail('already improved');
 
