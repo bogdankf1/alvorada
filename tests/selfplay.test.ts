@@ -73,7 +73,7 @@ describe('AI self-play', () => {
   }, 120_000);
 
   it('a full game reaches a verdict by the turn limit', () => {
-    const { state } = runGame(60221, 265); // turnLimit is 260; run just past it
+    const { state } = runGame(60221, 305); // turnLimit is 300 (Industrial era); run just past it
     expect(state.phase).toBe('ended');
     expect(state.winner).not.toBeNull();
     expect(state.chronicle.length).toBeGreaterThan(0);
@@ -87,10 +87,13 @@ describe('AI self-play', () => {
     // + scientific_method) is unreachable by turn 260 on seed 7 (it finishes ~turn 305), and
     // the brake's base/perPop/luxury teeth are pinned by tests/happiness.test.ts. Seed 314
     // demonstrates the capstone is a live victory path under the tuned numbers.
-    const { state } = runGame(314, 265);
+    // The Industrial era moved the science capstone scientific_method → electricity and the
+    // turn limit 260 → 300; seed 314 still produces a science win (reaches electricity ~turn 213),
+    // so it's KEPT — only the asserted capstone tech changes to 'electricity'.
+    const { state } = runGame(314, 305);
     expect(state.phase).toBe('ended');
     expect(state.winner?.victory).toBe('science');
-    expect(state.players[state.winner!.player].techs).toContain('scientific_method');
+    expect(state.players[state.winner!.player].techs).toContain('electricity');
   }, 300_000);
 
   it('the culture victory is a reachable victory in self-play', () => {
@@ -112,8 +115,10 @@ describe('AI self-play', () => {
     // Re-seeded 938→949 because domain-aware movement (land units kept off the sea in routing)
     // shifted AI pathing so seed 938 now produces a science win. Seed 949 fires culture at turn 220.
     // Re-seeded 949→960 because naval AI (Track C Spec B — explorer galleys + peacetime sea crossings)
-    // shifted coastal AI trajectories so seed 949 now produces a science win. Seed 960 fires culture at turn 232.)
-    const { state } = runGame(960, 265);
+    // shifted coastal AI trajectories so seed 949 now produces a science win. Seed 960 fires culture at turn 232.
+    // Re-seeded 960→700 because the Industrial era (capstone → electricity, turn limit → 300, Coal resource
+    // shifting map-gen) moved the trajectories so seed 960 now produces a science win. Seed 700 fires culture at turn 226.)
+    const { state } = runGame(700, 305);
     expect(state.phase).toBe('ended');
     expect(state.winner?.victory).toBe('culture');
   }, 300_000);

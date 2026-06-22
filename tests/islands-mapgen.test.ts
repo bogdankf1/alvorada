@@ -32,8 +32,11 @@ function fingerprint(m: GeneratedMap): string {
 
 describe('continents output (regression guard)', () => {
   it('is unchanged for fixed seeds', () => {
-    expect(fingerprint(generateMap(cfg(12345), STANDARD_RULESET))).toBe('fc8e9881');
-    expect(fingerprint(generateMap(cfg(67890), STANDARD_RULESET))).toBe('d62ce45a');
+    // Fingerprints re-captured 2026-06-22 when the Industrial era added the Coal resource,
+    // which legitimately shifts the weighted-resource map-gen pass (an intended content change,
+    // not a regression). The guard still catches UNintended future changes to continents output.
+    expect(fingerprint(generateMap(cfg(12345), STANDARD_RULESET))).toBe('62860ea5');
+    expect(fingerprint(generateMap(cfg(67890), STANDARD_RULESET))).toBe('66c9808f');
   });
 });
 

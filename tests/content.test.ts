@@ -9,9 +9,9 @@ import { cityStrength } from '../src/engine/systems/combat';
 describe('era content', () => {
   // (ruleset cross-reference validity is covered by tests/ruleset.test.ts)
 
-  it('has four eras in order', () => {
+  it('has five eras in order', () => {
     expect(STANDARD_RULESET.eras.map((e) => e.id)).toEqual([
-      'ancient', 'classical', 'medieval', 'renaissance',
+      'ancient', 'classical', 'medieval', 'renaissance', 'industrial',
     ]);
   });
 
@@ -210,9 +210,10 @@ describe('science victory', () => {
     s = applyAction(ctx, s, { type: 'FOUND_CITY', player: 0, unit: settler.id });
     s = thaw(s);
     // give player 0 the capstone's prereqs and a full beaker bank on it
-    s.players[0].techs.push('printing_press', 'chemistry');
-    s.players[0].researching = 'scientific_method';
-    s.players[0].science = ctx.rules.techs.scientific_method.cost;
+    // (the Industrial era moved the science capstone to 'electricity', prereqs industrialization + scientific_method)
+    s.players[0].techs.push('industrialization', 'scientific_method');
+    s.players[0].researching = 'electricity';
+    s.players[0].science = ctx.rules.techs.electricity.cost;
     s = endTurn(s); // player 0 ends; beginTurn(1) runs... need player 0's beginTurn
     // advance until player 0's turn-start processes the research
     let guard = 0;
