@@ -262,4 +262,41 @@ Backlog remaining below: modern-era tech tree, merge-adjacent-improvements, civi
 
 ---
 
+## Batch 3 (2026-06-22 playtest — first islands/naval hands-on)
+
+### 1. Lumber mill — harvest wood from an *un-cleared* forest 🟢 NEW
+- If a worker does NOT chop a forest tile, allow building a "lumber mill"-type improvement on it (prepare wood / +production); if the forest is already cleared, it's not buildable. Maybe tech-gated.
+- **Code reality:** improvements have `validTerrains`/`validElevations` + `clearsFeature` (the chop), but **no `requiresFeature`/`validFeatures`** field — so "improvement that REQUIRES the forest to remain" isn't expressible yet. Needs: new `requiresFeature` (or `validFeatures`) on `ImprovementDef` + a `lumber_mill` improvement (valid on `forest`) + render case. Determinism: AI's `bestWorkerJob` would use it → re-tune likely.
+- Status: open (small-medium, needs a design pass on yields/tech gate)
+
+### 2. Unit obsolescence — stop offering archers once cannons exist 🟢 NEW (AI already half-handles it)
+- Don't build/show obsolete units once a successor exists (archer→… , catapult→…).
+- **Code reality:** no `obsoletedBy` field anywhere. The AI's `bestMilitary` already picks the STRONGEST available, so the AI rarely builds archers when it has better — but it's by strength, not formal obsolescence, and the **human's production list still shows everything**. Needs: `obsoletedBy: techId` (or successor unit) on `UnitDef` → hide/disable in the picker + skip in AI. Determinism: changes production/AI → re-tune. Pairs with #7.
+- Status: open (medium)
+
+### 3. Roads should visually connect to the adjacent city 🟢 NEW (renderer-only)
+- A road on a tile next to a city should render as joined to the city center (looks connected).
+- **Code reality:** the renderer draws road segments only between tiles that BOTH have a road (renderer.ts ~396-407); the city tile isn't a "road", so adjacent roads stop short. Fix = draw a stub from a road tile to an adjacent owned city center. Pure UI, no determinism impact. Small.
+- Side note: user found you CAN build improvements on a city tile — flag separately, is that intended? (minor; the city center already yields its own tile — probably harmless, low priority to block.)
+- Status: open (small)
+
+### 4. Specialists +/− does nothing, and the row is cramped 🔴 BUG + 🟡 UI [screenshot]
+- **Root-caused.** Two problems: (a) **functional** — clicking `−` to 0 dispatches `SET_SPECIALISTS count=0`, but the reducer treats `count<=0` as "UNPIN" (deletes the forced pin), and `allocateCitizens` then GREEDILY re-assigns the specialist (the merchant slot out-yields the free tile), so it snaps back → looks inert. You **cannot force a specialist OFF**. The `+` at 1/1 is correctly disabled (at max). Fixing it needs a small model change: a pin of 0 must mean "force zero" (a real pin), AND the greedy fill must skip a slot that's pinned (not re-add it). (b) **layout** — "Merchant1/1 [−][+]" is cramped/overlapping (no spacing, unclear). Needs CSS + clearer affordance.
+- Status: open (medium — the most broken thing here; HIGH priority)
+
+### 5. Remove-road option 🟢 NEW (small)
+- Let a worker remove a road from a tile. Needs a `REMOVE_ROAD` action + worker order/button (mirror `BUILD_ROAD`). AI won't use it → minimal determinism impact. Small.
+- Status: open (small)
+
+### 6. Naval discoverability — "how do I build a ship / cross the sea?" ❓ANSWERED + 🟢 NEW (UX gap)
+- **Answer:** a **Galley** needs **Bronze Working** researched AND a **coastal city** (founded next to water); **embarking** land units across the sea also unlocks at **Bronze Working** — then click a land unit and move it onto an adjacent sea tile.
+- **The real signal:** the player we built naval FOR couldn't find this → a discoverability gap. Needs: surface *why* a unit isn't buildable ("needs a coastal city"), an embark hint, and/or a reference (overlaps the deferred **Civilopedia**). 
+- Status: open (UX — pairs with Civilopedia)
+
+### 7. Separate Units and Buildings in the build menu 🟢 NEW (UI)
+- The production picker is a **flat list** (units + buildings mixed). Group it into Units / Buildings sections for easier scanning. Pure UI, small. Pairs with #2.
+- Status: open (small)
+
+---
+
 *Next batches appended below as testing continues.*
