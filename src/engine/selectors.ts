@@ -207,8 +207,10 @@ export function allocateCitizens(
   // forced specialists first (clamped to available slots and pop)
   if (city.forcedSpecialists) {
     for (const t of TYPE_ORDER) {
-      const want = Math.min(city.forcedSpecialists[t] ?? 0, slotCounts[t] ?? 0, remaining);
-      if (want > 0) { specialists[t] = want; slotCounts[t] = (slotCounts[t] ?? 0) - want; remaining -= want; }
+      if (!(t in city.forcedSpecialists)) continue; // only explicitly-pinned types are manually controlled
+      const want = Math.min(city.forcedSpecialists[t]!, slotCounts[t] ?? 0, remaining);
+      if (want > 0) { specialists[t] = want; remaining -= want; }
+      slotCounts[t] = 0; // pinned type is fully controlled — the greedy pass never (re-)fills it
     }
   }
 

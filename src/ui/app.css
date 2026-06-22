@@ -399,6 +399,9 @@
   border: 1px solid rgba(200, 165, 91, 0.3);
   color: var(--ivory);
 }
+.specialist-row { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+.specialist-row .spec-name { flex: 1; }
+.specialist-row .spec-count { font-variant-numeric: tabular-nums; opacity: 0.85; }
 
 /* tile info */
 .tile-info {

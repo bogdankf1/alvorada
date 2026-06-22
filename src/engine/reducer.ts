@@ -127,8 +127,7 @@ function handle(ctx: Ctx, state: GameState, action: Action): void {
     case 'SET_SPECIALISTS': {
       const city = state.cities[action.city];
       if (!city.forcedSpecialists) city.forcedSpecialists = {};
-      if (action.count <= 0) delete city.forcedSpecialists[action.specialist];
-      else city.forcedSpecialists[action.specialist] = action.count;
+      city.forcedSpecialists[action.specialist] = action.count; // 0 = force zero (kept as an explicit pin)
       break;
     }
 

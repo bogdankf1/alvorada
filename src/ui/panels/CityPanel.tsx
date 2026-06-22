@@ -186,15 +186,14 @@ export function CityPanel() {
             {specialistTypes.map((t) => {
               const assigned = alloc.specialists[t] ?? 0;
               const total = slotTotals[t] ?? 0;
-              const pinned = city.forcedSpecialists?.[t] ?? assigned;
               const set = (count: number) =>
                 humanDispatch({ type: 'SET_SPECIALISTS', player: viewer, city: city.id, specialist: t, count });
               return (
                 <div key={t} className="specialist-row">
                   <span className="spec-name">{gameCtx.rules.specialists[t].name}</span>
                   <span className="spec-count">{assigned}/{total}</span>
-                  <button className="btn btn--xs" disabled={pinned <= 0} onClick={() => set(Math.max(0, pinned - 1))}>−</button>
-                  <button className="btn btn--xs" disabled={assigned >= total} onClick={() => set(Math.min(total, pinned + 1))}>+</button>
+                  <button className="btn btn--xs" disabled={assigned <= 0} onClick={() => set(assigned - 1)}>−</button>
+                  <button className="btn btn--xs" disabled={assigned >= total} onClick={() => set(assigned + 1)}>+</button>
                 </div>
               );
             })}
