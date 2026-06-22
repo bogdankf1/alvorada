@@ -91,6 +91,11 @@ export const RESOURCES: Record<string, ResourceDef> = {
     improvedBy: 'mine', bonusImproved: { gold: 1 },
     spawn: { terrains: ['grassland', 'plains', 'desert'], elevations: ['hill'], weight: 4 },
   },
+  coal: {
+    id: 'coal', name: 'Coal', kind: 'strategic', yields: { production: 1 },
+    revealedBy: 'industrialization', improvedBy: 'mine', bonusImproved: { production: 1 },
+    spawn: { terrains: ['grassland', 'plains', 'tundra'], elevations: ['hill'], weight: 5 },
+  },
 };
 
 export const IMPROVEMENTS: Record<string, ImprovementDef> = {

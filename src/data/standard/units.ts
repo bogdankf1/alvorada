@@ -141,13 +141,13 @@ export const UNITS: Record<string, UnitDef> = {
   },
   musketman: {
     id: 'musketman', name: 'Musketman', cost: 120, moves: 2, sight: 2, strength: 30,
-    class: 'melee', domain: 'land', requiresTech: 'gunpowder', art: { glyph: 'sword' },
+    class: 'melee', domain: 'land', requiresTech: 'gunpowder', obsoletedBy: 'rifling', art: { glyph: 'sword' },
   },
   cannon: {
     id: 'cannon', name: 'Cannon', cost: 140, moves: 2, sight: 2, strength: 10,
     ranged: { strength: 32, range: 2 }, class: 'siege', domain: 'land',
     bonuses: [{ vsCity: true, pct: 100 }], requiresTech: 'metallurgy', requiresResource: 'iron',
-    art: { glyph: 'catapult' },
+    obsoletedBy: 'ballistics', art: { glyph: 'catapult' },
   },
   cuirassier: {
     id: 'cuirassier', name: 'Cuirassier', cost: 150, moves: 4, sight: 2, strength: 34,
@@ -183,7 +183,21 @@ export const UNITS: Record<string, UnitDef> = {
   },
   frigate: {
     id: 'frigate', name: 'Frigate', cost: 150, moves: 4, sight: 2, strength: 20,
-    ranged: { strength: 28, range: 2 }, class: 'ranged', domain: 'sea', requiresTech: 'metallurgy', art: { glyph: 'bow' },
+    ranged: { strength: 28, range: 2 }, class: 'ranged', domain: 'sea', requiresTech: 'metallurgy', obsoletedBy: 'steam_power', art: { glyph: 'bow' },
+  },
+  rifleman: {
+    id: 'rifleman', name: 'Rifleman', cost: 150, moves: 2, sight: 2, strength: 36,
+    class: 'melee', domain: 'land', requiresTech: 'rifling', art: { glyph: 'sword' },
+  },
+  artillery: {
+    id: 'artillery', name: 'Artillery', cost: 170, moves: 2, sight: 2, strength: 12,
+    ranged: { strength: 42, range: 2 }, class: 'siege', domain: 'land',
+    bonuses: [{ vsCity: true, pct: 100 }], requiresTech: 'ballistics', art: { glyph: 'catapult' },
+  },
+  ironclad: {
+    id: 'ironclad', name: 'Ironclad', cost: 180, moves: 4, sight: 3, strength: 28,
+    ranged: { strength: 36, range: 2 }, class: 'ranged', domain: 'sea',
+    requiresTech: 'steam_power', requiresResource: 'coal', art: { glyph: 'bow' },
   },
   // --- civ uniques ---
   legion: {
