@@ -177,7 +177,7 @@ function bestMilitary(ctx: Ctx, state: GameState, city: City): ProductionItem | 
   return null;
 }
 
-const BUILDING_PRIORITY = ['monument', 'shrine', 'granary', 'library', 'walls', 'market', 'harbor', 'workshop', 'aqueduct', 'temple', 'colosseum', 'courthouse', 'university', 'observatory', 'bank', 'castle', 'monastery', 'cathedral'];
+const BUILDING_PRIORITY = ['monument', 'shrine', 'granary', 'library', 'walls', 'market', 'harbor', 'workshop', 'factory', 'aqueduct', 'temple', 'colosseum', 'courthouse', 'university', 'observatory', 'bank', 'stock_exchange', 'castle', 'monastery', 'cathedral'];
 
 const FOCUS_BUILDINGS: Record<string, string[]> = {
   faith: ['shrine', 'temple', 'monastery', 'cathedral'],

@@ -166,6 +166,10 @@ export const BUILDINGS: Record<string, BuildingDef> = {
     wonder: true, effect: { kind: 'happiness', amount: 5 },
     requiresTech: 'construction', art: { glyph: 'temple' },
   },
+  factory: { id: 'factory', name: 'Factory', cost: 180, yields: { production: 5 }, requiresTech: 'industrialization', art: { glyph: 'hammer' } },
+  stock_exchange: { id: 'stock_exchange', name: 'Stock Exchange', cost: 160, yields: { gold: 5 }, specialistSlots: { type: 'merchant', count: 1 }, requiresTech: 'economics', art: { glyph: 'coin' } },
+  big_ben: { id: 'big_ben', name: 'Big Ben', cost: 320, yields: { gold: 3 }, wonder: true, effect: { kind: 'empireYields', yields: { gold: 1 } }, requiresTech: 'economics', art: { glyph: 'coin' } },
+  eiffel_tower: { id: 'eiffel_tower', name: 'Eiffel Tower', cost: 340, yields: { culture: 3 }, wonder: true, effect: { kind: 'empireYields', yields: { culture: 1 } }, requiresTech: 'electricity', art: { glyph: 'obelisk' } },
   // --- civ uniques ---
   bath: {
     id: 'bath', name: 'Roman Bath', cost: 104, yields: { food: 3 }, happiness: 1,

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { ctx } from './helpers';
 import { flatWorld, spawn, refreshVis, thaw } from './helpers';
-import { canProduce } from '../src/engine/selectors';
+import { canProduce, resourceRevealed } from '../src/engine/selectors';
 import { applyAction } from '../src/engine/reducer';
 import { tileIndex } from '../src/engine/hex';
 
@@ -57,5 +57,27 @@ describe('industrial units', () => {
     s.players[0].techs.push('rifling', 'steam_power');
     expect(canProduce(ctx, s, c, { kind: 'unit', id: 'musketman' }).ok).toBe(false);
     expect(canProduce(ctx, s, c, { kind: 'unit', id: 'frigate' }).ok).toBe(false);
+  });
+});
+
+describe('industrial buildings + coal', () => {
+  function city(techs: string[]) {
+    const s = flatWorld(16, 12, 2);
+    s.players[0].techs.push(...techs);
+    return { s, c: { q: 6, r: 6, owner: 0, buildings: [] as string[], pop: 3 } as any };
+  }
+  it('factory needs industrialization; stock_exchange needs economics', () => {
+    const { s, c } = city([]);
+    expect(canProduce(ctx, s, c, { kind: 'building', id: 'factory' }).ok).toBe(false);
+    expect(canProduce(ctx, s, c, { kind: 'building', id: 'stock_exchange' }).ok).toBe(false);
+    s.players[0].techs.push('industrialization', 'economics');
+    expect(canProduce(ctx, s, c, { kind: 'building', id: 'factory' }).ok).toBe(true);
+    expect(canProduce(ctx, s, c, { kind: 'building', id: 'stock_exchange' }).ok).toBe(true);
+  });
+  it('coal is revealed only with industrialization', () => {
+    const { s } = city([]);
+    expect(resourceRevealed(ctx, s, 0, 'coal')).toBe(false);
+    s.players[0].techs.push('industrialization');
+    expect(resourceRevealed(ctx, s, 0, 'coal')).toBe(true);
   });
 });
