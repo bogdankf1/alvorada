@@ -514,6 +514,8 @@ export function canProduce(
     if (replacedByUnique(ctx.rules.units, player.civ, item.id)) return { ok: false, reason: 'replaced by a unique unit' };
     if (def.requiresTech && !player.techs.includes(def.requiresTech))
       return { ok: false, reason: `requires ${ctx.rules.techs[def.requiresTech].name}` };
+    if (def.obsoletedBy && player.techs.includes(def.obsoletedBy))
+      return { ok: false, reason: 'obsolete' };
     if (def.requiresResource && strategicAvailability(ctx, state, city.owner, def.requiresResource) <= 0)
       return { ok: false, reason: `requires ${ctx.rules.resources[def.requiresResource].name}` };
     if (def.abilities?.includes('foundCity')) {

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ctx, flatWorld, spawn, idxOf, refreshVis, thaw } from './helpers';
 import { applyAction } from '../src/engine/reducer';
 import { validateAction } from '../src/engine/validate';
-import { tileYields } from '../src/engine/selectors';
+import { tileYields, canProduce, productionOptions } from '../src/engine/selectors';
 
 function cityWorld() {
   let s = flatWorld(16, 12, 2);
@@ -55,5 +55,30 @@ describe('lumber mill', () => {
     const after = tileYields(ctx, s, fIdx, 0).production;
     expect(after - before).toBe(2);
     expect(s.tiles[fIdx].feature).toBe('forest');
+  });
+});
+
+describe('unit obsolescence', () => {
+  function cityFor(techs: string[]) {
+    const s = flatWorld(16, 12, 2);
+    s.players[0].techs.push(...techs);
+    const city = { q: 6, r: 6, owner: 0, buildings: [] as string[], pop: 3 } as any;
+    return { s, city };
+  }
+  it('an archer is buildable before machinery, obsolete after', () => {
+    const { s, city } = cityFor(['archery']);
+    expect(canProduce(ctx, s, city, { kind: 'unit', id: 'archer' }).ok).toBe(true);
+    s.players[0].techs.push('machinery');
+    const res = canProduce(ctx, s, city, { kind: 'unit', id: 'archer' });
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.reason).toMatch(/obsolete/i);
+  });
+  it('obsolete units drop out of productionOptions', () => {
+    const { s, city } = cityFor(['archery', 'machinery']);
+    expect(productionOptions(ctx, s, city).some((o) => o.kind === 'unit' && o.id === 'archer')).toBe(false);
+  });
+  it('a latest-tier unit (crossbowman) is not obsoleted by any tech', () => {
+    const { s, city } = cityFor(['machinery', 'metallurgy', 'gunpowder']);
+    expect(canProduce(ctx, s, city, { kind: 'unit', id: 'crossbowman' }).ok).toBe(true);
   });
 });

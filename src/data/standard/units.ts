@@ -45,6 +45,7 @@ export const UNITS: Record<string, UnitDef> = {
     strength: 8,
     class: 'melee',
     domain: 'land',
+    obsoletedBy: 'iron_working',
     art: { glyph: 'club' },
   },
   archer: {
@@ -58,6 +59,7 @@ export const UNITS: Record<string, UnitDef> = {
     class: 'ranged',
     domain: 'land',
     requiresTech: 'archery',
+    obsoletedBy: 'machinery',
     art: { glyph: 'bow' },
   },
   spearman: {
@@ -71,6 +73,7 @@ export const UNITS: Record<string, UnitDef> = {
     domain: 'land',
     bonuses: [{ vsClass: 'mounted', pct: 50 }],
     requiresTech: 'bronze_working',
+    obsoletedBy: 'feudalism',
     art: { glyph: 'spear' },
   },
   horseman: {
@@ -84,6 +87,7 @@ export const UNITS: Record<string, UnitDef> = {
     domain: 'land',
     requiresTech: 'horseback_riding',
     requiresResource: 'horses',
+    obsoletedBy: 'chivalry',
     art: { glyph: 'horse' },
   },
   swordsman: {
@@ -97,6 +101,7 @@ export const UNITS: Record<string, UnitDef> = {
     domain: 'land',
     requiresTech: 'iron_working',
     requiresResource: 'iron',
+    obsoletedBy: 'gunpowder',
     art: { glyph: 'sword' },
   },
   catapult: {
@@ -111,12 +116,13 @@ export const UNITS: Record<string, UnitDef> = {
     domain: 'land',
     bonuses: [{ vsCity: true, pct: 100 }],
     requiresTech: 'mathematics',
+    obsoletedBy: 'machinery',
     art: { glyph: 'catapult' },
   },
   pikeman: {
     id: 'pikeman', name: 'Pikeman', cost: 90, moves: 2, sight: 2, strength: 18,
     class: 'melee', domain: 'land', bonuses: [{ vsClass: 'mounted', pct: 50 }],
-    requiresTech: 'feudalism', art: { glyph: 'spear' },
+    requiresTech: 'feudalism', obsoletedBy: 'gunpowder', art: { glyph: 'spear' },
   },
   crossbowman: {
     id: 'crossbowman', name: 'Crossbowman', cost: 80, moves: 2, sight: 2, strength: 14,
@@ -126,12 +132,12 @@ export const UNITS: Record<string, UnitDef> = {
   trebuchet: {
     id: 'trebuchet', name: 'Trebuchet', cost: 96, moves: 2, sight: 2, strength: 8,
     ranged: { strength: 20, range: 2 }, class: 'siege', domain: 'land',
-    bonuses: [{ vsCity: true, pct: 100 }], requiresTech: 'machinery', art: { glyph: 'catapult' },
+    bonuses: [{ vsCity: true, pct: 100 }], requiresTech: 'machinery', obsoletedBy: 'metallurgy', art: { glyph: 'catapult' },
   },
   knight: {
     id: 'knight', name: 'Knight', cost: 96, moves: 4, sight: 2, strength: 24,
     class: 'mounted', domain: 'land', requiresTech: 'chivalry', requiresResource: 'horses',
-    art: { glyph: 'horse' },
+    obsoletedBy: 'metallurgy', art: { glyph: 'horse' },
   },
   musketman: {
     id: 'musketman', name: 'Musketman', cost: 120, moves: 2, sight: 2, strength: 30,
@@ -173,7 +179,7 @@ export const UNITS: Record<string, UnitDef> = {
   },
   galleass: {
     id: 'galleass', name: 'Galleass', cost: 110, moves: 3, sight: 2, strength: 14,
-    ranged: { strength: 16, range: 2 }, class: 'ranged', domain: 'sea', requiresTech: 'machinery', art: { glyph: 'bow' },
+    ranged: { strength: 16, range: 2 }, class: 'ranged', domain: 'sea', requiresTech: 'machinery', obsoletedBy: 'metallurgy', art: { glyph: 'bow' },
   },
   frigate: {
     id: 'frigate', name: 'Frigate', cost: 150, moves: 4, sight: 2, strength: 20,
@@ -183,21 +189,21 @@ export const UNITS: Record<string, UnitDef> = {
   legion: {
     id: 'legion', name: 'Legion', cost: 88, moves: 2, sight: 2, strength: 18,
     class: 'melee', domain: 'land', requiresTech: 'iron_working', requiresResource: 'iron',
-    bonuses: [{ vsCity: true, pct: 50 }], civ: 'rome', replaces: 'swordsman', art: { glyph: 'sword' },
+    bonuses: [{ vsCity: true, pct: 50 }], civ: 'rome', replaces: 'swordsman', obsoletedBy: 'gunpowder', art: { glyph: 'sword' },
   },
   war_chariot: {
     id: 'war_chariot', name: 'War Chariot', cost: 80, moves: 5, sight: 2, strength: 14,
     class: 'mounted', domain: 'land', requiresTech: 'horseback_riding',
-    civ: 'egypt', replaces: 'horseman', art: { glyph: 'horse' },
+    civ: 'egypt', replaces: 'horseman', obsoletedBy: 'chivalry', art: { glyph: 'horse' },
   },
   bowman: {
     id: 'bowman', name: 'Bowman', cost: 48, moves: 2, sight: 2, strength: 6,
     ranged: { strength: 9, range: 2 }, class: 'ranged', domain: 'land',
-    requiresTech: 'archery', civ: 'babylon', replaces: 'archer', art: { glyph: 'bow' },
+    requiresTech: 'archery', civ: 'babylon', replaces: 'archer', obsoletedBy: 'machinery', art: { glyph: 'bow' },
   },
   hoplite: {
     id: 'hoplite', name: 'Hoplite', cost: 56, moves: 2, sight: 2, strength: 13,
     class: 'melee', domain: 'land', bonuses: [{ vsClass: 'mounted', pct: 50 }],
-    requiresTech: 'bronze_working', civ: 'hellas', replaces: 'spearman', art: { glyph: 'spear' },
+    requiresTech: 'bronze_working', civ: 'hellas', replaces: 'spearman', obsoletedBy: 'feudalism', art: { glyph: 'spear' },
   },
 };

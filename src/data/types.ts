@@ -132,6 +132,7 @@ export interface UnitDef {
   abilities?: UnitAbility[];
   bonuses?: { vsClass?: UnitClass; vsCity?: boolean; pct: number }[];
   requiresTech?: string;
+  obsoletedBy?: string; // tech id; once researched, this unit can no longer be built (existing units unaffected)
   requiresResource?: string; // strategic resource consumed while alive
   civ?: string; // if set, only this civ may build it
   replaces?: string; // base unit id this unique stands in for (that civ no longer builds the base)
