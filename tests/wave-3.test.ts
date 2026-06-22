@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { ctx, flatWorld, spawn, refreshVis, thaw, idxOf } from './helpers';
 import { applyAction } from '../src/engine/reducer';
-import { allocateCitizens } from '../src/engine/selectors';
+import { allocateCitizens, cityBuildHints } from '../src/engine/selectors';
 import { validateAction } from '../src/engine/validate';
+import { tileIndex } from '../src/engine/hex';
 
 /** A founded city for player 0 owning only its centre tile, with a market (1 merchant slot). */
 function marketCity() {
@@ -60,5 +61,33 @@ describe('remove road', () => {
     refreshVis(s);
     expect(validateAction(ctx, s, { type: 'REMOVE_ROAD', player: 0, unit: w.id }).ok).toBe(false);       // no road
     expect(validateAction(ctx, s, { type: 'REMOVE_ROAD', player: 0, unit: warrior.id }).ok).toBe(false); // not a worker
+  });
+});
+
+describe('cityBuildHints', () => {
+  function coastWorld() {
+    const s = flatWorld(18, 12, 2);
+    for (let r = 0; r < s.mapH; r++) for (let q = 8; q < s.mapW; q++) {
+      const i = tileIndex({ q, r }, s.mapW, s.mapH); if (i >= 0) s.tiles[i].terrain = 'coast';
+    }
+    return s;
+  }
+  it('an inland city with the tech surfaces the galley as needing a coastal city', () => {
+    const s = coastWorld();
+    s.players[0].techs.push('bronze_working');
+    const inland = { q: 2, r: 5, owner: 0, buildings: [] as string[], pop: 3 } as any;
+    const hints = cityBuildHints(ctx, s, inland);
+    expect(hints.some((h) => h.item.kind === 'unit' && h.item.id === 'galley' && /coastal/i.test(h.reason))).toBe(true);
+  });
+  it('a coastal city does not list the galley as unavailable (it is buildable)', () => {
+    const s = coastWorld();
+    s.players[0].techs.push('bronze_working');
+    const coastal = { q: 7, r: 5, owner: 0, buildings: [] as string[], pop: 3 } as any;
+    expect(cityBuildHints(ctx, s, coastal).some((h) => h.item.id === 'galley')).toBe(false);
+  });
+  it('tech-gated items are excluded (no future-era flood)', () => {
+    const s = coastWorld(); // no bronze_working
+    const inland = { q: 2, r: 5, owner: 0, buildings: [] as string[], pop: 3 } as any;
+    expect(cityBuildHints(ctx, s, inland).some((h) => h.item.id === 'galley')).toBe(false);
   });
 });

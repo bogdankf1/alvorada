@@ -550,6 +550,31 @@ export function productionOptions(ctx: Ctx, state: GameState, city: City): Produ
   return out;
 }
 
+/** Tech-unlocked items this city can't build, with a surfaceable (non-tech) reason. */
+export function cityBuildHints(ctx: Ctx, state: GameState, city: City): { item: ProductionItem; reason: string }[] {
+  const player = state.players[city.owner];
+  const techMet = (req?: string) => !req || player.techs.includes(req);
+  const coastal = isCoastal(ctx, state, city);
+  const out: { item: ProductionItem; reason: string }[] = [];
+  for (const id of Object.keys(ctx.rules.units).sort()) {
+    const def = ctx.rules.units[id];
+    if (def.civ && def.civ !== player.civ) continue;
+    if (!techMet(def.requiresTech)) continue;
+    if (canProduce(ctx, state, city, { kind: 'unit', id }).ok) continue;
+    if (def.domain === 'sea' && !coastal) { out.push({ item: { kind: 'unit', id }, reason: 'needs a coastal city' }); continue; }
+    if (def.requiresResource && strategicAvailability(ctx, state, city.owner, def.requiresResource) <= 0)
+      out.push({ item: { kind: 'unit', id }, reason: `needs ${ctx.rules.resources[def.requiresResource].name}` });
+  }
+  for (const id of Object.keys(ctx.rules.buildings).sort()) {
+    const def = ctx.rules.buildings[id];
+    if (def.civ && def.civ !== player.civ) continue;
+    if (!techMet(def.requiresTech)) continue;
+    if (canProduce(ctx, state, city, { kind: 'building', id }).ok) continue;
+    if (def.requiresCoastal && !coastal) out.push({ item: { kind: 'building', id }, reason: 'needs a coastal city' });
+  }
+  return out;
+}
+
 export function itemCost(ctx: Ctx, item: ProductionItem): number {
   return item.kind === 'unit' ? ctx.rules.units[item.id].cost : ctx.rules.buildings[item.id].cost;
 }

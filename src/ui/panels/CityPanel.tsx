@@ -3,6 +3,7 @@ import { appStore, useApp } from '../../app/store';
 import { humanDispatch, isMyTurn } from '../actions';
 import {
   allocateCitizens,
+  cityBuildHints,
   cityYields,
   growthThreshold,
   itemCost,
@@ -57,6 +58,9 @@ export function CityPanel() {
       : null;
 
   const options = mine && isMyTurn() ? productionOptions(gameCtx, game, city) : [];
+  const unitOpts = options.filter((o) => o.kind === 'unit');
+  const buildingOpts = options.filter((o) => o.kind === 'building');
+  const hints = mine && isMyTurn() ? cityBuildHints(gameCtx, game, city) : [];
 
   const itemName = (item: ProductionItem) =>
     item.kind === 'unit' ? gameCtx.rules.units[item.id].name : gameCtx.rules.buildings[item.id].name;
@@ -126,44 +130,69 @@ export function CityPanel() {
           </div>
         </div>
 
-        {options.length > 0 && (
+        {(options.length > 0 || hints.length > 0) && (
           <>
             <div className="city-section-title">Order Production</div>
             <div className="prod-list">
-              {options.map((item) => {
-                const cost = itemCost(gameCtx, item);
-                const turns = total.production > 0 ? Math.ceil(cost / total.production) : null;
-                const price = purchaseCost(gameCtx, item);
-                const isCurrent = current?.kind === item.kind && current?.id === item.id;
+              {(() => {
+                const renderItem = (item: ProductionItem) => {
+                  const cost = itemCost(gameCtx, item);
+                  const turns = total.production > 0 ? Math.ceil(cost / total.production) : null;
+                  const price = purchaseCost(gameCtx, item);
+                  const isCurrent = current?.kind === item.kind && current?.id === item.id;
+                  return (
+                    <div
+                      key={`${item.kind}:${item.id}`}
+                      className={`prod-item ${isCurrent ? 'is-current' : ''}`}
+                      onClick={() =>
+                        humanDispatch({ type: 'SET_PRODUCTION', player: viewer, city: city.id, item })
+                      }
+                    >
+                      <span className="nm">{itemName(item)}</span>
+                      {item.kind === 'building' && gameCtx.rules.buildings[item.id].wonder && (
+                        <span className="wonder-tag" title={wonderBlurb(gameCtx.rules.buildings[item.id])}>Wonder</span>
+                      )}
+                      {isCurrent && <span className="cur-tag">Building</span>}
+                      <span className="turns">{turns !== null ? `${turns}t` : '—'}</span>
+                      {player.gold >= price && (
+                        <button
+                          className="btn buy"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            humanDispatch({ type: 'BUY_ITEM', player: viewer, city: city.id, item });
+                          }}
+                          title="Purchase outright with gold"
+                        >
+                          {price}g
+                        </button>
+                      )}
+                    </div>
+                  );
+                };
                 return (
-                  <div
-                    key={`${item.kind}:${item.id}`}
-                    className={`prod-item ${isCurrent ? 'is-current' : ''}`}
-                    onClick={() =>
-                      humanDispatch({ type: 'SET_PRODUCTION', player: viewer, city: city.id, item })
-                    }
-                  >
-                    <span className="nm">{itemName(item)}</span>
-                    {item.kind === 'building' && gameCtx.rules.buildings[item.id].wonder && (
-                      <span className="wonder-tag" title={wonderBlurb(gameCtx.rules.buildings[item.id])}>Wonder</span>
+                  <>
+                    {unitOpts.length > 0 && (<>
+                      <div className="city-subsection-title">Units</div>
+                      {unitOpts.map(renderItem)}
+                    </>)}
+                    {buildingOpts.length > 0 && (<>
+                      <div className="city-subsection-title">Buildings</div>
+                      {buildingOpts.map(renderItem)}
+                    </>)}
+                    {hints.length > 0 && (
+                      <div className="prod-unavailable">
+                        <div className="city-subsection-title">Unavailable</div>
+                        {hints.map((h) => (
+                          <div key={`${h.item.kind}:${h.item.id}`} className="prod-item is-locked" title={h.reason}>
+                            <span className="nm">{itemName(h.item)}</span>
+                            <span className="lock-reason">{h.reason}</span>
+                          </div>
+                        ))}
+                      </div>
                     )}
-                    {isCurrent && <span className="cur-tag">Building</span>}
-                    <span className="turns">{turns !== null ? `${turns}t` : '—'}</span>
-                    {player.gold >= price && (
-                      <button
-                        className="btn buy"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          humanDispatch({ type: 'BUY_ITEM', player: viewer, city: city.id, item });
-                        }}
-                        title="Purchase outright with gold"
-                      >
-                        {price}g
-                      </button>
-                    )}
-                  </div>
+                  </>
                 );
-              })}
+              })()}
             </div>
           </>
         )}
