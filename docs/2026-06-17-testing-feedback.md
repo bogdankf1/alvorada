@@ -264,6 +264,8 @@ Backlog remaining below: modern-era tech tree, merge-adjacent-improvements, civi
 
 ## Batch 3 (2026-06-22 playtest — first islands/naval hands-on)
 
+> **✅ Wave 3 SHIPPED (2026-06-22, merged to `main` locally)** — items #3 (roads→city), #4 (specialists fix + tidy), #5 (remove-road), #6 (naval discoverability: Unavailable list + embark hint), #7 (split build menu). Spec/plan `docs/superpowers/{specs,plans}/2026-06-22-wave-3-ui-qol*`. 292 tests green, **re-tune-free, no schema bump**. **Still open from this batch:** #1 (lumber mill — needs a `requiresFeature` field) and #2 (unit obsolescence) — both touch data + AI, deliberately kept as separate content features.
+
 ### 1. Lumber mill — harvest wood from an *un-cleared* forest 🟢 NEW
 - If a worker does NOT chop a forest tile, allow building a "lumber mill"-type improvement on it (prepare wood / +production); if the forest is already cleared, it's not buildable. Maybe tech-gated.
 - **Code reality:** improvements have `validTerrains`/`validElevations` + `clearsFeature` (the chop), but **no `requiresFeature`/`validFeatures`** field — so "improvement that REQUIRES the forest to remain" isn't expressible yet. Needs: new `requiresFeature` (or `validFeatures`) on `ImprovementDef` + a `lumber_mill` improvement (valid on `forest`) + render case. Determinism: AI's `bestWorkerJob` would use it → re-tune likely.
