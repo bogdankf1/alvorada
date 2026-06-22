@@ -501,6 +501,29 @@ function paintPlantation(g: CanvasRenderingContext2D, cx: number, cy: number, q:
   g.restore();
 }
 
+/** Lumber Mill: three stacked log ends with a saw-stroke above. */
+function paintLumberMill(g: CanvasRenderingContext2D, cx: number, cy: number, q: number, r: number, seed: number): void {
+  const x = cx, y = cy + 2;
+  g.strokeStyle = 'rgba(74,52,32,0.9)';
+  g.fillStyle = 'rgba(150,110,70,0.9)';
+  g.lineWidth = 1.4;
+  // three stacked log ends
+  for (let i = 0; i < 3; i++) {
+    const lx = x + (i - 1) * 5;
+    g.beginPath();
+    g.ellipse(lx, y, 2.4, 2.4, 0, 0, Math.PI * 2);
+    g.fill();
+    g.stroke();
+  }
+  // a saw stroke above
+  g.strokeStyle = 'rgba(60,48,34,0.7)';
+  const jitter = (hash2(q, r, seed + 41) - 0.5) * 2;
+  g.beginPath();
+  g.moveTo(x - 7, y - 5 + jitter);
+  g.lineTo(x + 7, y - 5 - jitter);
+  g.stroke();
+}
+
 export function paintImprovement(
   g: CanvasRenderingContext2D,
   impId: string,
@@ -528,6 +551,9 @@ export function paintImprovement(
       break;
     case 'fishing_boats':
       paintFishingBoats(g, cx, cy, q, r, seed);
+      break;
+    case 'lumber_mill':
+      paintLumberMill(g, cx, cy, q, r, seed);
       break;
   }
 }
