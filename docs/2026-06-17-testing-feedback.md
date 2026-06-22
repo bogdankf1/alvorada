@@ -158,7 +158,16 @@ Cross-water conquest + coastal reliability. 283 tests green, **no schema bump, n
 
 **The whole naval arc is done** (combat-core → sea-economy → islands map-gen → naval AI → naval war): islands are a real game where the AI explores, colonizes overseas, runs coastal economies, and wages amphibious war. Across-water conquest is emergent (the behavioral test locks seed 960; same-landmass war is more common). **Lesson:** the review caught an unused-local that broke `tsc`/`npm run build` but not `npm test` — run the build, not just the tests, before declaring green.
 
-Backlog remaining below: modern-era tech tree, merge-adjacent-improvements, civilopedia. **Naval follow-ups (revisitable, balance/playtest):** make islands the default map once playtested; raise across-water conquest/colonization reliability; carrier/air domain (never scoped).
+## ✅ Modern-era arc — Industrial Era (Spec A of N) — SHIPPED (2026-06-22, merged to `main` locally)
+
+The modern-era tech tree, decomposed as a multi-spec saga; **Industrial first** (land/sea only, no air/nukes). 308 tests green, **no schema bump**, all ruleset data + a settings change. Spec/plan `…/2026-06-22-industrial-era*`.
+- **+1 era + 6 techs** (economics, industrialization, rifling, steam_power, ballistics, **electricity**); **3 units** (rifleman, artillery, ironclad[needs Coal]) extending obsolescence; **2 buildings** (factory, stock_exchange); **2 wonders** (Big Ben, Eiffel Tower); **Coal** strategic resource.
+- **Science capstone moved** `scientific_method` → `electricity`, **turn limit 260 → 300**, so the science race runs through the new era. Re-tuned: science seed 314 kept (now wins via electricity), culture re-seeded 960→700; the continents map-gen fingerprint re-captured (Coal entered the resource pool).
+- **⚠️ Balance flag for the next playtest:** science may now be too dominant (~9/12 sampled seeds win science) — electricity is only 2 techs deeper but the turn limit grew +40, and factory/wonders boost the leader pre-capstone. If confirmed, tune (raise electricity cost / deepen the chain / push the capstone further).
+
+**Next modern-era decisions (deferred until played):** Modern era (tanks/ships + **air domain go/no-go**), Atomic/Information (nukes?, space).
+
+Backlog remaining below: **Modern era + later modern-era eras**, merge-adjacent-improvements, civilopedia. **Naval follow-ups (revisitable, balance/playtest):** make islands the default map once playtested; raise across-water conquest/colonization reliability; carrier/air domain (never scoped). **Suggested next: a playtest round** (judge Industrial balance + science dominance, islands-as-default, and what to do next).
 
 ---
 
