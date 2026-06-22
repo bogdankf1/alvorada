@@ -39,9 +39,9 @@ const SETTINGS: RulesetSettings = {
   borderGrowth: { base: 10, linear: 8, quad: 2 },
   borderMaxRadius: 3,
   score: { city: 8, pop: 3, tech: 5, strengthPer: 20 },
-  // turnLimit 260 + scoreThreshold 600: the longer arc + higher score bar let a tech
-  // leader actually reach the science capstone (~turn 200-250) before the score/timeout
-  // ending preempts it — so science is a reachable race, not a dead victory path.
+  // turnLimit 300 + scoreThreshold 600: bumped from 260 to give the extended tech tree
+  // (Renaissance → Industrial) enough runway for a science leader to reach the electricity
+  // capstone. The science capstone moved from scientific_method to electricity (Industrial era).
   // culture.minTurn 220: raised from 150 so self-play breadth (200-turn) games reach the
   // medieval eras before a cultural victor can emerge.
   // culture.dominanceFactor 3 (tuned up from 2 via Phase-8 self-play): at 2, a cultural
@@ -52,7 +52,7 @@ const SETTINGS: RulesetSettings = {
   // ends 'science' @ ~221) while a genuine culture blowout still wins (seeds 999, 60221 end
   // 'culture' @ 220). At 4 the culture path becomes too rare (only the most extreme blowout
   // fires); 3 keeps both victory paths live and non-trivial across the seed sweep.
-  victory: { scoreThreshold: 600, turnLimit: 260, scienceCapstone: 'scientific_method', culture: { dominanceFactor: 3, minTurn: 220, perWonder: 40 } },
+  victory: { scoreThreshold: 600, turnLimit: 300, scienceCapstone: 'electricity', culture: { dominanceFactor: 3, minTurn: 220, perWonder: 40 } },
   // Tuned via self-play telemetry. The brake still bites hard (empires routinely go
   // Unhappy/Very-Unhappy and build colosseums/courthouses) — but unhappyGrowthDivisor 3
   // (was 4) lets an Unhappy empire still grow its science core instead of stalling out,

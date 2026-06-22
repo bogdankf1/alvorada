@@ -5,6 +5,7 @@ export const ERAS: EraDef[] = [
   { id: 'classical', name: 'Classical Era' },
   { id: 'medieval', name: 'Medieval Era' },
   { id: 'renaissance', name: 'Renaissance Era' },
+  { id: 'industrial', name: 'Industrial Era' },
 ];
 
 /**
@@ -142,4 +143,11 @@ export const TECHS: Record<string, TechDef> = {
   metallurgy: { id: 'metallurgy', name: 'Metallurgy', era: 'renaissance', cost: 300, prereqs: ['gunpowder'], pos: { col: 8, row: 4 } },
   chemistry: { id: 'chemistry', name: 'Chemistry', era: 'renaissance', cost: 340, prereqs: ['metallurgy', 'astronomy'], pos: { col: 9, row: 4 } },
   scientific_method: { id: 'scientific_method', name: 'Scientific Method', era: 'renaissance', cost: 400, prereqs: ['printing_press', 'chemistry'], pos: { col: 9, row: 1 } },
+  // --- Industrial ---
+  economics: { id: 'economics', name: 'Economics', era: 'industrial', cost: 440, prereqs: ['banking'], pos: { col: 10, row: 1 } },
+  industrialization: { id: 'industrialization', name: 'Industrialization', era: 'industrial', cost: 460, prereqs: ['banking', 'chemistry'], pos: { col: 10, row: 2 } },
+  rifling: { id: 'rifling', name: 'Rifling', era: 'industrial', cost: 460, prereqs: ['metallurgy'], pos: { col: 10, row: 4 } },
+  steam_power: { id: 'steam_power', name: 'Steam Power', era: 'industrial', cost: 480, prereqs: ['chemistry', 'scientific_method'], pos: { col: 11, row: 3 } },
+  ballistics: { id: 'ballistics', name: 'Ballistics', era: 'industrial', cost: 520, prereqs: ['rifling'], pos: { col: 11, row: 4 } },
+  electricity: { id: 'electricity', name: 'Electricity', era: 'industrial', cost: 560, prereqs: ['industrialization', 'scientific_method'], pos: { col: 11, row: 1 } },
 };
