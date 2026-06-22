@@ -251,6 +251,7 @@
 .unit-hp {
   margin: 6px 0 8px;
 }
+.unit-hint { font-size: 12px; opacity: 0.75; margin: 4px 0; font-style: italic; }
 .unit-actions {
   display: flex;
   flex-wrap: wrap;

@@ -232,6 +232,7 @@ export type Action =
   | { type: 'RANGED_ATTACK'; player: PlayerId; unit: UnitId; target: Axial }
   | { type: 'BUILD_IMPROVEMENT'; player: PlayerId; unit: UnitId; improvement: string }
   | { type: 'BUILD_ROAD'; player: PlayerId; unit: UnitId; road: string }
+  | { type: 'REMOVE_ROAD'; player: PlayerId; unit: UnitId }
   | { type: 'FORTIFY'; player: PlayerId; unit: UnitId }
   | { type: 'SKIP_UNIT'; player: PlayerId; unit: UnitId }
   | { type: 'SLEEP_UNIT'; player: PlayerId; unit: UnitId }

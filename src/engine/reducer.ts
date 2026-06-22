@@ -79,6 +79,16 @@ function handle(ctx: Ctx, state: GameState, action: Action): void {
       break;
     }
 
+    case 'REMOVE_ROAD': {
+      const unit = state.units[action.unit];
+      if (unit.stance === 'sleep') unit.stance = 'none';
+      const idx = tileIndex({ q: unit.q, r: unit.r }, state.mapW, state.mapH);
+      state.tiles[idx].road = null;
+      unit.moves = 0;
+      unit.acted = true;
+      break;
+    }
+
     case 'FORTIFY': {
       const unit = state.units[action.unit];
       unit.stance = 'fortified';

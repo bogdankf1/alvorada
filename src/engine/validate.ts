@@ -176,6 +176,17 @@ export function validateAction(ctx: Ctx, state: GameState, action: Action): Vali
       return ok;
     }
 
+    case 'REMOVE_ROAD': {
+      const v = ownUnit(state, action.player, action.unit);
+      if (!v.unit) return v.error!;
+      const unit = v.unit;
+      if (!ctx.rules.units[unit.def].abilities?.includes('improve')) return fail('only workers remove roads');
+      if (unit.moves <= 0) return fail('no movement left');
+      const idx = tileIndex({ q: unit.q, r: unit.r }, state.mapW, state.mapH);
+      if (!state.tiles[idx].road) return fail('no road here');
+      return ok;
+    }
+
     case 'BUILD_IMPROVEMENT': {
       const v = ownUnit(state, action.player, action.unit);
       if (!v.unit) return v.error!;

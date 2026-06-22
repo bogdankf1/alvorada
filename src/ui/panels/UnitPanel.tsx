@@ -6,6 +6,7 @@ import { promotionSlots, pendingPromotions, availablePromotions } from '../../en
 import type { Action } from '../../engine/types';
 import { IconBoots, IconShield } from '../icons';
 import { effectText } from '../promotions';
+import { neighbors, tileIndex } from '../../engine/hex';
 
 export function UnitPanel() {
   const game = useApp((s) => s.game);
@@ -96,6 +97,16 @@ export function UnitPanel() {
         );
       })()}
 
+      {(() => {
+        if (def.domain !== 'land') return null;
+        if (!game.players[viewer].techs.includes(gameCtx.rules.settings.naval.embarkTech)) return null;
+        const nearWater = neighbors({ q: unit.q, r: unit.r }).some((nb) => {
+          const i = tileIndex(nb, game.mapW, game.mapH);
+          return i >= 0 && gameCtx.rules.terrains[game.tiles[i].terrain].water;
+        });
+        return nearWater ? <div className="unit-hint">Can embark — move onto adjacent sea.</div> : null;
+      })()}
+
       {mine && (
         <div className="unit-actions">
           {tryButton('Found City', { type: 'FOUND_CITY', player: viewer, unit: unit.id })}
@@ -109,6 +120,7 @@ export function UnitPanel() {
           {Object.values(gameCtx.rules.roads).map((road) =>
             tryButton(`Build ${road.name}`, { type: 'BUILD_ROAD', player: viewer, unit: unit.id, road: road.id }, `road-${road.id}`),
           )}
+          {tryButton('Remove Road', { type: 'REMOVE_ROAD', player: viewer, unit: unit.id }, 'remove-road')}
           {def.abilities?.includes('trade') && (
             <button className="btn" onClick={() => appStore.set({ tradeRouteUnit: unit.id })}>
               Establish Trade Route
