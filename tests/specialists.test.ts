@@ -49,13 +49,15 @@ describe('allocateCitizens', () => {
 });
 
 describe('SET_SPECIALISTS', () => {
-  it('pins, rejects over-cap, and clears at zero', () => {
+  it('pins, rejects over-cap, and forces zero at zero (a 0 pin is kept, not cleared)', () => {
     const { s, id } = oneCity();
     s.cities[id].buildings.push('library'); // 1 scientist slot
     let s2 = applyAction(ctx, s, { type: 'SET_SPECIALISTS', player: 0, city: id, specialist: 'scientist', count: 1 });
     expect(s2.cities[id].forcedSpecialists?.scientist).toBe(1);
     expect(validateAction(ctx, s2, { type: 'SET_SPECIALISTS', player: 0, city: id, specialist: 'scientist', count: 2 }).ok).toBe(false);
+    // count: 0 now means "force zero" (an explicit pin), not "unpin" — so the player can turn a specialist off
     s2 = applyAction(ctx, s2, { type: 'SET_SPECIALISTS', player: 0, city: id, specialist: 'scientist', count: 0 });
-    expect(s2.cities[id].forcedSpecialists?.scientist).toBeUndefined();
+    expect(s2.cities[id].forcedSpecialists?.scientist).toBe(0);
+    expect(allocateCitizens(ctx, s2, s2.cities[id]).specialists.scientist ?? 0).toBe(0); // the slot is not auto-refilled
   });
 });
