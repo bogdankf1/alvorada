@@ -264,7 +264,9 @@ Backlog remaining below: modern-era tech tree, merge-adjacent-improvements, civi
 
 ## Batch 3 (2026-06-22 playtest — first islands/naval hands-on)
 
-> **✅ Wave 3 SHIPPED (2026-06-22, merged to `main` locally)** — items #3 (roads→city), #4 (specialists fix + tidy), #5 (remove-road), #6 (naval discoverability: Unavailable list + embark hint), #7 (split build menu). Spec/plan `docs/superpowers/{specs,plans}/2026-06-22-wave-3-ui-qol*`. 292 tests green, **re-tune-free, no schema bump**. **Still open from this batch:** #1 (lumber mill — needs a `requiresFeature` field) and #2 (unit obsolescence) — both touch data + AI, deliberately kept as separate content features.
+> **✅ BATCH 3 FULLY SHIPPED (2026-06-22, merged to `main` locally).**
+> - **Wave 3 (UI/QoL)** — #3 (roads→city), #4 (specialists fix + tidy), #5 (remove-road), #6 (naval discoverability: Unavailable list + embark hint), #7 (split build menu). Spec/plan `…/2026-06-22-wave-3-ui-qol*`. 292 tests, re-tune-free.
+> - **Content** — #1 **Lumber Mill** (new `requiresFeature` field on improvements; build on un-cleared forest for +2 production, gated `construction`) + #2 **Unit obsolescence** (new `obsoletedBy` tech field; superseded units leave the build menu, existing units unaffected; 14-unit catalog). Spec/plan `…/2026-06-22-batch3-content*`. 299 tests green, **NO re-tune** (seeds 314/960 held even with the lumber mill), no schema bump.
 
 ### 1. Lumber mill — harvest wood from an *un-cleared* forest 🟢 NEW
 - If a worker does NOT chop a forest tile, allow building a "lumber mill"-type improvement on it (prepare wood / +production); if the forest is already cleared, it's not buildable. Maybe tech-gated.
