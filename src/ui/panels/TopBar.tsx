@@ -118,6 +118,7 @@ export function TopBar() {
       >
         Powers{pending > 0 ? ` ●` : ''}
       </button>
+      <button className="btn btn--ghost" onClick={() => appStore.set({ overlay: 'chronicle' })} title="Chronicle (H)">Chronicle</button>
       <button
         className="btn btn--ghost"
         onClick={() => appStore.set((s) => ({ aiLogOpen: !s.aiLogOpen }))}

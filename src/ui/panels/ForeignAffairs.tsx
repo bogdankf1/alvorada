@@ -6,6 +6,7 @@ import { attitude, agendaKnown } from '../../engine/diplomacy-eval';
 import { atWar, metPlayers } from '../../engine/selectors';
 import type { DealItems, GameState, PlayerId } from '../../engine/types';
 import { ATTITUDE_COLOR, ATTITUDE_LABEL, dealVerdict, emptyDraft, type DraftDeal } from '../diplomacy';
+import { OverlaySheet } from './OverlaySheet';
 
 export function ForeignAffairs() {
   const game = useApp((s) => s.game);
@@ -16,22 +17,14 @@ export function ForeignAffairs() {
   if (!game) return null;
 
   const met = metPlayers(game, viewer);
-  const close = () => appStore.set({ overlay: null });
   const pick = (id: PlayerId) => appStore.set({ diploTarget: id, draftDeal: emptyDraft() });
   const setDraft = (next: DraftDeal) => appStore.set({ draftDeal: next });
   const term = gameCtx.rules.settings.diplomacy.termLength;
 
   return (
-    <div className="overlay-scrim" onClick={close}>
-      <div className="diplo" onClick={(e) => e.stopPropagation()}>
-        <div className="tech-head">
-          <h2>FOREIGN AFFAIRS</h2>
-          <div style={{ flex: 1 }} />
-          <button className="btn" onClick={close}>Close (Esc)</button>
-        </div>
-
-        <div className="diplo-body scroll-quiet">
-          <div className="powers">
+    <OverlaySheet title="FOREIGN AFFAIRS" variant="wide">
+      <div className="diplo-grid">
+        <div className="powers">
             {met.length === 0 && <div className="muted">You have met no other powers yet.</div>}
             {met.map((id) => {
               const p = game.players[id];
@@ -83,8 +76,7 @@ export function ForeignAffairs() {
             />
           )}
         </div>
-      </div>
-    </div>
+      </OverlaySheet>
   );
 }
 

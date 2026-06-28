@@ -4,6 +4,7 @@ import { humanDispatch, isMyTurn } from '../actions';
 import { availableTechs } from '../../engine/selectors';
 import { techUnlocks } from '../../data/validate';
 import { IconScroll } from '../icons';
+import { OverlaySheet } from './OverlaySheet';
 
 const COL_W = 218;
 const ROW_H = 92;
@@ -20,27 +21,18 @@ export function TechTree() {
   const maxCol = Math.max(...techs.map((t) => t.pos.col));
   const maxRow = Math.max(...techs.map((t) => t.pos.row));
 
-  const close = () => appStore.set({ overlay: null });
-
   return (
-    <div className="overlay-scrim" onClick={close}>
-      <div className="tech-head" onClick={(e) => e.stopPropagation()}>
-        <h2>THE PATH OF KNOWLEDGE</h2>
-        <span style={{ color: 'var(--ivory-dim)', fontSize: 13 }}>
-          {player.researching
-            ? `Researching ${gameCtx.rules.techs[player.researching].name}`
-            : 'Choose what your sages study next'}
-        </span>
-        <div style={{ flex: 1 }} />
-        <button className="btn" onClick={close}>
-          Close (Esc)
-        </button>
-      </div>
-      <div className="tech-scroll scroll-quiet" onClick={(e) => e.stopPropagation()}>
-        <div
-          className="tech-grid"
-          style={{ width: (maxCol + 1) * COL_W + 40, height: (maxRow + 1) * ROW_H + 60 }}
-        >
+    <OverlaySheet
+      title="THE PATH OF KNOWLEDGE"
+      variant="wide"
+      subtitle={player.researching
+        ? `Researching ${gameCtx.rules.techs[player.researching].name}`
+        : 'Choose what your sages study next'}
+    >
+      <div
+        className="tech-grid"
+        style={{ width: (maxCol + 1) * COL_W + 40, height: (maxRow + 1) * ROW_H + 60 }}
+      >
           {/* era labels */}
           {gameCtx.rules.eras.map((era) => {
             const cols = techs.filter((t) => t.era === era.id).map((t) => t.pos.col);
@@ -129,7 +121,6 @@ export function TechTree() {
             );
           })}
         </div>
-      </div>
-    </div>
+      </OverlaySheet>
   );
 }

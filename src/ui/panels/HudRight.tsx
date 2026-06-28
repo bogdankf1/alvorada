@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { gameCtx } from '../../app/driver';
-import { appStore, focusCamera, useApp } from '../../app/store';
+import { focusCamera, useApp } from '../../app/store';
 import { endTurnRequest, turnGate } from '../actions';
 import { axialOfIndex, hexToPixel } from '../../engine/hex';
 import { sortedIds, VIS_UNSEEN } from '../../engine/types';
@@ -45,7 +45,6 @@ export function HudRight() {
         {label}
         {sub && <span className="sub">{sub}</span>}
       </div>
-      <div className="end-turn" style={{ fontSize: 13 }} onClick={() => appStore.set({ overlay: 'chronicle' })} title="Chronicle (H)">Chronicle</div>
       <Minimap />
     </div>
   );

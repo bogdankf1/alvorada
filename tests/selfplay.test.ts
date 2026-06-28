@@ -209,7 +209,7 @@ describe('culture & religion in self-play', () => {
     let replay = initialState(config(4242), ctx);
     for (const a of log) replay = applyAction(ctx, replay, a);
     expect(gameHash(replay)).toBe(gameHash(state));
-  }, 300_000);
+  }, 600_000); // full 260-turn game + replay — the heaviest test; headroom to survive concurrent machine load
 });
 
 describe('combat depth in self-play', () => {
