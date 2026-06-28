@@ -19,7 +19,7 @@ export function humanDispatch(action: Action): boolean {
   // jump to the next unit that still needs orders. Disband manages its own selection.
   if (res.ok && 'unit' in action && action.type !== 'DISBAND') {
     const u = game.state.units[action.unit];
-    if (!u || !unitNeedsOrders(u)) selectNextIdleUnit();
+    if (!u || !unitNeedsOrders(u)) scheduleNextIdleUnit(action.unit);
   }
   if (res.ok) {
     const sfx = actionSfx(action.type);
@@ -106,6 +106,27 @@ export function idleUnits(): number[] {
   const { game, viewingPlayer } = appStore.get();
   if (!game) return [];
   return playerUnits(game, viewingPlayer).filter(unitNeedsOrders).map((u) => u.id);
+}
+
+/**
+ * Brief pause before auto-jumping to the next idle unit, so the player sees the
+ * result of the action they just gave (move, attack, found, …) before the camera
+ * moves on. Manual input cancels it: re-scheduling clears the old timer, and the
+ * callback bails if the turn ended or the player grabbed a different unit/city.
+ */
+const ADVANCE_DELAY = 450;
+let advanceTimer: ReturnType<typeof setTimeout> | null = null;
+
+function scheduleNextIdleUnit(justActed: number): void {
+  if (advanceTimer !== null) clearTimeout(advanceTimer);
+  advanceTimer = setTimeout(() => {
+    advanceTimer = null;
+    if (!isMyTurn()) return; // turn ended / AI is up — don't yank the camera
+    const { selectedUnit, selectedCity } = appStore.get();
+    if (selectedCity !== null) return; // player opened a city meanwhile
+    if (selectedUnit !== null && selectedUnit !== justActed) return; // player picked another unit
+    selectNextIdleUnit();
+  }, ADVANCE_DELAY);
 }
 
 export function selectNextIdleUnit(): void {

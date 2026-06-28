@@ -695,15 +695,31 @@ export class MapRenderer {
       const pos = sel
         ? this.unitRenderPos(s, sel, this.animatedPos(sel))
         : hexToPixel({ q: target.q, r: target.r }, HEX);
-      const pulse = 0.55 + 0.3 * Math.sin(t / 510);
+      const pulse = 0.7 + 0.3 * Math.sin(t / 510);
       hexPath(g, pos.x, pos.y, HEX - 2);
       g.strokeStyle = css(rgb(PALETTE.ivory), pulse);
-      g.lineWidth = 2.4;
+      g.lineWidth = 3.2;
       g.stroke();
       hexPath(g, pos.x, pos.y, HEX - 5.5);
-      g.strokeStyle = css(rgb(PALETTE.brass), pulse * 0.6);
-      g.lineWidth = 1.2;
+      g.strokeStyle = css(rgb(PALETTE.brass), pulse * 0.7);
+      g.lineWidth = 1.5;
       g.stroke();
+      // bobbing chevron over the selected unit — unmistakable as the queue advances
+      if (sel) {
+        const bob = Math.sin(t / 320) * 3;
+        const mx = pos.x;
+        const my = pos.y - (HEX - 2) - 10 + bob;
+        g.beginPath();
+        g.moveTo(mx - 6, my);
+        g.lineTo(mx + 6, my);
+        g.lineTo(mx, my + 9);
+        g.closePath();
+        g.fillStyle = css(rgb(PALETTE.brassBright), 0.95);
+        g.fill();
+        g.lineWidth = 1.4;
+        g.strokeStyle = 'rgba(20,16,10,0.75)';
+        g.stroke();
+      }
     }
     // hover
     if (this.overlay.hoveredTile !== null) {
