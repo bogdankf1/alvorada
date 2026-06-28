@@ -1,10 +1,16 @@
 import { gameCtx } from '../../app/driver';
-import { appStore, useApp } from '../../app/store';
+import { useApp } from '../../app/store';
 import { humanDispatch, isMyTurn } from '../actions';
 import { IconAmphora } from '../icons';
+import { OverlaySheet } from './OverlaySheet';
+import { civicsLayout } from './civics-layout';
 
-const COL_W = 240;
-const ROW_H = 110;
+const COL_W = 260;
+const ROW_H = 104;
+const NODE_W = 210;
+const NODE_H = 58;
+const PAD_X = 20;
+const PAD_TOP = 26;
 
 export function Civics() {
   const game = useApp((s) => s.game);
@@ -12,52 +18,80 @@ export function Civics() {
   if (!game) return null;
   const player = game.players[viewer];
   const policies = Object.values(gameCtx.rules.policies);
-  const branches = [...new Set(policies.map((p) => p.branch))].sort();
   const adopted = new Set(player.policies);
-  const depth = (id: string): number => {
+  const canAdopt = (id: string) => {
     const p = gameCtx.rules.policies[id];
-    return p.prereqs.length ? 1 + Math.max(...p.prereqs.map(depth)) : 0;
+    return !adopted.has(id) && p.prereqs.every((pre) => adopted.has(pre)) && player.policyProgress >= p.cost;
   };
-  const canAdopt = (p: (typeof policies)[number]) =>
-    !adopted.has(p.id) && p.prereqs.every((pre) => adopted.has(pre)) && player.policyProgress >= p.cost;
-  const close = () => appStore.set({ overlay: null });
+  const layout = civicsLayout(policies);
+  const posOf = new Map(layout.nodes.map((n) => [n.id, n]));
+  const affordable = policies.filter((p) => canAdopt(p.id)).length;
+
+  const cx = (col: number) => col * COL_W + PAD_X + NODE_W / 2;
+  const nodeTop = (row: number) => row * ROW_H + PAD_TOP;
 
   return (
-    <div className="overlay-scrim" onClick={close}>
-      <div className="tech-head" onClick={(e) => e.stopPropagation()}>
-        <h2>THE SOCIAL ORDER</h2>
-        <span style={{ color: 'var(--ivory-dim)', fontSize: 13 }}>
-          <IconAmphora size={12} /> {player.policyProgress} culture banked toward the next policy
-        </span>
-        <div style={{ flex: 1 }} />
-        <button className="btn" onClick={close}>Close (Esc)</button>
-      </div>
-      <div className="tech-scroll scroll-quiet" onClick={(e) => e.stopPropagation()}>
-        <div className="tech-grid" style={{ width: branches.length * COL_W + 40, height: 5 * ROW_H }}>
-          {branches.map((br, ci) => (
-            <div key={br} className="tech-era-label" style={{ left: ci * COL_W + 6 }}>{br}</div>
-          ))}
-          {policies.map((p) => {
-            const ci = branches.indexOf(p.branch);
-            const ri = depth(p.id);
-            const state = adopted.has(p.id) ? 'is-known' : canAdopt(p) ? 'is-available' : 'is-locked';
+    <OverlaySheet
+      title="THE SOCIAL ORDER"
+      variant="wide"
+      subtitle={<><IconAmphora size={12} /> {player.policyProgress} culture banked toward the next policy</>}
+      actions={affordable > 0 ? <span className="sheet__cta">▸ You can adopt a policy now</span> : undefined}
+    >
+      <div
+        className="tech-grid"
+        style={{ width: layout.cols.length * COL_W + 40, height: layout.rows * ROW_H + 40 }}
+      >
+        {layout.cols.map((br, ci) => (
+          <div key={br} className="tech-era-label" style={{ left: ci * COL_W + PAD_X }}>{br}</div>
+        ))}
+        {/* prerequisite conduits — bezier from parent bottom to child top, bowed
+            left so connectors to non-adjacent children arc around nodes between */}
+        <svg
+          width={layout.cols.length * COL_W + 40}
+          height={layout.rows * ROW_H + 40}
+          style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+        >
+          {layout.edges.map((e) => {
+            const from = posOf.get(e.from)!;
+            const to = posOf.get(e.to)!;
+            const x = cx(to.col);
+            const py = nodeTop(from.row) + NODE_H;
+            const cyTop = nodeTop(to.row);
+            const bow = 24 + (to.row - from.row - 1) * 16;
+            const lit = adopted.has(e.from);
             return (
-              <div
-                key={p.id}
-                className={`tech-node ${state}`}
-                style={{ left: ci * COL_W + 6, top: ri * ROW_H + 24 }}
-                onClick={() => {
-                  if (state === 'is-available' && isMyTurn())
-                    humanDispatch({ type: 'ADOPT_POLICY', player: viewer, policy: p.id });
-                }}
-              >
-                <h4>{p.name}</h4>
-                <div className="cost"><IconAmphora size={11} /> {p.cost}{adopted.has(p.id) ? ' · adopted' : ''}</div>
-              </div>
+              <path
+                key={`${e.from}->${e.to}`}
+                d={`M${x},${py} C${x - bow},${py + 14} ${x - bow},${cyTop - 14} ${x},${cyTop}`}
+                stroke={lit ? 'rgba(200,165,91,0.75)' : 'rgba(120,130,150,0.3)'}
+                strokeWidth={lit ? 1.8 : 1.2}
+                fill="none"
+              />
             );
           })}
-        </div>
+        </svg>
+        {/* nodes */}
+        {layout.nodes.map((n) => {
+          const p = gameCtx.rules.policies[n.id];
+          const state = adopted.has(n.id) ? 'is-known' : canAdopt(n.id) ? 'is-available' : 'is-locked';
+          return (
+            <div
+              key={n.id}
+              className={`tech-node ${state}`}
+              style={{ left: n.col * COL_W + PAD_X, top: n.row * ROW_H + PAD_TOP, width: NODE_W }}
+              onClick={() => {
+                if (state === 'is-available' && isMyTurn())
+                  humanDispatch({ type: 'ADOPT_POLICY', player: viewer, policy: n.id });
+              }}
+            >
+              <h4>{p.name}</h4>
+              <div className="cost">
+                <IconAmphora size={11} /> {p.cost}{adopted.has(n.id) ? ' · adopted' : ''}
+              </div>
+            </div>
+          );
+        })}
       </div>
-    </div>
+    </OverlaySheet>
   );
 }
