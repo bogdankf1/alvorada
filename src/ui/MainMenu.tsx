@@ -125,6 +125,26 @@ export function MainMenu() {
             Begin the Journey
           </button>
         </div>
+        <a
+          href="https://built-by-bohdan.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: 'block',
+            marginTop: 18,
+            textAlign: 'center',
+            fontFamily: 'var(--font-body)',
+            fontSize: 12,
+            letterSpacing: '0.04em',
+            color: 'var(--ivory-dim)',
+            textDecoration: 'none',
+            transition: 'color 120ms ease',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--ivory)')}
+          onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--ivory-dim)')}
+        >
+          Built by Bohdan
+        </a>
       </div>
     </div>
   );
