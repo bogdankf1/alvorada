@@ -312,25 +312,27 @@ Backlog remaining below: **Modern era + later modern-era eras**, merge-adjacent-
 
 ---
 
-## Batch 4 — overlay-pages polish pass (2026-06-28, from flow testing) 🟡 SAVED FOR NEXT STEP
+## Batch 4 — overlay-pages polish pass (2026-06-28, from flow testing) ✅ FULLY SHIPPED
 
-> Theme: the full-screen overlay pages (Civics, Victory, Demographics/Powers, Chronicle) need a cohesive visual pass. The currently-approved work in flight is a separate small tweak (selection highlight + advance delay); these are queued behind it.
+> Theme: the full-screen overlay pages (Civics, Victory, Demographics/Powers, Chronicle) need a cohesive visual pass.
+>
+> **✅ FULLY SHIPPED (2026-06-28, merged to `main` via PR #1 `74c0c86`).** Spec/plan `docs/superpowers/{specs,plans}/2026-06-28-overlay-pages-redesign*`. A shared `OverlaySheet` shell + `.sheet*` CSS now wraps every overlay (Civics/Victory/Demographics/Powers/Chronicle/Tech); Civics overlap fixed via a pure `civicsLayout` + bezier connectors + adopt CTA; Victory→card grid; Demographics→mini-bar standings; Chronicle→top bar. UI-only, no schema/engine/AI/RNG change, no seed re-tune; 311 tests green (3 new in `tests/civics-layout.test.ts`).
 
 ### 8. Civics page ("THE SOCIAL ORDER") layout bug — overlapping text 🔴 BUG [screenshot]
-- On the Civics overlay, the second-row policy names render **doubled / on top of each other** ("MERITOCRACY", "FREE THOUGHT", "LANDED ELITE" each show a ghosted overlap). Likely a locked/unaffordable-state style stacking two text layers (or a transform/opacity layer drawn twice). First row (affordable) renders clean.
-- Status: open (bug — visual)
+- On the Civics overlay, the second-row policy names render **doubled / on top of each other** ("MERITOCRACY", "FREE THOUGHT", "LANDED ELITE" each show a ghosted overlap). Root cause: nodes were placed at `(branch, prereqDepth)` and each branch has two depth-1 children → identical x/y.
+- Status: ✅ shipped — pure `civicsLayout` gives every policy its own row (collision-free).
 
 ### 9. Civics page — prompt to pick a policy when none chosen yet 🟢 NEW (UX)
 - If the player can adopt a policy but hasn't, the page should actively *propose* selecting one (a call-to-action / highlight), not just sit there. Mirrors the turn-gate "you have something to do" nudge.
-- Status: open (small UX)
+- Status: ✅ shipped — pulsing brass "▸ You can adopt a policy now" CTA in the header when an affordable policy is available; adoptable nodes highlighted.
 
 ### 10. Beautify + unify the overlay pages (Civics, Victory, Powers, Chronicle, Demographics) 🟡 UI [screenshots]
 - Make these full-screen overlays **more beautiful and visually consistent** — one shared style/shell (header treatment, panel cards, spacing, typography), and **use the available space** rather than floating content in a corner (e.g. Demographics/"THE STANDING OF NATIONS" currently hugs the top, leaving most of the screen empty).
-- Status: open (medium — design pass; define a shared overlay shell/component first)
+- Status: ✅ shipped — shared `OverlaySheet` shell + `.sheet*`/`.sheet-card` vocab across all overlays (incl. Tech); Victory→card grid, Demographics→full-width mini-bar standings.
 
 ### 11. Move Chronicle to the top bar 🟢 NEW (UI)
 - Remove the bottom-right-corner Chronicle button; surface Chronicle from the **top bar** alongside the other overlay entry points.
-- Status: open (small)
+- Status: ✅ shipped — Chronicle button now in the top bar (next to Powers); removed from `HudRight`.
 
 ---
 
