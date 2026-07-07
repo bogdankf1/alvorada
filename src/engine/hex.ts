@@ -54,6 +54,11 @@ export function hexDistance(a: Axial, b: Axial): number {
   return (Math.abs(dq) + Math.abs(dr) + Math.abs(dq + dr)) / 2;
 }
 
+/** hexDistance for any `{q,r}`-bearing objects (units, cities, tiles) without wrapping. */
+export function dist(a: { q: number; r: number }, b: { q: number; r: number }): number {
+  return hexDistance(a, b);
+}
+
 export function neighbors(a: Axial): Axial[] {
   return HEX_DIRS.map((d) => ({ q: a.q + d.q, r: a.r + d.r }));
 }

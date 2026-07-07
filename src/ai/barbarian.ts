@@ -1,6 +1,6 @@
 /** Barbarian AI: aggressive and simple. Pure, deterministic, fair fog. */
 import type { Action, Axial, Ctx, GameState, PlayerId, Unit } from '../engine/types';
-import { hexDistance, neighbors, tileIndex } from '../engine/hex';
+import { dist, neighbors, tileIndex } from '../engine/hex';
 import { atWar, cityAt, militaryAt, playerCities, playerUnits } from '../engine/selectors';
 import { validateAction } from '../engine/validate';
 import { findPath } from '../engine/map/pathfind';
@@ -14,13 +14,13 @@ function nearestPrey(state: GameState, pid: PlayerId, unit: Unit): Axial | null 
     for (const u of playerUnits(state, p.id)) {
       const idx = tileIndex({ q: u.q, r: u.r }, state.mapW, state.mapH);
       if (vis[idx] !== 2) continue; // only what we can see
-      const d = hexDistance({ q: unit.q, r: unit.r }, { q: u.q, r: u.r });
+      const d = dist(unit, u);
       if (d < bestD || (d === bestD && best && (u.q < best.q || (u.q === best.q && u.r < best.r)))) { bestD = d; best = { q: u.q, r: u.r }; }
     }
     for (const c of playerCities(state, p.id)) {
       const idx = tileIndex({ q: c.q, r: c.r }, state.mapW, state.mapH);
       if (vis[idx] === 0) continue; // known (explored or visible)
-      const d = hexDistance({ q: unit.q, r: unit.r }, { q: c.q, r: c.r });
+      const d = dist(unit, c);
       if (d < bestD) { bestD = d; best = { q: c.q, r: c.r }; }
     }
   }

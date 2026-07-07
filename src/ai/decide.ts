@@ -5,7 +5,7 @@
  */
 import type { Action, Axial, City, Ctx, GameState, PlayerId, Unit } from '../engine/types';
 import { VIS_UNSEEN, VIS_VISIBLE } from '../engine/types';
-import { axialOfIndex, hexDistance, hexesWithin, neighbors, tileIndex } from '../engine/hex';
+import { axialOfIndex, dist, hexDistance, hexesWithin, neighbors, tileIndex } from '../engine/hex';
 import {
   atWar,
   availablePromotions,
@@ -171,7 +171,7 @@ function considerWar(ctx: Ctx, state: GameState, pid: PlayerId): AiDecision | nu
     });
     if (!theirCities.length) continue;
     const nearest = Math.min(
-      ...theirCities.map((c) => hexDistance({ q: c.q, r: c.r }, { q: myCapital.q, r: myCapital.r })),
+      ...theirCities.map((c) => dist(c, myCapital)),
     );
     if (myPower >= theirPower * ratioNeeded && nearest <= 18) {
       return {
@@ -293,14 +293,14 @@ function pickTradeTarget(ctx: Ctx, state: GameState, unit: Unit): City | null {
   const range = ctx.rules.settings.tradeRoute.caravanRange;
   const myCities = playerCities(state, pid);
   const withinRangeOfOwn = (c: City) =>
-    myCities.some((o) => o.id !== c.id && hexDistance({ q: o.q, r: o.r }, { q: c.q, r: c.r }) <= range);
+    myCities.some((o) => o.id !== c.id && dist(o, c) <= range);
   const routed = new Set(Object.values(state.tradeRoutes).filter((r) => r.owner === pid).map((r) => r.toCity));
 
   const cand: { c: City; domestic: boolean; dist: number }[] = [];
   if (myCities.length >= 2)
     for (const c of myCities) {
       if (routed.has(c.id) || !withinRangeOfOwn(c)) continue;
-      cand.push({ c, domestic: true, dist: hexDistance(here, { q: c.q, r: c.r }) });
+      cand.push({ c, domestic: true, dist: dist(here, c) });
     }
   for (const p of state.players) {
     if (!p.alive || p.id === pid || !hasMet(state, pid, p.id) || atWar(state, pid, p.id)) continue;
@@ -308,7 +308,7 @@ function pickTradeTarget(ctx: Ctx, state: GameState, unit: Unit): City | null {
       const idx = tileIndex({ q: c.q, r: c.r }, state.mapW, state.mapH);
       if (state.visibility[pid][idx] === VIS_UNSEEN) continue;
       if (routed.has(c.id) || !withinRangeOfOwn(c)) continue;
-      cand.push({ c, domestic: false, dist: hexDistance(here, { q: c.q, r: c.r }) });
+      cand.push({ c, domestic: false, dist: dist(here, c) });
     }
   }
   cand.sort((a, b) => (a.domestic === b.domestic ? 0 : a.domestic ? -1 : 1) || a.dist - b.dist || a.c.id - b.c.id);
@@ -318,7 +318,7 @@ function pickTradeTarget(ctx: Ctx, state: GameState, unit: Unit): City | null {
 function decideCaravan(ctx: Ctx, state: GameState, unit: Unit): AiDecision | null {
   const target = pickTradeTarget(ctx, state, unit);
   if (!target) return null;
-  if (hexDistance({ q: unit.q, r: unit.r }, { q: target.q, r: target.r }) <= 1) {
+  if (dist(unit, target) <= 1) {
     const action = { type: 'ESTABLISH_TRADE_ROUTE' as const, player: unit.owner, unit: unit.id, targetCity: target.id };
     // Return null gracefully if the action would be invalid (e.g. no land route to target)
     // The outer tryDecision in decide() will validate and fall through to SKIP if needed.
@@ -453,8 +453,8 @@ function decideMilitary(ctx: Ctx, state: GameState, unit: Unit): AiDecision | nu
     // escort the nearest friendly embarked unit (civilian or military)
     const escortee = playerUnits(state, pid)
       .filter((u) => u.id !== unit.id && isWater(ctx, state.tiles[tileIndex({ q: u.q, r: u.r }, state.mapW, state.mapH)].terrain))
-      .sort((a, b) => hexDistance(here, { q: a.q, r: a.r }) - hexDistance(here, { q: b.q, r: b.r }) || a.id - b.id)[0];
-    if (escortee && hexDistance(here, { q: escortee.q, r: escortee.r }) > 1) {
+      .sort((a, b) => dist(here, a) - dist(here, b) || a.id - b.id)[0];
+    if (escortee && dist(here, escortee) > 1) {
       const d = moveAlong(ctx, state, unit, { q: escortee.q, r: escortee.r }, 'escorting a settler at sea');
       if (d) return d;
     }
@@ -477,7 +477,7 @@ function decideMilitary(ctx: Ctx, state: GameState, unit: Unit): AiDecision | nu
     .filter((c) => !militaryAt(ctx, state, { q: c.q, r: c.r }))
     .sort(
       (a, b) =>
-        hexDistance({ q: a.q, r: a.r }, here) - hexDistance({ q: b.q, r: b.r }, here) || a.id - b.id,
+        dist(a, here) - dist(b, here) || a.id - b.id,
     );
   if (unguarded.length) {
     const c = unguarded[0];
@@ -518,7 +518,7 @@ function campaignOrders(ctx: Ctx, state: GameState, unit: Unit): AiDecision | nu
     for (const c of playerCities(state, e.id)) {
       const idx = tileIndex({ q: c.q, r: c.r }, state.mapW, state.mapH);
       if (state.visibility[pid][idx] === VIS_UNSEEN) continue;
-      const d = hexDistance({ q: c.q, r: c.r }, { q: capital.q, r: capital.r });
+      const d = dist(c, capital);
       if (d < targetDist || (d === targetDist && target && c.id < target.id)) {
         target = c;
         targetDist = d;
@@ -529,16 +529,14 @@ function campaignOrders(ctx: Ctx, state: GameState, unit: Unit): AiDecision | nu
 
   // staging city: ours nearest to the target
   const staging = [...myCities].sort(
-    (a, b) =>
-      hexDistance({ q: a.q, r: a.r }, { q: target.q, r: target.r }) -
-        hexDistance({ q: b.q, r: b.r }, { q: target.q, r: target.r }) || a.id - b.id,
+    (a, b) => dist(a, target) - dist(b, target) || a.id - b.id,
   )[0];
 
   // force gathered near staging vs what the city needs
   const gathered = playerUnits(state, pid).filter(
     (u) =>
       !isCivilian(ctx, u) &&
-      hexDistance({ q: u.q, r: u.r }, { q: staging.q, r: staging.r }) <= 3,
+      dist(u, staging) <= 3,
   );
   const gatheredStrength = gathered.reduce((s, u) => {
     const d = ctx.rules.units[u.def];
@@ -546,7 +544,7 @@ function campaignOrders(ctx: Ctx, state: GameState, unit: Unit): AiDecision | nu
   }, 0);
   const needed = cityStrength(ctx, state, target) * 2;
 
-  const unitNear = hexDistance({ q: unit.q, r: unit.r }, { q: staging.q, r: staging.r }) <= 3;
+  const unitNear = dist(unit, staging) <= 3;
   if (gatheredStrength >= needed) {
     // advance on the target — by land if possible, else embark and storm the shore
     const ringSpots = hexesWithin({ q: target.q, r: target.r }, 1).filter((h) => !(h.q === target.q && h.r === target.r));

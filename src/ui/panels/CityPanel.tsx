@@ -1,5 +1,5 @@
 import { gameCtx } from '../../app/driver';
-import { appStore, useApp } from '../../app/store';
+import { appStore, useApp, useGameView } from '../../app/store';
 import { humanDispatch, isMyTurn } from '../actions';
 import {
   allocateCitizens,
@@ -12,8 +12,8 @@ import {
 } from '../../engine/selectors';
 import type { ProductionItem } from '../../engine/types';
 import type { SpecialistType } from '../../data/types';
-import { YIELD_COLORS, YIELD_ICONS, IconCog, IconPeople } from '../icons';
-import { YIELD_KEYS } from '../../data/types';
+import { YIELD_COLORS, IconCog, IconPeople } from '../icons';
+import { YieldChips } from '../YieldChips';
 
 function wonderBlurb(b: import('../../data/types').BuildingDef): string {
   const e = b.effect;
@@ -29,10 +29,8 @@ function wonderBlurb(b: import('../../data/types').BuildingDef): string {
 }
 
 export function CityPanel() {
-  const game = useApp((s) => s.game);
-  const viewer = useApp((s) => s.viewingPlayer);
+  const { game, viewer } = useGameView();
   const selectedCity = useApp((s) => s.selectedCity);
-  useApp((s) => s.aiThinking);
   if (!game || selectedCity === null) return null;
   const city = game.cities[selectedCity];
   if (!city) return null;
@@ -83,17 +81,7 @@ export function CityPanel() {
         Gold {game.players[city.owner].gold} — click a highlighted tile to buy it
       </div>
 
-      <div className="yields-row">
-        {YIELD_KEYS.map((k) => {
-          const Icon = YIELD_ICONS[k];
-          return (
-            <span key={k} className="yield-chip" style={{ color: YIELD_COLORS[k] }} title={k}>
-              <Icon />
-              <span className="num">{total[k]}</span>
-            </span>
-          );
-        })}
-      </div>
+      <YieldChips values={total} wrapNum titled />
 
       <div className="city-scroll scroll-quiet">
         <div className="city-section-title">Growth</div>

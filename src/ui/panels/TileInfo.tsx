@@ -3,8 +3,7 @@ import { useApp } from '../../app/store';
 import { axialOfIndex } from '../../engine/hex';
 import { resourceRevealed, tileYields, unitsAt } from '../../engine/selectors';
 import { VIS_UNSEEN } from '../../engine/types';
-import { YIELD_COLORS, YIELD_ICONS } from '../icons';
-import { YIELD_KEYS } from '../../data/types';
+import { YieldChips } from '../YieldChips';
 
 /** Hover plate (bottom-left). Yields are shown from the viewer's knowledge. */
 export function TileInfo() {
@@ -40,17 +39,7 @@ export function TileInfo() {
       <div className="tname">{terr.name}</div>
       {parts.length > 0 && <div className="sub">{parts.join(' · ')}</div>}
       {owner && <div className="sub">Lands of {owner.name}</div>}
-      <div className="yields-row">
-        {YIELD_KEYS.filter((k) => y[k] > 0).map((k) => {
-          const Icon = YIELD_ICONS[k];
-          return (
-            <span key={k} className="yield-chip" style={{ color: YIELD_COLORS[k], fontSize: 12 }}>
-              <Icon size={12} />
-              {y[k]}
-            </span>
-          );
-        })}
-      </div>
+      <YieldChips values={y} positiveOnly size={12} />
       {units.map((u) => (
         <div key={u.id} className="sub" style={{ marginTop: 3 }}>
           {gameCtx.rules.units[u.def].name} — {game.players[u.owner].name} ({u.hp} hp)

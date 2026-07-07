@@ -6,7 +6,7 @@
 import type { AiWeights } from '../data/types';
 import type { City, Ctx, GameState, PlayerId, ProductionItem, Unit } from '../engine/types';
 import { VIS_UNSEEN, VIS_VISIBLE } from '../engine/types';
-import { axialOfIndex, hexDistance, hexesWithin, tileIndex } from '../engine/hex';
+import { axialOfIndex, dist, hexDistance, hexesWithin, tileIndex } from '../engine/hex';
 import {
   atWar,
   availableTechs,
@@ -106,12 +106,12 @@ function activeTradeCount(ctx: Ctx, state: GameState, pid: PlayerId): number {
 function hasTradeTarget(ctx: Ctx, state: GameState, pid: PlayerId): boolean {
   const range = ctx.rules.settings.tradeRoute.caravanRange;
   const mine = playerCities(state, pid);
-  if (mine.length >= 2 && mine.some((a) => mine.some((b) => a.id !== b.id && hexDistance({ q: a.q, r: a.r }, { q: b.q, r: b.r }) <= range)))
+  if (mine.length >= 2 && mine.some((a) => mine.some((b) => a.id !== b.id && dist(a, b) <= range)))
     return true;
   for (const p of state.players) {
     if (!p.alive || p.id === pid || !hasMet(state, pid, p.id) || atWar(state, pid, p.id)) continue;
     for (const c of playerCities(state, p.id))
-      if (mine.some((o) => hexDistance({ q: o.q, r: o.r }, { q: c.q, r: c.r }) <= range)) return true;
+      if (mine.some((o) => dist(o, c) <= range)) return true;
   }
   return false;
 }
@@ -124,7 +124,7 @@ function threatNear(ctx: Ctx, state: GameState, city: City): number {
     const u = state.units[id];
     if (u.owner === city.owner || isCivilian(ctx, u)) continue;
     if (!atWar(state, city.owner, u.owner)) continue;
-    if (hexDistance({ q: u.q, r: u.r }, { q: city.q, r: city.r }) <= 4) {
+    if (dist(u, city) <= 4) {
       threat += ctx.rules.units[u.def].strength;
     }
   }
@@ -232,7 +232,7 @@ export function pickProduction(
   const tw = traitWeights(ctx, state, pid);
 
   // 1. an undefended city arms itself first
-  if (!hasGarrison(ctx, state, city) && !myUnits.some((u) => !isCivilian(ctx, u) && hexDistance({ q: u.q, r: u.r }, { q: city.q, r: city.r }) <= 2)) {
+  if (!hasGarrison(ctx, state, city) && !myUnits.some((u) => !isCivilian(ctx, u) && dist(u, city) <= 2)) {
     const mil = bestMilitary(ctx, state, city);
     if (mil) return { item: mil, reason: `${city.name} is undefended` };
   }

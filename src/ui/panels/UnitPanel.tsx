@@ -1,5 +1,5 @@
 import { gameCtx } from '../../app/driver';
-import { appStore, useApp } from '../../app/store';
+import { appStore, useApp, useGameView } from '../../app/store';
 import { humanDispatch, isMyTurn } from '../actions';
 import { validateAction } from '../../engine/validate';
 import { promotionSlots, pendingPromotions, availablePromotions } from '../../engine/selectors';
@@ -9,10 +9,8 @@ import { effectText } from '../promotions';
 import { neighbors, tileIndex } from '../../engine/hex';
 
 export function UnitPanel() {
-  const game = useApp((s) => s.game);
-  const viewer = useApp((s) => s.viewingPlayer);
+  const { game, viewer } = useGameView();
   const selectedUnit = useApp((s) => s.selectedUnit);
-  useApp((s) => s.aiThinking); // re-render when turn control changes
   if (!game || selectedUnit === null) return null;
   const unit = game.units[selectedUnit];
   if (!unit) return null;

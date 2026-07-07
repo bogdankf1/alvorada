@@ -91,6 +91,14 @@ export function useApp<S>(selector: (s: AppState) => S): S {
   return useSyncExternalStore(appStore.subscribe, () => selector(appStore.get()));
 }
 
+/** game + viewer lens for panels; also subscribes to aiThinking so the panel re-renders on turn-control changes. */
+export function useGameView(): { game: GameState | null; viewer: PlayerId } {
+  const game = useApp((s) => s.game);
+  const viewer = useApp((s) => s.viewingPlayer);
+  useApp((s) => s.aiThinking); // re-render when turn control changes
+  return { game, viewer };
+}
+
 let toastSeq = 1;
 export function pushToast(t: Omit<Toast, 'id'>): void {
   const toast = { ...t, id: toastSeq++ };
